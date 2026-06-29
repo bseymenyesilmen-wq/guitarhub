@@ -31,6 +31,16 @@ const SUGGESTIONS = [
   "Repertuarımı nerede görürüm?",
 ];
 
+function getConversationId() {
+  const key = "guitarhub-yoda-conversation-id";
+  const existing = window.localStorage.getItem(key);
+  if (existing) return existing;
+
+  const created = crypto.randomUUID();
+  window.localStorage.setItem(key, created);
+  return created;
+}
+
 export function ChatbotWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -62,7 +72,7 @@ export function ChatbotWidget() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ message: trimmed, history: apiHistory }),
+      body: JSON.stringify({ message: trimmed, history: apiHistory, conversationId: getConversationId() }),
     }).catch(() => null);
 
     const payload = response ? await response.json().catch(() => null) : null;

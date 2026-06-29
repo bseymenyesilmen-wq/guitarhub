@@ -10,9 +10,10 @@ import {
 type ChatbotRequest = {
   message?: string;
   history?: ChatMessage[];
+  conversationId?: string;
 };
 
-type OpenAiChatResponse = {
+type HermesChatResponse = {
   choices?: Array<{
     message?: {
       content?: string;
@@ -20,22 +21,31 @@ type OpenAiChatResponse = {
   }>;
 };
 
-function getProviderConfig() {
-  const apiKey = process.env.AI_CHAT_API_KEY || process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY || "";
-  const baseUrl = process.env.AI_CHAT_API_URL || (process.env.OPENROUTER_API_KEY ? "https://openrouter.ai/api/v1" : "https://api.openai.com/v1");
-  const model = process.env.AI_CHAT_MODEL || (process.env.OPENROUTER_API_KEY ? "openai/gpt-4o-mini" : "gpt-4o-mini");
-  return { apiKey, baseUrl: baseUrl.replace(/\/$/, ""), model };
+function getHermesConfig() {
+  const apiKey = process.env.HERMES_API_KEY ?? "";
+  const baseUrl = (process.env.HERMES_API_URL ?? "").replace(/\/$/, "");
+  const model = process.env.HERMES_API_MODEL || "hermes-agent";
+  return { apiKey, baseUrl, model };
 }
 
-async function callChatProvider(input: string, history: ChatMessage[]) {
-  const { apiKey, baseUrl, model } = getProviderConfig();
-  if (!apiKey) return null;
+function chatCompletionsUrl(baseUrl: string) {
+  if (baseUrl.endsWith("/v1")) {
+    return `${baseUrl}/chat/completions`;
+  }
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
+  return `${baseUrl}/v1/chat/completions`;
+}
+
+async function callHermes(input: string, history: ChatMessage[], conversationId?: string) {
+  const { apiKey, baseUrl, model } = getHermesConfig();
+  if (!apiKey || !baseUrl) return null;
+
+  const response = await fetch(chatCompletionsUrl(baseUrl), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      ...(conversationId ? { "X-Hermes-Session-Key": `guitarhub:${conversationId.slice(0, 180)}` } : {}),
     },
     body: JSON.stringify({
       model,
@@ -46,7 +56,7 @@ async function callChatProvider(input: string, history: ChatMessage[]) {
 
   if (!response.ok) return null;
 
-  const payload = (await response.json().catch(() => null)) as OpenAiChatResponse | null;
+  const payload = (await response.json().catch(() => null)) as HermesChatResponse | null;
   return payload?.choices?.[0]?.message?.content?.trim() || null;
 }
 
@@ -54,6 +64,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as ChatbotRequest | null;
   const message = body?.message?.trim() ?? "";
   const history = Array.isArray(body?.history) ? body.history : [];
+  const conversationId = body?.conversationId?.trim();
 
   if (!message) {
     return NextResponse.json({ reply: "Mesaj boş olamaz." }, { status: 400 });
@@ -63,8 +74,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ reply: RESTRICTED_REPLY });
   }
 
-  const providerReply = await callChatProvider(message, history).catch(() => null);
-  const reply = providerReply || buildFallbackReply(message);
+  const hermesReply = await callHermes(message, history, conversationId).catch(() => null);
+  const reply = hermesReply || buildFallbackReply(message);
 
   return NextResponse.json({ reply });
 }

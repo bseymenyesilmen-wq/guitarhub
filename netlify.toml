@@ -6,6 +6,7 @@
   NODE_VERSION = "22"
   NEXT_PUBLIC_SUPABASE_URL = "https://rvpvgkxdyatfhhfdyfrg.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_4AbWTTreyhQodW06gI1Z2A_TZHovb58"
+  HERMES_API_URL = "http://85.215.42.46:8642"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
