@@ -125,39 +125,124 @@ export function buildNotes(root: string, formula: string[]) {
   return formula.map((interval) => noteFromInterval(root, interval));
 }
 
+const E_STRING_FRET: Record<string, number> = { E: 0, F: 1, "F#": 2, G: 3, "G#": 4, A: 5, "A#": 6, B: 7, C: 8, "C#": 9, D: 10, "D#": 11 };
+const A_STRING_FRET: Record<string, number> = { A: 0, "A#": 1, B: 2, C: 3, "C#": 4, D: 5, "D#": 6, E: 7, F: 8, "F#": 9, G: 10, "G#": 11 };
+
+const QUALITY_SUFFIX: Record<string, string> = {
+  major: "",
+  minor: "m",
+  "7": "7",
+  maj7: "maj7",
+  min7: "m7",
+  dim: "dim",
+  aug: "aug",
+  sus2: "sus2",
+  sus4: "sus4",
+  add9: "add9",
+  "6": "6",
+  "9": "9",
+  "11": "11",
+  "13": "13",
+};
+
+function difficultyForFret(fret: number): Difficulty {
+  if (fret <= 0) return "beginner";
+  if (fret <= 5) return "intermediate";
+  return "advanced";
+}
+
+function eShapePosition(root: string, quality: string): ChordPosition {
+  const fret = E_STRING_FRET[root];
+  const baseFret = Math.max(1, fret);
+  const minorLike = quality === "minor" || quality === "min7";
+  const seventh = quality === "7" || quality === "min7" || quality === "9" || quality === "11" || quality === "13";
+  const frets: Array<number | "x"> = minorLike
+    ? [fret, fret + 2, seventh ? fret : fret + 2, fret, fret, fret]
+    : [fret, fret + 2, seventh ? fret : fret + 2, fret + 1, fret, fret];
+
+  return {
+    id: `${root}-${quality}-e-shape`,
+    name: fret === 0 ? "Açık E-shape" : "E-shape barre",
+    frets,
+    fingers: fret === 0 ? [0, 2, seventh ? 0 : 3, minorLike ? 0 : 1, 0, 0] : [1, 3, seventh ? 1 : 4, minorLike ? 1 : 2, 1, 1],
+    baseFret,
+    barre: fret > 0 ? { fret, fromString: 1, toString: 6, finger: 1 } : undefined,
+    difficulty: difficultyForFret(fret),
+    hint: fret === 0 ? "Açık pozisyon; telleri tek tek temiz kontrol et." : "Barre parmağını hafif yana yatır; başparmağı sapın arkasında tut.",
+  };
+}
+
+function aShapePosition(root: string, quality: string): ChordPosition {
+  const fret = A_STRING_FRET[root];
+  const baseFret = Math.max(1, fret);
+  const minorLike = quality === "minor" || quality === "min7";
+  const seventh = quality === "7" || quality === "min7" || quality === "9" || quality === "11" || quality === "13";
+  const frets: Array<number | "x"> = minorLike
+    ? ["x", fret, fret + 2, fret + 2, seventh ? fret + 1 : fret + 1, fret]
+    : ["x", fret, fret + 2, seventh ? fret : fret + 2, fret + 2, fret];
+
+  return {
+    id: `${root}-${quality}-a-shape`,
+    name: fret === 0 ? "Açık A-shape" : "A-shape barre",
+    frets,
+    fingers: fret === 0 ? [0, 0, 2, seventh ? 0 : 3, minorLike ? 1 : 4, 0] : [0, 1, 3, seventh ? 1 : 3, minorLike ? 2 : 3, 1],
+    baseFret,
+    barre: fret > 0 ? { fret, fromString: 1, toString: 5, finger: 1 } : undefined,
+    difficulty: difficultyForFret(fret),
+    hint: "A telinden başlat; düşük E telini sustur. Aynı akorun farklı tınısını verir.",
+  };
+}
+
+function compactPosition(root: string, quality: string): ChordPosition {
+  const fret = Math.max(1, A_STRING_FRET[root]);
+  return {
+    id: `${root}-${quality}-compact`,
+    name: "Kompakt pozisyon",
+    frets: ["x", fret, fret + 1, fret + 2, fret + 1, "x"],
+    fingers: [0, 1, 2, 4, 3, 0],
+    baseFret: fret,
+    difficulty: "advanced",
+    hint: "Kompakt renk pozisyonu; özellikle dim/aug ve caz renklerinde kısa geçiş için kullan.",
+  };
+}
+
+function generatedPositions(root: string, quality: string) {
+  if (quality === "dim" || quality === "aug") return [compactPosition(root, quality), eShapePosition(root, quality)];
+  return [eShapePosition(root, quality), aShapePosition(root, quality)];
+}
+
 export function buildChord(name: string, root: string, formulaKey: keyof typeof CHORD_FORMULAS, family?: string): ChordDefinition {
   const formula = CHORD_FORMULAS[formulaKey].formula;
+  const existing = POSITION_LIBRARY[name] ?? [];
+  const generated = generatedPositions(root, String(formulaKey)).filter(
+    (position) => !existing.some((item) => item.id === position.id),
+  );
+
   return {
     name,
     root,
     family: family ?? CHORD_FORMULAS[formulaKey].label,
     formula,
     notes: buildNotes(root, formula),
-    positions: POSITION_LIBRARY[name] ?? [{ id: `${name}-movable`, name: "Teori pozisyonu", frets: ["x", "x", "x", "x", "x", "x"], fingers: [0, 0, 0, 0, 0, 0], baseFret: 1, difficulty: "advanced", hint: "Bu akor için pozisyon verisi sonraki güncellemede genişletilecek." }],
+    positions: [...existing, ...generated].slice(0, 3),
   };
 }
 
-export const CHORD_LIBRARY: ChordDefinition[] = [
-  buildChord("A", "A", "major"),
-  buildChord("Am", "A", "minor"),
-  buildChord("A7", "A", "7", "Dominant 7"),
-  buildChord("Am7", "A", "min7"),
-  buildChord("Amaj7", "A", "maj7"),
-  buildChord("Asus4", "A", "sus4"),
-  buildChord("Aadd9", "A", "add9"),
+const CORE_CHORDS = NOTE_NAMES.flatMap((root) =>
+  (["major", "minor", "7", "maj7", "min7", "dim", "aug", "sus2", "sus4", "add9", "6", "9"] as const).map((quality) =>
+    buildChord(`${root}${QUALITY_SUFFIX[quality]}`, root, quality, quality === "7" ? "Dominant 7" : undefined),
+  ),
+);
+
+const SLASH_CHORDS = [
   buildChord("A/C#", "A", "major", "Slash Chord"),
-  buildChord("F", "F", "major", "Barre Chord"),
-  buildChord("F#m", "F#", "minor", "Barre Chord"),
-  buildChord("F#m7", "F#", "min7"),
-  buildChord("Bm7", "B", "min7"),
-  buildChord("G#dim", "G#", "dim"),
-  buildChord("C", "C", "major"),
-  buildChord("D", "D", "major"),
-  buildChord("Dm", "D", "minor"),
-  buildChord("E", "E", "major"),
-  buildChord("Em", "E", "minor"),
-  buildChord("G", "G", "major"),
+  buildChord("C/E", "C", "major", "Slash Chord"),
+  buildChord("D/F#", "D", "major", "Slash Chord"),
+  buildChord("G/B", "G", "major", "Slash Chord"),
+  buildChord("F/A", "F", "major", "Slash Chord"),
 ];
+
+export const CHORD_LIBRARY: ChordDefinition[] = [...CORE_CHORDS, ...SLASH_CHORDS];
 
 export function getScaleNotes(root: string, scaleId: string) {
   const scale = SCALE_FORMULAS.find((item) => item.id === scaleId) ?? SCALE_FORMULAS[0];

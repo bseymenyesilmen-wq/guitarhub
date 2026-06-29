@@ -10,11 +10,7 @@ const NAV_ITEMS = [
   { href: "/sarki-ara", label: "Şarkı Ara", icon: "⌕" },
   { href: "/akor-kutuphanesi", label: "Akorlar", icon: "♬" },
   { href: "/gam-kutuphanesi", label: "Gamlar", icon: "◎" },
-  { href: "/teori", label: "Eğitim", icon: "✦" },
-  { href: "/pratik", label: "Pratik", icon: "✓" },
 ];
-
-const MOBILE_ITEMS = NAV_ITEMS.filter((item) => ["/", "/repertuar", "/sarki-ara", "/pratik", "/teori"].includes(item.href));
 
 export function AppNav() {
   const pathname = usePathname();
@@ -68,7 +64,7 @@ export function AppNav() {
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-zinc-950/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.35rem)] pt-2 backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
-          {MOBILE_ITEMS.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
             return (
               <Link

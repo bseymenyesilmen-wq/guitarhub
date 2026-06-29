@@ -37,7 +37,7 @@ export default function Giris() {
       <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-8">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-red-400">GuitarHub</p>
         <h1 className="text-3xl font-black">Giris yap</h1>
-        <p className="mt-2 text-sm text-zinc-400">Repertuarina ve pratik paneline devam et.</p>
+        <p className="mt-2 text-sm text-zinc-400">Repertuarına ve şarkı arama paneline devam et.</p>
 
         <div className="mt-6 space-y-4">
           <input

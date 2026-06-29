@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "GuitarHub",
-  description: "Kisisel gitar repertuar ve pratik takip uygulamasi",
+  description: "Kişisel gitar repertuar, akor ve gam uygulaması",
 };
 
 export default function RootLayout({
