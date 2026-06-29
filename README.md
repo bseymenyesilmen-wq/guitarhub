@@ -55,6 +55,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 - Eski ayrı Express backend Netlify için gerekli değildir; şarkı arama artık Next.js API route içinde çalışır.
 - Netlify deployment için sadece bu frontend klasörünü repo kökü olarak kullan.
 
+## Ürün ve mimari roadmap
+
+GuitarHub'ı mobile-first, sahne kullanımına hazır ve gitar eğitimine odaklı profesyonel platforma dönüştürmek için detaylı ürün/mimari doküman:
+
+- [`docs/GUITARHUB_PRODUCT_ARCHITECTURE.md`](docs/GUITARHUB_PRODUCT_ARCHITECTURE.md)
+
 ## Kontrol komutları
 
 ```bash
