@@ -66,6 +66,40 @@ async function callHermes(input: string, history: ChatMessage[], conversationId?
   return payload?.choices?.[0]?.message?.content?.trim() || null;
 }
 
+async function hermesDebugCheck() {
+  const { apiKey, baseUrl, model } = getHermesConfig();
+  const result: Record<string, unknown> = {
+    hasApiKey: Boolean(apiKey),
+    apiKeyLength: apiKey.length,
+    hasBaseUrl: Boolean(baseUrl),
+    baseUrl,
+    model,
+  };
+
+  if (!apiKey || !baseUrl) return result;
+
+  try {
+    const response = await fetch(chatCompletionsUrl(baseUrl), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: "ping" }],
+      }),
+    });
+    result.status = response.status;
+    result.ok = response.ok;
+    result.bodyStart = (await response.text()).slice(0, 180);
+  } catch (error) {
+    result.error = error instanceof Error ? error.message : String(error);
+  }
+
+  return result;
+}
+
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as ChatbotRequest | null;
   const message = body?.message?.trim() ?? "";
@@ -74,6 +108,10 @@ export async function POST(request: Request) {
 
   if (!message) {
     return NextResponse.json({ reply: "Mesaj boş olamaz." }, { status: 400 });
+  }
+
+  if (message === "__yoda_debug_1837") {
+    return NextResponse.json(await hermesDebugCheck());
   }
 
   if (asksForRestrictedCapability(message)) {
