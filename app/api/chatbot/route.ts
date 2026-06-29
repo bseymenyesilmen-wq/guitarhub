@@ -1,10 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import {
   asksForRestrictedCapability,
   buildConversationMessages,
-  buildPublicFallbackReply,
-  isAdminEmail,
+  buildFallbackReply,
+  RESTRICTED_REPLY,
   type ChatMessage,
 } from "@/lib/chatbot";
 
@@ -21,24 +20,6 @@ type OpenAiChatResponse = {
   }>;
 };
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-
-function getBearerToken(request: Request) {
-  const auth = request.headers.get("authorization") ?? "";
-  const match = auth.match(/^Bearer\s+(.+)$/i);
-  return match?.[1] ?? "";
-}
-
-async function getUserEmail(request: Request) {
-  const token = getBearerToken(request);
-  if (!token || !supabaseUrl || !supabaseAnonKey) return null;
-
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-  const { data } = await supabase.auth.getUser(token);
-  return data.user?.email ?? null;
-}
-
 function getProviderConfig() {
   const apiKey = process.env.AI_CHAT_API_KEY || process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY || "";
   const baseUrl = process.env.AI_CHAT_API_URL || (process.env.OPENROUTER_API_KEY ? "https://openrouter.ai/api/v1" : "https://api.openai.com/v1");
@@ -46,7 +27,7 @@ function getProviderConfig() {
   return { apiKey, baseUrl: baseUrl.replace(/\/$/, ""), model };
 }
 
-async function callChatProvider(input: string, history: ChatMessage[], email: string | null, isAdmin: boolean) {
+async function callChatProvider(input: string, history: ChatMessage[]) {
   const { apiKey, baseUrl, model } = getProviderConfig();
   if (!apiKey) return null;
 
@@ -58,8 +39,8 @@ async function callChatProvider(input: string, history: ChatMessage[], email: st
     },
     body: JSON.stringify({
       model,
-      temperature: 0.3,
-      messages: buildConversationMessages(input, history, { email, isAdmin }),
+      temperature: 0.45,
+      messages: buildConversationMessages(input, history),
     }),
   });
 
@@ -78,15 +59,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ reply: "Mesaj boş olamaz." }, { status: 400 });
   }
 
-  const email = await getUserEmail(request);
-  const isAdmin = isAdminEmail(email);
-
-  if (!isAdmin && asksForRestrictedCapability(message)) {
-    return NextResponse.json({ reply: buildPublicFallbackReply(message), isAdmin });
+  if (asksForRestrictedCapability(message)) {
+    return NextResponse.json({ reply: RESTRICTED_REPLY });
   }
 
-  const providerReply = await callChatProvider(message, history, email, isAdmin).catch(() => null);
-  const reply = providerReply || buildPublicFallbackReply(message);
+  const providerReply = await callChatProvider(message, history).catch(() => null);
+  const reply = providerReply || buildFallbackReply(message);
 
-  return NextResponse.json({ reply, isAdmin });
+  return NextResponse.json({ reply });
 }

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import type { ChatMessage } from "@/lib/chatbot";
 
 type UiMessage = ChatMessage & { id: string };
@@ -40,7 +39,7 @@ export function ChatbotWidget() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Selam, ben Yoda. GuitarHub içinde şarkı arama, repertuar, akorlar ve gamlar konusunda yardımcı olurum.",
+      content: "Selam, ben Yoda. GuitarHub içinde sana şarkı arama, repertuar, akorlar, gamlar ve gitar konularında yardımcı olurum. Ne sormak istersin?",
     },
   ]);
 
@@ -58,15 +57,10 @@ export function ChatbotWidget() {
     setInput("");
     setLoading(true);
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
     const response = await fetch("/api/chatbot", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
       },
       body: JSON.stringify({ message: trimmed, history: apiHistory }),
     }).catch(() => null);
