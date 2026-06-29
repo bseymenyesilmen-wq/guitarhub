@@ -1,0 +1,45 @@
+export type SongSearchResult = {
+  title: string;
+  artist: string;
+  key: string;
+  capo: string;
+  chords: string;
+  lyrics: string;
+  source?: string;
+};
+
+export type SongSearchResponse =
+  | {
+      found: true;
+      song: SongSearchResult;
+    }
+  | {
+      found: false;
+      message: string;
+    };
+
+export function normalizeSongSearchResult(value: unknown): SongSearchResult | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const title = typeof record.title === "string" ? record.title.trim() : "";
+  const artist = typeof record.artist === "string" ? record.artist.trim() : "";
+  const chords = typeof record.chords === "string" ? record.chords.trim() : "";
+  const lyrics = typeof record.lyrics === "string" ? record.lyrics.trim() : "";
+
+  if (!title || !artist || (!chords && !lyrics)) {
+    return null;
+  }
+
+  return {
+    title,
+    artist,
+    chords,
+    lyrics,
+    key: typeof record.key === "string" ? record.key.trim() : "",
+    capo: typeof record.capo === "string" ? record.capo.trim() : "",
+    source: typeof record.source === "string" ? record.source.trim() : undefined,
+  };
+}
