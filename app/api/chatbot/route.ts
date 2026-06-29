@@ -21,10 +21,16 @@ type HermesChatResponse = {
   }>;
 };
 
+function envValue(name: string) {
+  const raw = process.env[name]?.trim() ?? "";
+  const withoutOptionalKeyPrefix = raw.replace(new RegExp(`^${name}\\s*=\\s*`), "");
+  return withoutOptionalKeyPrefix.replace(/^['\"]|['\"]$/g, "").trim();
+}
+
 function getHermesConfig() {
-  const apiKey = process.env.HERMES_API_KEY ?? "";
-  const baseUrl = (process.env.HERMES_API_URL ?? "").replace(/\/$/, "");
-  const model = process.env.HERMES_API_MODEL || "hermes-agent";
+  const apiKey = envValue("HERMES_API_KEY");
+  const baseUrl = envValue("HERMES_API_URL").replace(/\/$/, "");
+  const model = envValue("HERMES_API_MODEL") || "hermes-agent";
   return { apiKey, baseUrl, model };
 }
 

@@ -95,6 +95,14 @@ export function buildFallbackReply(message: string) {
     return "Kısa bir çalışma planı: 5 dk parmak ısınma, 10 dk akor geçişi, 10 dk ritim/metronom, 15 dk sevdiğin bir şarkı. Zorlandığın akoru yavaşlatıp temiz ses çıkana kadar tekrar et.";
   }
 
+  if (normalized.includes("naber") || normalized.includes("selam") || normalized.includes("merhaba") || normalized.includes("hey")) {
+    return "İyidir kanka, buradayım. Gitar, akor, gam, repertuar ya da şarkı arama tarafında neye bakıyoruz?";
+  }
+
+  if ((normalized.includes("gam") || normalized.includes("scale")) && (normalized.includes("nedir") || normalized.includes("ne demek") || normalized.includes("anlat"))) {
+    return "Gam, notaların belli bir sırayla dizilmiş halidir. Mesela Do majör gamı: Do-Re-Mi-Fa-Sol-La-Si-Do. Gitarda gam çalışmak solo atmayı, melodi kurmayı ve hangi akor üstüne hangi notaların yakışacağını anlamayı sağlar. İstersen [Gam Kütüphanesi](/gam-kutuphanesi) üzerinden root nota seçip klavyede görebilirsin.";
+  }
+
   if (normalized.includes("ton") || normalized.includes("hangi gam") || normalized.includes("gamdan")) {
     return "Bir şarkının tonunu anlamak için bitiş akoruna, en çok döndüğü akora ve melodinin durakladığı sese bak. Gamları incelemek için [Gam Kütüphanesi](/gam-kutuphanesi) bölümünü kullanabilirsin.";
   }
