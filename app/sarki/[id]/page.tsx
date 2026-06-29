@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
+import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
 import { extractChords, transposeText } from "@/lib/music";
+import { CHORD_LIBRARY, type ChordDefinition } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
 import type { Song } from "@/lib/types";
 
@@ -16,6 +18,7 @@ export default function SarkiDetay() {
   const [shift, setShift] = useState(0);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedChord, setSelectedChord] = useState<ChordDefinition | null>(null);
 
   useEffect(() => {
     async function loadSong() {
@@ -52,6 +55,16 @@ export default function SarkiDetay() {
   const transposedChords = useMemo(() => transposeText(song?.chords ?? "", shift), [shift, song?.chords]);
   const chordList = useMemo(() => extractChords(transposedChords), [transposedChords]);
 
+  function openChord(chordName: string) {
+    const normalized = chordName.replace(/♯/g, "#").trim();
+    const chord = CHORD_LIBRARY.find((item) => item.name === normalized || item.aliases?.includes(normalized));
+    if (chord) {
+      setSelectedChord(chord);
+    } else {
+      setMessage(`${chordName} için detaylı diyagram henüz kütüphanede yok.`);
+    }
+  }
+
   async function toggleFavorite() {
     if (!song) return;
 
@@ -70,7 +83,7 @@ export default function SarkiDetay() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 p-4 text-white sm:p-6">
+    <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-5xl">
         <AppNav />
 
@@ -125,9 +138,9 @@ export default function SarkiDetay() {
               <h2 className="text-xl font-bold">Kullanilan Akorlar</h2>
               <div className="mt-4 flex flex-wrap gap-2">
                 {chordList.map((chord) => (
-                  <span key={chord} className="rounded-lg bg-zinc-950 px-3 py-2 font-mono text-red-400">
+                  <button key={chord} onClick={() => openChord(chord)} className="min-h-11 rounded-lg bg-zinc-950 px-3 py-2 font-mono text-red-400 hover:bg-zinc-800">
                     {chord}
-                  </span>
+                  </button>
                 ))}
                 {chordList.length === 0 && <p className="text-zinc-400">Akor bilgisi eklenmemis.</p>}
               </div>
@@ -150,10 +163,12 @@ export default function SarkiDetay() {
 </div>
             </section>
 
-           
+
           </>
         )}
       </div>
+
+      <ChordBottomSheet chord={selectedChord} onClose={() => setSelectedChord(null)} />
     </main>
   );
 }

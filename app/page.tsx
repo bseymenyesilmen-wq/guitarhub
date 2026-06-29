@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppNav } from "@/app/components/AppNav";
+import { getTimeGreeting } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
 import type { PracticeLog, Song } from "@/lib/types";
 
@@ -59,9 +60,10 @@ export default function Home() {
   );
 
   const favoriteCount = songs.filter((song) => Boolean(song.favorite)).length;
+  const greeting = useMemo(() => getTimeGreeting(), []);
 
   return (
-    <main className="min-h-screen bg-zinc-950 p-4 text-white sm:p-6">
+    <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
@@ -70,7 +72,7 @@ export default function Home() {
             Kisisel gitar merkezi
           </p>
           <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">
-            Hos geldin, {name}
+            {greeting}, {name}
           </h1>
           <p className="mt-3 max-w-2xl text-zinc-400">
             Repertuarini, favorilerini, pratik surelerini ve muzik teorisi notlarini tek panelden takip et.
