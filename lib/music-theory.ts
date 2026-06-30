@@ -422,6 +422,29 @@ function generatedPositions(root: string, quality: string) {
   return cagedPositions(root, quality);
 }
 
+function usageScore(position: ChordPosition) {
+  const fretted = position.frets.filter((fret): fret is number => typeof fret === "number" && fret > 0);
+  const mutedCount = position.frets.filter((fret) => fret === "x").length;
+  const openCount = position.frets.filter((fret) => fret === 0).length;
+  const maxFret = fretted.length ? Math.max(...fretted) : 0;
+  const span = fretted.length ? maxFret - Math.min(...fretted) : 0;
+  const barrePenalty = position.barre ? 2 : 0;
+  const openBonus = openCount > 0 && position.baseFret <= 1 ? -3 : 0;
+
+  return position.baseFret * 8 + maxFret * 2 + span * 3 + mutedCount + barrePenalty + openBonus;
+}
+
+function sortByUsage(positions: ChordPosition[]) {
+  return [...positions]
+    .map((position, index) => ({
+      position: { ...position, hint: "" },
+      index,
+      score: usageScore(position),
+    }))
+    .sort((a, b) => a.score - b.score || a.index - b.index)
+    .map((item) => item.position);
+}
+
 export function buildChord(name: string, root: string, formulaKey: keyof typeof CHORD_FORMULAS, family?: string): ChordDefinition {
   const formula = CHORD_FORMULAS[formulaKey].formula;
   const existing = POSITION_LIBRARY[name] ?? [];
@@ -437,7 +460,7 @@ export function buildChord(name: string, root: string, formulaKey: keyof typeof 
     family: family ?? CHORD_FORMULAS[formulaKey].label,
     formula,
     notes: buildNotes(root, formula),
-    positions: sitePositions ?? positions.slice(0, 5),
+    positions: sitePositions ? sortByUsage(sitePositions) : positions.slice(0, 5),
   };
 }
 

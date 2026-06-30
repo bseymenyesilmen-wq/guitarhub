@@ -81,7 +81,7 @@ export function ChordDiagram({ position, title }: Props) {
           );
         })}
       </svg>
-      <p className="mt-3 text-center text-xs text-zinc-400">{position.hint}</p>
+      {position.hint && <p className="mt-3 text-center text-xs text-zinc-400">{position.hint}</p>}
     </div>
   );
 }
