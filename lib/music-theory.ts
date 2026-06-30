@@ -225,64 +225,152 @@ const QUALITY_SUFFIX: Record<string, string> = {
   "13": "13",
 };
 
+type CagedShape = {
+  shape: "C" | "A" | "G" | "E" | "D";
+  root: NoteName;
+  frets: Array<number | "x">;
+  fingers: number[];
+};
+
+const CAGED_SHAPES: Partial<Record<keyof typeof CHORD_FORMULAS, CagedShape[]>> = {
+  major: [
+    { shape: "C", root: "C", frets: ["x", 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 2, 2, 0], fingers: [0, 0, 1, 2, 3, 0] },
+    { shape: "G", root: "G", frets: [3, 2, 0, 0, 0, 3], fingers: [3, 2, 0, 0, 0, 4] },
+    { shape: "E", root: "E", frets: [0, 2, 2, 1, 0, 0], fingers: [0, 2, 3, 1, 0, 0] },
+    { shape: "D", root: "D", frets: ["x", "x", 0, 2, 3, 2], fingers: [0, 0, 0, 1, 3, 2] },
+  ],
+  minor: [
+    { shape: "C", root: "C", frets: ["x", 3, 1, 0, 1, 3], fingers: [0, 3, 1, 0, 1, 4] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0] },
+    { shape: "G", root: "G", frets: [3, 1, 0, 0, 3, 3], fingers: [3, 1, 0, 0, 4, 4] },
+    { shape: "E", root: "E", frets: [0, 2, 2, 0, 0, 0], fingers: [0, 2, 3, 0, 0, 0] },
+    { shape: "D", root: "D", frets: ["x", "x", 0, 2, 3, 1], fingers: [0, 0, 0, 2, 3, 1] },
+  ],
+  "7": [
+    { shape: "C", root: "C", frets: ["x", 3, 2, 3, 1, 0], fingers: [0, 3, 2, 4, 1, 0] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 0, 2, 0], fingers: [0, 0, 1, 0, 2, 0] },
+    { shape: "G", root: "G", frets: [3, 2, 0, 0, 0, 1], fingers: [3, 2, 0, 0, 0, 1] },
+    { shape: "E", root: "E", frets: [0, 2, 0, 1, 0, 0], fingers: [0, 2, 0, 1, 0, 0] },
+    { shape: "D", root: "D", frets: ["x", "x", 0, 2, 1, 2], fingers: [0, 0, 0, 2, 1, 3] },
+  ],
+  maj7: [
+    { shape: "C", root: "C", frets: ["x", 3, 2, 0, 0, 0], fingers: [0, 3, 2, 0, 0, 0] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 1, 2, 0], fingers: [0, 0, 2, 1, 3, 0] },
+    { shape: "G", root: "G", frets: [3, 2, 0, 0, 0, 2], fingers: [3, 1, 0, 0, 0, 2] },
+    { shape: "E", root: "E", frets: [0, 2, 1, 1, 0, 0], fingers: [0, 3, 1, 2, 0, 0] },
+    { shape: "D", root: "D", frets: ["x", "x", 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1] },
+  ],
+  min7: [
+    { shape: "C", root: "C", frets: ["x", 3, 1, 3, 1, 3], fingers: [0, 3, 1, 4, 1, 4] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 0, 1, 0], fingers: [0, 0, 2, 0, 1, 0] },
+    { shape: "G", root: "G", frets: [3, 1, 0, 0, 3, 1], fingers: [3, 1, 0, 0, 4, 1] },
+    { shape: "E", root: "E", frets: [0, 2, 0, 0, 0, 0], fingers: [0, 2, 0, 0, 0, 0] },
+    { shape: "D", root: "D", frets: ["x", "x", 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1] },
+  ],
+  sus2: [
+    { shape: "C", root: "C", frets: ["x", 3, 0, 0, 1, 3], fingers: [0, 3, 0, 0, 1, 4] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 2, 0, 0], fingers: [0, 0, 1, 2, 0, 0] },
+    { shape: "G", root: "G", frets: [3, 0, 0, 0, 3, 3], fingers: [2, 0, 0, 0, 3, 4] },
+    { shape: "E", root: "E", frets: [0, 2, 4, 4, 0, 0], fingers: [0, 1, 3, 4, 0, 0] },
+    { shape: "D", root: "D", frets: ["x", "x", 0, 2, 3, 0], fingers: [0, 0, 0, 1, 3, 0] },
+  ],
+  sus4: [
+    { shape: "C", root: "C", frets: ["x", 3, 3, 0, 1, 1], fingers: [0, 3, 4, 0, 1, 1] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 2, 3, 0], fingers: [0, 0, 1, 2, 3, 0] },
+    { shape: "G", root: "G", frets: [3, 3, 0, 0, 1, 3], fingers: [2, 3, 0, 0, 1, 4] },
+    { shape: "E", root: "E", frets: [0, 2, 2, 2, 0, 0], fingers: [0, 1, 2, 3, 0, 0] },
+    { shape: "D", root: "D", frets: ["x", "x", 0, 2, 3, 3], fingers: [0, 0, 0, 1, 2, 3] },
+  ],
+  add9: [
+    { shape: "C", root: "C", frets: ["x", 3, 2, 0, 3, 3], fingers: [0, 3, 2, 0, 4, 4] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 4, 2, 0], fingers: [0, 0, 1, 3, 2, 0] },
+    { shape: "G", root: "G", frets: [3, 0, 0, 2, 0, 3], fingers: [2, 0, 0, 1, 0, 3] },
+    { shape: "E", root: "E", frets: [0, 2, 2, 1, 0, 2], fingers: [0, 2, 3, 1, 0, 4] },
+    { shape: "D", root: "D", frets: ["x", 5, 4, 2, 3, 0], fingers: [0, 4, 3, 1, 2, 0] },
+  ],
+  "6": [
+    { shape: "C", root: "C", frets: ["x", 3, 2, 2, 1, 0], fingers: [0, 4, 2, 3, 1, 0] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 2, 2, 2], fingers: [0, 0, 1, 1, 1, 1] },
+    { shape: "G", root: "G", frets: [3, 2, 0, 0, 0, 0], fingers: [3, 2, 0, 0, 0, 0] },
+    { shape: "E", root: "E", frets: [0, 2, 2, 1, 2, 0], fingers: [0, 2, 3, 1, 4, 0] },
+    { shape: "D", root: "D", frets: ["x", "x", 0, 2, 0, 2], fingers: [0, 0, 0, 1, 0, 2] },
+  ],
+  "9": [
+    { shape: "C", root: "C", frets: ["x", 3, 2, 3, 3, 3], fingers: [0, 2, 1, 3, 3, 3] },
+    { shape: "A", root: "A", frets: ["x", 0, 2, 4, 2, 3], fingers: [0, 0, 1, 4, 2, 3] },
+    { shape: "G", root: "G", frets: [3, 2, 0, 2, 0, 1], fingers: [4, 3, 0, 2, 0, 1] },
+    { shape: "E", root: "E", frets: [0, 2, 0, 1, 0, 2], fingers: [0, 2, 0, 1, 0, 3] },
+    { shape: "D", root: "D", frets: ["x", 5, 4, 5, 5, 5], fingers: [0, 2, 1, 3, 3, 3] },
+  ],
+};
+
 function difficultyForFret(fret: number): Difficulty {
   if (fret <= 0) return "beginner";
   if (fret <= 5) return "intermediate";
   return "advanced";
 }
 
-function eShapePosition(root: string, quality: string): ChordPosition {
-  const fret = E_STRING_FRET[root];
-  const baseFret = Math.max(1, fret);
-  const minorLike = quality === "minor" || quality === "min7";
-  const seventh = quality === "7" || quality === "min7" || quality === "9" || quality === "11" || quality === "13";
-  const frets: Array<number | "x"> = minorLike
-    ? [fret, fret + 2, seventh ? fret : fret + 2, fret, fret, fret]
-    : [fret, fret + 2, seventh ? fret : fret + 2, fret + 1, fret, fret];
+function fretNote(stringIndex: number, fret: number) {
+  return transposeBySemitones(OPEN_STRING_NOTES_LOW_TO_HIGH[stringIndex], fret % NOTE_NAMES.length);
+}
+
+function minFret(frets: Array<number | "x">) {
+  const played = frets.filter((fret): fret is number => typeof fret === "number" && fret > 0);
+  return played.length ? Math.min(...played) : 0;
+}
+
+function barreForPosition(frets: Array<number | "x">): ChordPosition["barre"] {
+  const fret = minFret(frets);
+  if (!fret) return undefined;
+  const indices = frets.map((value, index) => (value === fret ? index : -1)).filter((index) => index >= 0);
+  if (indices.length < 2) return undefined;
+  return { fret, fromString: 6 - Math.max(...indices), toString: 6 - Math.min(...indices), finger: 1 };
+}
+
+function transposeCagedShape(root: string, quality: string, shape: CagedShape): ChordPosition {
+  const rootIndex = NOTE_NAMES.indexOf(root as NoteName);
+  const shapeRootIndex = NOTE_NAMES.indexOf(shape.root);
+  const semitones = (rootIndex - shapeRootIndex + NOTE_NAMES.length) % NOTE_NAMES.length;
+  const frets = shape.frets.map((fret) => (fret === "x" ? "x" : fret + semitones));
+  const baseFret = Math.max(1, minFret(frets));
 
   return {
-    id: `${root}-${quality}-e-shape`,
-    name: fret === 0 ? "Açık E-shape" : "E-shape barre",
+    id: `${root}-${quality}-${shape.shape.toLowerCase()}-caged`,
+    name: `${shape.shape}-shape CAGED`,
     frets,
-    fingers: fret === 0 ? [0, 2, seventh ? 0 : 3, minorLike ? 0 : 1, 0, 0] : [1, 3, seventh ? 1 : 4, minorLike ? 1 : 2, 1, 1],
+    fingers: shape.fingers,
     baseFret,
-    barre: fret > 0 ? { fret, fromString: 1, toString: 6, finger: 1 } : undefined,
-    difficulty: difficultyForFret(fret),
-    hint: fret === 0 ? "Açık pozisyon; telleri tek tek temiz kontrol et." : "Barre parmağını hafif yana yatır; başparmağı sapın arkasında tut.",
+    barre: barreForPosition(frets),
+    difficulty: difficultyForFret(baseFret),
+    hint: `${shape.shape} kalıbından taşınan CAGED pozisyonu; sadece diyagramdaki telleri çal.`,
   };
 }
 
-function aShapePosition(root: string, quality: string): ChordPosition {
-  const fret = A_STRING_FRET[root];
-  const baseFret = Math.max(1, fret);
-  const minorLike = quality === "minor" || quality === "min7";
-  const seventh = quality === "7" || quality === "min7" || quality === "9" || quality === "11" || quality === "13";
-  const frets: Array<number | "x"> = minorLike
-    ? ["x", fret, fret + 2, fret + 2, seventh ? fret + 1 : fret + 1, fret]
-    : ["x", fret, fret + 2, seventh ? fret : fret + 2, fret + 2, fret];
+function validateChordPosition(root: string, formula: string[], position: ChordPosition) {
+  const allowedNotes = new Set(buildNotes(root, formula));
+  const playedNotes = position.frets
+    .map((fret, stringIndex) => (fret === "x" ? null : fretNote(stringIndex, fret)))
+    .filter((note): note is string => Boolean(note));
 
-  return {
-    id: `${root}-${quality}-a-shape`,
-    name: fret === 0 ? "Açık A-shape" : "A-shape barre",
-    frets,
-    fingers: fret === 0 ? [0, 0, 2, seventh ? 0 : 3, minorLike ? 1 : 4, 0] : [0, 1, 3, seventh ? 1 : 3, minorLike ? 2 : 3, 1],
-    baseFret,
-    barre: fret > 0 ? { fret, fromString: 1, toString: 5, finger: 1 } : undefined,
-    difficulty: difficultyForFret(fret),
-    hint: "A telinden başlat; düşük E telini sustur. Aynı akorun farklı tınısını verir.",
-  };
+  return playedNotes.length > 0 && playedNotes.includes(root) && playedNotes.every((note) => allowedNotes.has(note));
 }
 
 function compactPosition(root: string, quality: string): ChordPosition {
-  const fret = Math.max(1, A_STRING_FRET[root]);
+  const fret = A_STRING_FRET[root];
+  const isAug = quality === "aug";
+  const frets: Array<number | "x"> = isAug
+    ? ["x", fret, fret + 3, fret + 2, fret + 2, "x"]
+    : ["x", fret, fret + 1, fret + 2, fret + 1, "x"];
+
   return {
     id: `${root}-${quality}-compact`,
-    name: "Kompakt pozisyon",
-    frets: ["x", fret, fret + 1, fret + 2, fret + 1, "x"],
-    fingers: [0, 1, 2, 4, 3, 0],
-    baseFret: fret,
+    name: isAug ? "Kompakt aug pozisyon" : "Kompakt dim pozisyon",
+    frets,
+    fingers: fret === 0 ? [0, 0, 3, 1, 2, 0] : [0, 1, 2, 4, 3, 0],
+    baseFret: Math.max(1, minFret(frets)),
     difficulty: "advanced",
-    hint: "Kompakt renk pozisyonu; özellikle dim/aug ve caz renklerinde kısa geçiş için kullan.",
+    hint: "Kompakt renk pozisyonu; dim/aug akorları kısa geçiş ve gerilim için kullan.",
   };
 }
 
@@ -314,10 +402,22 @@ function powerChordPositions(root: string): ChordPosition[] {
   ];
 }
 
+function cagedPositions(root: string, quality: string) {
+  const formula = CHORD_FORMULAS[quality]?.formula;
+  const shapes = CAGED_SHAPES[quality];
+  if (!formula || !shapes) return [];
+
+  return shapes
+    .map((shape) => transposeCagedShape(root, quality, shape))
+    .filter((position) => validateChordPosition(root, formula, position));
+}
+
 function generatedPositions(root: string, quality: string) {
   if (quality === "power5") return powerChordPositions(root);
-  if (quality === "dim" || quality === "aug") return [compactPosition(root, quality), eShapePosition(root, quality)];
-  return [eShapePosition(root, quality), aShapePosition(root, quality)];
+  const caged = cagedPositions(root, quality);
+  if (caged.length) return caged;
+  if (quality === "dim" || quality === "aug") return [compactPosition(root, quality)].filter((position) => validateChordPosition(root, CHORD_FORMULAS[quality].formula, position));
+  return cagedPositions(root, quality);
 }
 
 export function buildChord(name: string, root: string, formulaKey: keyof typeof CHORD_FORMULAS, family?: string): ChordDefinition {
@@ -326,6 +426,7 @@ export function buildChord(name: string, root: string, formulaKey: keyof typeof 
   const generated = generatedPositions(root, String(formulaKey)).filter(
     (position) => !existing.some((item) => item.id === position.id),
   );
+  const positions = generated.length >= 5 && family !== "Slash Chord" ? generated : [...existing, ...generated];
 
   return {
     name,
@@ -333,7 +434,7 @@ export function buildChord(name: string, root: string, formulaKey: keyof typeof 
     family: family ?? CHORD_FORMULAS[formulaKey].label,
     formula,
     notes: buildNotes(root, formula),
-    positions: [...existing, ...generated].slice(0, 5),
+    positions: positions.slice(0, 5),
   };
 }
 
