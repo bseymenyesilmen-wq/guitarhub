@@ -3,25 +3,31 @@
 import { useMemo, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 import { Fretboard } from "@/app/components/Fretboard";
-import { NOTE_NAMES, SCALE_FORMULAS } from "@/lib/music-theory";
+import { getScalePositions, NOTE_NAMES, SCALE_FORMULAS, type ScaleViewMode } from "@/lib/music-theory";
 
-const POSITION_FRETS = [0, 3, 5, 7, 9, 12, 15];
-const FULL_POSITION = -1;
+const VIEW_MODES: Array<{ id: ScaleViewMode; label: string; description: string }> = [
+  { id: "full", label: "Full", description: "0-12 arası genel harita" },
+  { id: "vertical", label: "Vertical", description: "Seçili pozisyon kutusu" },
+  { id: "diagonal", label: "Diagonal", description: "Sap boyunca çapraz hat" },
+];
 
 export default function GamKutuphanesi() {
   const [root, setRoot] = useState("C");
   const [scaleId, setScaleId] = useState("major");
   const [category, setCategory] = useState("Tümü");
-  const [showIntervals, setShowIntervals] = useState(true);
-  const [startFret, setStartFret] = useState(FULL_POSITION);
+  const [showIntervals, setShowIntervals] = useState(false);
+  const [viewMode, setViewMode] = useState<ScaleViewMode>("vertical");
+  const [positionIndex, setPositionIndex] = useState(0);
 
   const scale = SCALE_FORMULAS.find((item) => item.id === scaleId) ?? SCALE_FORMULAS[0];
   const filteredScales = useMemo(
     () => SCALE_FORMULAS.filter((item) => category === "Tümü" || item.category === category),
     [category],
   );
-  const fretboardStart = startFret === FULL_POSITION ? 0 : startFret;
-  const displayFrets = startFret === FULL_POSITION ? 21 : 5;
+  const positions = useMemo(() => getScalePositions(root, scaleId, viewMode), [root, scaleId, viewMode]);
+  const selectedPosition = positions[Math.min(positionIndex, positions.length - 1)] ?? positions[0];
+  const fretboardStart = viewMode === "full" ? 0 : selectedPosition?.startFret ?? 0;
+  const displayFrets = viewMode === "full" ? 12 : selectedPosition?.displayFrets ?? 4;
 
   return (
     <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
@@ -32,7 +38,7 @@ export default function GamKutuphanesi() {
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-400">Gerçek gitar fretboard</p>
           <h1 className="mt-3 text-4xl font-black">Gam Kütüphanesi</h1>
           <p className="mt-2 max-w-2xl text-zinc-400">
-            All-Guitar-Chords mantığıyla root nota, gam ve pozisyon seç. Full görünümde tüm sapı gör; 7. perde gibi bir pozisyon seçince o bölgedeki gam şekli öne çıksın.
+            All-Guitar-Chords mantığıyla root nota, gam, görünüm tipi ve pozisyon seç. Pentatonic gibi gamlarda 1. Pozisyon, 2. Pozisyon diye kutuları çalış.
           </p>
         </section>
 
@@ -43,7 +49,10 @@ export default function GamKutuphanesi() {
               {NOTE_NAMES.map((note) => (
                 <button
                   key={note}
-                  onClick={() => setRoot(note)}
+                  onClick={() => {
+                    setRoot(note);
+                    setPositionIndex(0);
+                  }}
                   className={`min-h-12 rounded-2xl text-sm font-black ${root === note ? "bg-red-600" : "bg-zinc-950 hover:bg-zinc-800"}`}
                 >
                   {note}
@@ -77,7 +86,10 @@ export default function GamKutuphanesi() {
               {filteredScales.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setScaleId(item.id)}
+                  onClick={() => {
+                    setScaleId(item.id);
+                    setPositionIndex(0);
+                  }}
                   className={`rounded-2xl p-3 text-left ${scaleId === item.id ? "bg-red-600" : "bg-zinc-950 hover:bg-zinc-800"}`}
                 >
                   <span className="block font-black">{root} {item.name}</span>
@@ -99,37 +111,50 @@ export default function GamKutuphanesi() {
             </span>
           </div>
 
-          <div className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-3">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="font-black">3. Pozisyon seç</h3>
-                <p className="text-xs text-zinc-500">Full tüm sapı gösterir. Perde seçersen o bölgedeki pratik pozisyonu görürsün.</p>
+          <div className="mb-4 grid gap-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-3 lg:grid-cols-[0.75fr_1.25fr]">
+            <div>
+              <h3 className="font-black">3. Görünüm</h3>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {VIEW_MODES.map((mode) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => {
+                      setViewMode(mode.id);
+                      setPositionIndex(0);
+                    }}
+                    className={`rounded-2xl px-3 py-3 text-left ${viewMode === mode.id ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+                  >
+                    <span className="block text-sm font-black">{mode.label}</span>
+                    <span className="mt-1 hidden text-[10px] text-zinc-300 sm:block">{mode.description}</span>
+                  </button>
+                ))}
               </div>
-              <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-zinc-400">
-                {startFret === FULL_POSITION ? "Full" : `${startFret}. perde pozisyonu`}
-              </span>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <button
-                onClick={() => setStartFret(FULL_POSITION)}
-                className={`min-h-11 shrink-0 rounded-full px-5 text-sm font-black ${startFret === FULL_POSITION ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
-              >
-                Full
-              </button>
-              {POSITION_FRETS.map((fret) => (
-                <button
-                  key={fret}
-                  onClick={() => setStartFret(fret)}
-                  className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-black ${startFret === fret ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
-                >
-                  {fret}. perde
-                </button>
-              ))}
+
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-black">4. Pozisyon çalış</h3>
+                <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-zinc-400">
+                  {viewMode === "full" ? "Genel harita" : selectedPosition?.label}
+                </span>
+              </div>
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                {positions.map((position) => (
+                  <button
+                    key={`${viewMode}-${position.index}-${position.startFret}`}
+                    onClick={() => setPositionIndex(position.index)}
+                    className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-black ${positionIndex === position.index && viewMode !== "full" ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+                    disabled={viewMode === "full"}
+                  >
+                    {position.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <Fretboard root={root} scaleId={scaleId} showIntervals={showIntervals} startFret={fretboardStart} displayFrets={displayFrets} />
-          <p className="mt-3 text-sm text-zinc-500">Mobilde klavyeyi yatay kaydır. Root kırmızı, gam notaları mavi; interval kapalıysa nota adları görünür.</p>
+          <Fretboard root={root} scaleId={scaleId} showIntervals={showIntervals} startFret={fretboardStart} displayFrets={displayFrets} viewMode={viewMode} />
+          <p className="mt-3 text-sm text-zinc-500">Kompakt görünümde sağa-sola kaydırmadan çalış. Root kırmızı, gam notaları mavi; interval kapalıysa nota adları görünür.</p>
         </section>
       </div>
     </main>

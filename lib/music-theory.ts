@@ -46,6 +46,15 @@ export type FretboardNote = {
   isRoot: boolean;
 };
 
+export type ScaleViewMode = "full" | "vertical" | "diagonal";
+
+export type ScalePosition = {
+  index: number;
+  label: string;
+  startFret: number;
+  displayFrets: number;
+};
+
 const INTERVAL_STEPS: Record<string, number> = {
   "1": 0,
   b2: 1,
@@ -522,6 +531,29 @@ export function buildScaleFretboard(root: string, scaleId: string, startFret = 0
 
 export function buildFretboard(root: string, scaleId: string, frets = 12): FretboardNote[] {
   return buildScaleFretboard(root, scaleId, 0, frets);
+}
+
+function normalizeFret(fret: number) {
+  if (fret < 0) return 0;
+  if (fret <= 15) return fret;
+  return fret - 12;
+}
+
+export function getScalePositions(root: string, scaleId: string, viewMode: ScaleViewMode = "vertical"): ScalePosition[] {
+  const scale = SCALE_FORMULAS.find((item) => item.id === scaleId) ?? SCALE_FORMULAS[0];
+  const rootOnLowE = NOTE_NAMES.indexOf(root as NoteName) + 8;
+  const displayFrets = viewMode === "diagonal" ? 7 : 4;
+  const starts = scale.formula
+    .map((interval) => normalizeFret(rootOnLowE + (INTERVAL_STEPS[interval] ?? 0) - 1))
+    .filter((fret, index, list) => list.indexOf(fret) === index)
+    .sort((a, b) => a - b);
+
+  return starts.map((startFret, index) => ({
+    index,
+    label: `${index + 1}. Pozisyon`,
+    startFret,
+    displayFrets,
+  }));
 }
 
 export function getTimeGreeting(date = new Date()) {
