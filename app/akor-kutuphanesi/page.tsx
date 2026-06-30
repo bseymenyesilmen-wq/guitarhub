@@ -65,9 +65,17 @@ export default function AkorKutuphanesi() {
           {chords.map((chord) => {
             const mainPosition = chord.positions.find((position) => position.difficulty === "beginner") ?? chord.positions[0];
             return (
-              <button
+              <article
                 key={chord.name}
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedChord(chord)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedChord(chord);
+                  }
+                }}
                 className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 text-left hover:border-red-500/70 hover:bg-zinc-900/80"
               >
                 <div className="mb-4 flex items-start justify-between gap-3">
@@ -87,7 +95,7 @@ export default function AkorKutuphanesi() {
 
                 <ChordDiagram position={mainPosition} title={chord.name} />
                 <p className="mt-3 text-center text-sm font-semibold text-red-300">Detay ve alternatifler için dokun</p>
-              </button>
+              </article>
             );
           })}
         </section>
