@@ -93,7 +93,6 @@ export default function GamKutuphanesi() {
             <div>
               <h2 className="text-2xl font-black">{root} {scale.name}</h2>
               <p className="mt-1 text-zinc-400">{scale.character}</p>
-              <p className="mt-1 text-xs font-semibold text-zinc-500">All-Guitar-Chords yolu: /scales/{root.toLowerCase()}/{scale.scaleSlug}</p>
             </div>
             <span className="rounded-2xl bg-zinc-950 px-4 py-2 text-sm font-bold text-red-300">
               {scale.genres.join(" · ")}
