@@ -39,22 +39,27 @@ type Props = {
   text: string;
   emptyText?: string;
   onChordClick?: (chord: string) => void;
+  size?: "normal" | "compact";
 };
 
-export function ChordTextViewer({ text, emptyText = "Akor eklenmemiş.", onChordClick }: Props) {
+export function ChordTextViewer({ text, emptyText = "Akor eklenmemiş.", onChordClick, size = "normal" }: Props) {
   const lines = buildLines(text);
+  const textSizeClass =
+    size === "compact"
+      ? "text-[14px] leading-[1.45] sm:text-[15px] sm:leading-[1.5]"
+      : "text-[24px] leading-[1.45] sm:text-[26px] sm:leading-[1.5]";
 
   return (
     <div className="overflow-x-auto rounded-2xl bg-zinc-950 p-4 sm:p-5">
       <div
-        className="min-w-max text-[24px] leading-[1.45] tracking-normal text-zinc-100 sm:text-[26px] sm:leading-[1.5]"
+        className={`min-w-max tracking-normal text-zinc-100 ${textSizeClass}`}
         style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
       >
         {lines.length === 0 && <pre className="m-0 whitespace-pre text-zinc-500">{emptyText}</pre>}
 
         {lines.map((item) => {
           if (item.type === "space") {
-            return <div key={item.key} className="h-5 sm:h-6" />;
+            return <div key={item.key} className={size === "compact" ? "h-3 sm:h-4" : "h-5 sm:h-6"} />;
           }
 
           if (!item.chordLine) {

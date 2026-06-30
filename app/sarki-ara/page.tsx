@@ -239,7 +239,7 @@ export default function SarkiAra() {
 
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-zinc-400">Akorlar ve Sözler</h3>
-              <ChordTextViewer text={transposedChords} onChordClick={openChord} />
+              <ChordTextViewer text={transposedChords} onChordClick={openChord} size="compact" />
               {result.lyrics && result.lyrics.trim() && result.lyrics.trim() !== editedChords.trim() && (
                 <details className="mt-4 rounded-2xl bg-zinc-950 p-4 text-zinc-300">
                   <summary className="cursor-pointer font-bold text-zinc-200">Sözleri ayrıca göster</summary>
