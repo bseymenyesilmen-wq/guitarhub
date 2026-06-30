@@ -28,6 +28,7 @@ export type ChordDefinition = {
 
 export type ScaleDefinition = {
   id: string;
+  scaleSlug: string;
   name: string;
   category: string;
   formula: string[];
@@ -84,20 +85,22 @@ export const CHORD_FORMULAS: Record<string, { label: string; formula: string[] }
   "13": { label: "13", formula: ["1", "3", "5", "b7", "9", "11", "13"] },
 };
 
-export const SCALE_FORMULAS: ScaleDefinition[] = [
-  { id: "major", name: "Major / Ionian", category: "Major", formula: ["1", "2", "3", "4", "5", "6", "7"], character: "Parlak, merkezli ve mutlu.", genres: ["Pop", "Rock", "Folk"] },
-  { id: "minor", name: "Natural Minor / Aeolian", category: "Minor", formula: ["1", "2", "b3", "4", "5", "b6", "b7"], character: "Karanlık ve hüzünlü.", genres: ["Rock", "Metal", "Pop ballad"] },
-  { id: "pentatonic-major", name: "Pentatonic Major", category: "Pentatonik", formula: ["1", "2", "3", "5", "6"], character: "Country/blues tadında güvenli major ses.", genres: ["Country", "Blues", "Rock"] },
-  { id: "pentatonic-minor", name: "Pentatonic Minor", category: "Pentatonik", formula: ["1", "b3", "4", "5", "b7"], character: "Solo için en pratik blues-rock havuzu.", genres: ["Blues", "Rock", "Metal"] },
-  { id: "blues", name: "Blues", category: "Blues", formula: ["1", "b3", "4", "b5", "5", "b7"], character: "Kirli, gergin ve cevaplı blues hissi.", genres: ["Blues", "Rock", "Jazz"] },
-  { id: "harmonic-minor", name: "Harmonic Minor", category: "Minor", formula: ["1", "2", "b3", "4", "5", "b6", "7"], character: "Klasik, dramatik ve doğu tınılı.", genres: ["Metal", "Klasik", "Fusion"] },
-  { id: "melodic-minor", name: "Melodic Minor", category: "Minor", formula: ["1", "2", "b3", "4", "5", "6", "7"], character: "Minor ama modern/jazz rengi güçlü.", genres: ["Jazz", "Fusion"] },
-  { id: "dorian", name: "Dorian", category: "Mod", formula: ["1", "2", "b3", "4", "5", "6", "b7"], character: "Minor ama umutlu; min7 vamp üstünde çok güçlü.", genres: ["Jazz", "Blues", "Fusion", "Rock"] },
-  { id: "phrygian", name: "Phrygian", category: "Mod", formula: ["1", "b2", "b3", "4", "5", "b6", "b7"], character: "Karanlık, İspanyol/Doğu tınısı.", genres: ["Flamenco", "Metal"] },
-  { id: "lydian", name: "Lydian", category: "Mod", formula: ["1", "2", "3", "#4", "5", "6", "7"], character: "Rüya gibi, havada ve sinematik.", genres: ["Film", "Fusion", "Progressive"] },
-  { id: "mixolydian", name: "Mixolydian", category: "Mod", formula: ["1", "2", "3", "4", "5", "6", "b7"], character: "Major ama bluesy/rock; dominant duygu.", genres: ["Blues", "Rock", "Funk"] },
-  { id: "locrian", name: "Locrian", category: "Mod", formula: ["1", "b2", "b3", "4", "b5", "b6", "b7"], character: "Dengesiz, gerilimli; m7b5 üstünde kullanılır.", genres: ["Jazz", "Metal", "Deneysel"] },
-];
+export const ALL_GUITAR_CHORDS_SCALE_TYPES = [
+  { id: "major", scaleSlug: "major", name: "Major", category: "Major", formula: ["1", "2", "3", "4", "5", "6", "7"], character: "Parlak, merkezli ve mutlu.", genres: ["Pop", "Rock", "Folk"] },
+  { id: "harmonic-minor", scaleSlug: "harmonic-minor", name: "Harmonic Minor", category: "Minor", formula: ["1", "2", "b3", "4", "5", "b6", "7"], character: "Klasik, dramatik ve doğu tınılı.", genres: ["Metal", "Klasik", "Fusion"] },
+  { id: "melodic-minor", scaleSlug: "melodic-minor", name: "Melodic Minor", category: "Minor", formula: ["1", "2", "b3", "4", "5", "6", "7"], character: "Minor ama modern/jazz rengi güçlü.", genres: ["Jazz", "Fusion"] },
+  { id: "minor", scaleSlug: "natural-minor", name: "Natural Minor", category: "Minor", formula: ["1", "2", "b3", "4", "5", "b6", "b7"], character: "Karanlık ve hüzünlü.", genres: ["Rock", "Metal", "Pop ballad"] },
+  { id: "pentatonic-major", scaleSlug: "pentatonic-major", name: "Pentatonic Major", category: "Pentatonik", formula: ["1", "2", "3", "5", "6"], character: "Country/blues tadında güvenli major ses.", genres: ["Country", "Blues", "Rock"] },
+  { id: "pentatonic-minor", scaleSlug: "pentatonic-minor", name: "Pentatonic Minor", category: "Pentatonik", formula: ["1", "b3", "4", "5", "b7"], character: "Solo için en pratik blues-rock havuzu.", genres: ["Blues", "Rock", "Metal"] },
+  { id: "blues", scaleSlug: "pentatonic-blues", name: "Pentatonic Blues", category: "Blues", formula: ["1", "b3", "4", "b5", "5", "b7"], character: "Kirli, gergin ve cevaplı blues hissi.", genres: ["Blues", "Rock", "Jazz"] },
+  { id: "dorian", scaleSlug: "dorian", name: "Dorian", category: "Mod", formula: ["1", "2", "b3", "4", "5", "6", "b7"], character: "Minor ama umutlu; min7 vamp üstünde çok güçlü.", genres: ["Jazz", "Blues", "Fusion", "Rock"] },
+  { id: "phrygian", scaleSlug: "phrygian", name: "Phrygian", category: "Mod", formula: ["1", "b2", "b3", "4", "5", "b6", "b7"], character: "Karanlık, İspanyol/Doğu tınısı.", genres: ["Flamenco", "Metal"] },
+  { id: "lydian", scaleSlug: "lydian", name: "Lydian", category: "Mod", formula: ["1", "2", "3", "#4", "5", "6", "7"], character: "Rüya gibi, havada ve sinematik.", genres: ["Film", "Fusion", "Progressive"] },
+  { id: "mixolydian", scaleSlug: "mixolydian", name: "Mixolydian", category: "Mod", formula: ["1", "2", "3", "4", "5", "6", "b7"], character: "Major ama bluesy/rock; dominant duygu.", genres: ["Blues", "Rock", "Funk"] },
+  { id: "locrian", scaleSlug: "locrian", name: "Locrian", category: "Mod", formula: ["1", "b2", "b3", "4", "b5", "b6", "b7"], character: "Dengesiz, gerilimli; m7b5 üstünde kullanılır.", genres: ["Jazz", "Metal", "Deneysel"] },
+] satisfies ScaleDefinition[];
+
+export const SCALE_FORMULAS: ScaleDefinition[] = ALL_GUITAR_CHORDS_SCALE_TYPES;
 
 export const OPEN_STRING_NOTES_LOW_TO_HIGH = ["E", "A", "D", "G", "B", "E"];
 
@@ -493,12 +496,15 @@ function transposeBySemitones(note: string, semitones: number) {
   return NOTE_NAMES[(rootIndex + semitones) % NOTE_NAMES.length];
 }
 
-export function buildFretboard(root: string, scaleId: string, frets = 12): FretboardNote[] {
+export function buildScaleFretboard(root: string, scaleId: string, startFret = 0, displayFrets = 12): FretboardNote[] {
   const scaleNotes = getScaleNotes(root, scaleId);
   const intervalByNote = new Map(scaleNotes.map((item) => [item.note, item.interval]));
+  const safeStart = Math.max(0, startFret);
+  const safeDisplayFrets = Math.max(1, displayFrets);
 
   return OPEN_STRING_NOTES_LOW_TO_HIGH.flatMap((stringName, stringIndex) =>
-    Array.from({ length: frets + 1 }, (_, fret) => {
+    Array.from({ length: safeDisplayFrets + 1 }, (_, offset) => {
+      const fret = safeStart + offset;
       const note = transposeBySemitones(stringName, fret % NOTE_NAMES.length);
       const interval = intervalByNote.get(note);
       return {
@@ -512,6 +518,10 @@ export function buildFretboard(root: string, scaleId: string, frets = 12): Fretb
       };
     }),
   );
+}
+
+export function buildFretboard(root: string, scaleId: string, frets = 12): FretboardNote[] {
+  return buildScaleFretboard(root, scaleId, 0, frets);
 }
 
 export function getTimeGreeting(date = new Date()) {

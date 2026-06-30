@@ -5,17 +5,23 @@ import { AppNav } from "@/app/components/AppNav";
 import { Fretboard } from "@/app/components/Fretboard";
 import { NOTE_NAMES, SCALE_FORMULAS } from "@/lib/music-theory";
 
+const POSITION_FRETS = [0, 3, 5, 7, 9, 12, 15];
+const FULL_POSITION = -1;
+
 export default function GamKutuphanesi() {
   const [root, setRoot] = useState("C");
   const [scaleId, setScaleId] = useState("major");
   const [category, setCategory] = useState("Tümü");
   const [showIntervals, setShowIntervals] = useState(true);
+  const [startFret, setStartFret] = useState(FULL_POSITION);
 
   const scale = SCALE_FORMULAS.find((item) => item.id === scaleId) ?? SCALE_FORMULAS[0];
   const filteredScales = useMemo(
     () => SCALE_FORMULAS.filter((item) => category === "Tümü" || item.category === category),
     [category],
   );
+  const fretboardStart = startFret === FULL_POSITION ? 0 : startFret;
+  const displayFrets = startFret === FULL_POSITION ? 21 : 5;
 
   return (
     <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
@@ -23,10 +29,10 @@ export default function GamKutuphanesi() {
         <AppNav />
 
         <section className="mb-6 rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-400">İnteraktif gitar klavyesi</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-400">Gerçek gitar fretboard</p>
           <h1 className="mt-3 text-4xl font-black">Gam Kütüphanesi</h1>
           <p className="mt-2 max-w-2xl text-zinc-400">
-            Root nota seç, gamı/modu belirle; klavye üzerinde root notaları kırmızı, diğer gam notaları mavi, interval dereceleriyle görünsün.
+            All-Guitar-Chords mantığıyla root nota, gam ve pozisyon seç. Full görünümde tüm sapı gör; 7. perde gibi bir pozisyon seçince o bölgedeki gam şekli öne çıksın.
           </p>
         </section>
 
@@ -87,13 +93,44 @@ export default function GamKutuphanesi() {
             <div>
               <h2 className="text-2xl font-black">{root} {scale.name}</h2>
               <p className="mt-1 text-zinc-400">{scale.character}</p>
+              <p className="mt-1 text-xs font-semibold text-zinc-500">All-Guitar-Chords yolu: /scales/{root.toLowerCase()}/{scale.scaleSlug}</p>
             </div>
             <span className="rounded-2xl bg-zinc-950 px-4 py-2 text-sm font-bold text-red-300">
               {scale.genres.join(" · ")}
             </span>
           </div>
-          <Fretboard root={root} scaleId={scaleId} showIntervals={showIntervals} />
-          <p className="mt-3 text-sm text-zinc-500">Mobilde klavyeyi yatay kaydır; tablet/desktop görünümünde 0-12 perde aynı anda görünür.</p>
+
+          <div className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-black">3. Pozisyon seç</h3>
+                <p className="text-xs text-zinc-500">Full tüm sapı gösterir. Perde seçersen o bölgedeki pratik pozisyonu görürsün.</p>
+              </div>
+              <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-zinc-400">
+                {startFret === FULL_POSITION ? "Full" : `${startFret}. perde pozisyonu`}
+              </span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              <button
+                onClick={() => setStartFret(FULL_POSITION)}
+                className={`min-h-11 shrink-0 rounded-full px-5 text-sm font-black ${startFret === FULL_POSITION ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+              >
+                Full
+              </button>
+              {POSITION_FRETS.map((fret) => (
+                <button
+                  key={fret}
+                  onClick={() => setStartFret(fret)}
+                  className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-black ${startFret === fret ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+                >
+                  {fret}. perde
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Fretboard root={root} scaleId={scaleId} showIntervals={showIntervals} startFret={fretboardStart} displayFrets={displayFrets} />
+          <p className="mt-3 text-sm text-zinc-500">Mobilde klavyeyi yatay kaydır. Root kırmızı, gam notaları mavi; interval kapalıysa nota adları görünür.</p>
         </section>
       </div>
     </main>
