@@ -8,6 +8,71 @@ import { getTimeGreeting } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
 import type { Song } from "@/lib/types";
 
+const QUICK_ACTIONS = [
+  {
+    href: "/sarki-ara",
+    title: "Şarkı Ara",
+    description: "Akor ve söz bul, beğendiğini repertuarına ekle.",
+    icon: "⌕",
+    primary: true,
+  },
+  {
+    href: "/repertuar",
+    title: "Repertuar",
+    description: "Kaydettiğin şarkılara hızlıca geri dön.",
+    icon: "♪",
+  },
+  {
+    href: "/akor-kutuphanesi",
+    title: "Akorlar",
+    description: "Bilmediğin akorun basışını gör.",
+    icon: "♬",
+  },
+  {
+    href: "/gam-kutuphanesi",
+    title: "Gamlar",
+    description: "Solo ve klavye çalışması için gamlara bak.",
+    icon: "◎",
+  },
+];
+
+const YODA_PROMPTS = ["F#m nasıl basılır?", "Şarkı nasıl eklenir?", "Gamları nerede bulurum?"];
+
+function firstName(value: string) {
+  return value.split("@")[0].split(" ")[0] || "Gitarist";
+}
+
+function pickContinueSong(songs: Song[]) {
+  return songs.find((song) => Boolean(song.favorite)) ?? songs[0] ?? null;
+}
+
+function StatCard({ label, value, helper }: { label: string; value: string; helper: string }) {
+  return (
+    <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-lg shadow-black/10">
+      <p className="text-sm font-semibold text-zinc-400">{label}</p>
+      <p className="mt-3 line-clamp-1 text-2xl font-black text-white">{value}</p>
+      <p className="mt-2 text-xs text-zinc-500">{helper}</p>
+    </div>
+  );
+}
+
+function SongRow({ song, actionLabel = "Aç" }: { song: Song; actionLabel?: string }) {
+  return (
+    <Link
+      href={`/sarki/${song.id}`}
+      className="group flex items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 transition hover:border-red-500/60 hover:bg-zinc-900"
+    >
+      <span className="min-w-0">
+        <strong className="line-clamp-1 text-white group-hover:text-red-100">{song.title}</strong>
+        <span className="mt-1 block line-clamp-1 text-sm text-zinc-400">{song.artist || "Sanatçı belirtilmemiş"}</span>
+      </span>
+      <span className="shrink-0 rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-red-300 group-hover:bg-red-600 group-hover:text-white">
+        {song.favorite ? "Favori" : actionLabel}
+      </span>
+    </Link>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const [name, setName] = useState("Gitarist");
@@ -25,7 +90,7 @@ export default function Home() {
         return;
       }
 
-      setName(String(session.user.user_metadata?.name ?? session.user.email ?? "Gitarist"));
+      setName(firstName(String(session.user.user_metadata?.name ?? session.user.email ?? "Gitarist")));
 
       const { data: songData } = await supabase
         .from("songs")
@@ -40,79 +105,148 @@ export default function Home() {
     loadDashboard();
   }, [router]);
 
-  const favoriteCount = songs.filter((song) => Boolean(song.favorite)).length;
+  const favoriteSongs = songs.filter((song) => Boolean(song.favorite));
+  const favoriteCount = favoriteSongs.length;
+  const continueSong = pickContinueSong(songs);
   const greeting = useMemo(() => getTimeGreeting(), []);
 
   return (
-    <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.18),transparent_35%),#09090b] p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">Kişisel gitar merkezi</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">
-            {greeting}, {name}
-          </h1>
-          <p className="mt-3 max-w-2xl text-zinc-400">
-            Repertuarını, şarkı aramayı, akorları ve gamları tek panelden takip et.
-          </p>
+        <section className="mb-8 overflow-hidden rounded-[2rem] border border-zinc-800 bg-zinc-950/70 p-5 shadow-2xl shadow-black/30 sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">Kişisel gitar merkezi</p>
+              <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">
+                {greeting}, {name}. Bugün ne çalıyoruz?
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
+                Repertuarına devam et, yeni şarkı ara, bilmediğin akoru aç veya gamlara göz at. Takılırsan sağ alttaki Yoda’ya sor.
+              </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link href="/sarki-ara" className="rounded-2xl bg-red-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-red-950/30 hover:bg-red-500">
+                  Şarkı Ara
+                </Link>
+                <Link href="/repertuar" className="rounded-2xl border border-zinc-700 bg-zinc-900 px-6 py-4 text-center font-black text-zinc-100 hover:border-red-500 hover:bg-zinc-800">
+                  Repertuarı Aç
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-red-500/20 bg-gradient-to-br from-red-950/40 to-zinc-900 p-5">
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-red-300">Devam Et</p>
+              {continueSong ? (
+                <div className="mt-4">
+                  <h2 className="line-clamp-2 text-3xl font-black text-white">{continueSong.title}</h2>
+                  <p className="mt-2 text-zinc-300">{continueSong.artist || "Sanatçı belirtilmemiş"}</p>
+                  <p className="mt-3 text-sm text-zinc-400">
+                    {continueSong.favorite ? "Favorilerinden bir şarkı seçtim." : "Son eklediğin şarkıdan devam edebilirsin."}
+                  </p>
+                  <Link href={`/sarki/${continueSong.id}`} className="mt-5 inline-flex rounded-2xl bg-white px-5 py-3 font-black text-zinc-950 hover:bg-red-100">
+                    Şarkıyı Aç
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <h2 className="text-3xl font-black text-white">İlk şarkını ekleyelim</h2>
+                  <p className="mt-3 text-zinc-300">Şarkı Ara’dan bir parça bulup repertuarına ekleyebilirsin.</p>
+                  <Link href="/sarki-ara" className="mt-5 inline-flex rounded-2xl bg-white px-5 py-3 font-black text-zinc-950 hover:bg-red-100">
+                    Şarkı Bul
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
         </section>
 
         {loading ? (
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-zinc-300">Panel yükleniyor...</div>
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-300">Panel yükleniyor...</div>
         ) : (
           <>
-            <section className="grid gap-4 sm:grid-cols-3">
-              {[
-                ["Toplam Şarkı", songs.length.toString()],
-                ["Favoriler", favoriteCount.toString()],
-                ["Son Eklenen", songs[0]?.title ?? "Henüz yok"],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-900 p-5">
-                  <p className="text-sm text-zinc-400">{label}</p>
-                  <p className="mt-3 text-2xl font-black text-white">{value}</p>
-                </div>
+            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard label="Repertuar" value={songs.length.toString()} helper="Kaydettiğin toplam şarkı" />
+              <StatCard label="Favoriler" value={favoriteCount.toString()} helper="Sık döndüğün parçalar" />
+              <StatCard label="Son Eklenen" value={songs[0]?.title ?? "Henüz yok"} helper="En yeni repertuar kaydı" />
+              <StatCard label="Yoda" value="Hazır" helper="Gitar ve uygulama sorularını sor" />
+            </section>
+
+            <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {QUICK_ACTIONS.map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className={`rounded-3xl border p-5 transition hover:-translate-y-1 ${
+                    action.primary
+                      ? "border-red-500/50 bg-red-600 text-white shadow-xl shadow-red-950/30 hover:bg-red-500"
+                      : "border-zinc-800 bg-zinc-900/80 text-zinc-100 hover:border-red-500/50 hover:bg-zinc-900"
+                  }`}
+                >
+                  <span className="text-3xl">{action.icon}</span>
+                  <h2 className="mt-4 text-xl font-black">{action.title}</h2>
+                  <p className={`mt-2 text-sm leading-6 ${action.primary ? "text-red-50" : "text-zinc-400"}`}>{action.description}</p>
+                </Link>
               ))}
             </section>
 
-            <section className="mt-8 grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-5">
+            <section className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-xl font-bold">Son Eklenen Şarkılar</h2>
-                  <Link href="/repertuar" className="text-sm font-semibold text-red-400 hover:text-red-300">
-                    Repertuara git
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Repertuar akışı</p>
+                    <h2 className="mt-1 text-2xl font-black">Son Eklenen Şarkılar</h2>
+                  </div>
+                  <Link href="/repertuar" className="rounded-full bg-zinc-950 px-4 py-2 text-sm font-bold text-red-300 hover:bg-red-600 hover:text-white">
+                    Tümünü gör
                   </Link>
                 </div>
 
                 <div className="space-y-3">
                   {songs.slice(0, 5).map((song) => (
-                    <Link key={song.id} href={`/sarki/${song.id}`} className="flex items-center justify-between rounded-lg bg-zinc-950 p-4 hover:bg-zinc-800">
-                      <span>
-                        <strong>{song.title}</strong>
-                        <span className="block text-sm text-zinc-400">{song.artist}</span>
-                      </span>
-                      <span className="text-sm text-red-400">{song.favorite ? "Favori" : "Detay"}</span>
-                    </Link>
+                    <SongRow key={song.id} song={song} />
                   ))}
 
                   {songs.length === 0 && (
-                    <div className="rounded-lg border border-dashed border-zinc-700 p-5 text-zinc-400">Repertuarında henüz şarkı yok.</div>
+                    <div className="rounded-2xl border border-dashed border-zinc-700 p-5 text-zinc-400">
+                      Repertuarında henüz şarkı yok. İlk parçanı bulmak için Şarkı Ara’ya git.
+                    </div>
                   )}
                 </div>
               </div>
 
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-5">
-                <h2 className="text-xl font-bold">Hızlı Başlangıç</h2>
-                <div className="mt-4 grid gap-3">
-                  <Link href="/sarki-ara" className="rounded-lg bg-red-600 px-4 py-3 text-center font-bold hover:bg-red-500">
-                    Şarkı ara
-                  </Link>
-                  <Link href="/akor-kutuphanesi" className="rounded-lg bg-zinc-800 px-4 py-3 text-center font-bold hover:bg-zinc-700">
-                    Akor kütüphanesi
-                  </Link>
-                  <Link href="/gam-kutuphanesi" className="rounded-lg bg-zinc-800 px-4 py-3 text-center font-bold hover:bg-zinc-700">
-                    Gam kütüphanesi
-                  </Link>
+              <div className="grid gap-6">
+                <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Favoriler</p>
+                      <h2 className="mt-1 text-2xl font-black">Hızlı Aç</h2>
+                    </div>
+                    <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold text-zinc-400">{favoriteCount} favori</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {favoriteSongs.slice(0, 3).map((song) => (
+                      <SongRow key={song.id} song={song} actionLabel="Aç" />
+                    ))}
+
+                    {favoriteSongs.length === 0 && <p className="rounded-2xl bg-zinc-950 p-4 text-sm text-zinc-400">Favori şarkı işaretlediğinde burada hızlıca açabileceksin.</p>}
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-red-500/20 bg-gradient-to-br from-zinc-900 to-red-950/30 p-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-300">Yoda Yardımcı</p>
+                  <h2 className="mt-2 text-2xl font-black">Takıldığın yerde sor</h2>
+                  <p className="mt-3 text-sm leading-6 text-zinc-300">
+                    Sağ alttaki Yoda butonundan uygulama kullanımı, akorlar, gamlar ve gitar sorularını sorabilirsin.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {YODA_PROMPTS.map((prompt) => (
+                      <span key={prompt} className="rounded-full bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-300">
+                        {prompt}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </section>
