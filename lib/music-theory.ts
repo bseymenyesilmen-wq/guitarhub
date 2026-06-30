@@ -66,6 +66,7 @@ const INTERVAL_STEPS: Record<string, number> = {
 
 export const CHORD_FORMULAS: Record<string, { label: string; formula: string[] }> = {
   major: { label: "Major", formula: ["1", "3", "5"] },
+  power5: { label: "5", formula: ["1", "5"] },
   minor: { label: "Minor", formula: ["1", "b3", "5"] },
   "7": { label: "7", formula: ["1", "3", "5", "b7"] },
   maj7: { label: "Maj7", formula: ["1", "3", "5", "7"] },
@@ -208,6 +209,7 @@ const A_STRING_FRET: Record<string, number> = { A: 0, "A#": 1, B: 2, C: 3, "C#":
 
 const QUALITY_SUFFIX: Record<string, string> = {
   major: "",
+  power5: "5",
   minor: "m",
   "7": "7",
   maj7: "maj7",
@@ -284,7 +286,36 @@ function compactPosition(root: string, quality: string): ChordPosition {
   };
 }
 
+function powerChordPositions(root: string): ChordPosition[] {
+  const eFret = E_STRING_FRET[root];
+  const aFret = A_STRING_FRET[root];
+  const eBaseFret = Math.max(1, eFret);
+  const aBaseFret = Math.max(1, aFret);
+
+  return [
+    {
+      id: `${root}-5-e-root`,
+      name: eFret === 0 ? "Açık E köklü power chord" : "E teli köklü power chord",
+      frets: [eFret, eFret + 2, eFret + 2, "x", "x", "x"],
+      fingers: eFret === 0 ? [0, 1, 2, 0, 0, 0] : [1, 3, 4, 0, 0, 0],
+      baseFret: eBaseFret,
+      difficulty: difficultyForFret(eFret),
+      hint: "Sadece kalın 3 teli çal; rock/metal ritimlerinde en pratik 5'li akor şeklidir.",
+    },
+    {
+      id: `${root}-5-a-root`,
+      name: aFret === 0 ? "Açık A köklü power chord" : "A teli köklü power chord",
+      frets: ["x", aFret, aFret + 2, aFret + 2, "x", "x"],
+      fingers: aFret === 0 ? [0, 0, 1, 2, 0, 0] : [0, 1, 3, 4, 0, 0],
+      baseFret: aBaseFret,
+      difficulty: difficultyForFret(aFret),
+      hint: "A telinden başlat; düşük E ve ince telleri sustur. Ritim gitar için temiz ve güçlü duyulur.",
+    },
+  ];
+}
+
 function generatedPositions(root: string, quality: string) {
+  if (quality === "power5") return powerChordPositions(root);
   if (quality === "dim" || quality === "aug") return [compactPosition(root, quality), eShapePosition(root, quality)];
   return [eShapePosition(root, quality), aShapePosition(root, quality)];
 }
@@ -312,6 +343,8 @@ const CORE_CHORDS = NOTE_NAMES.flatMap((root) =>
   ),
 );
 
+const POWER_CHORDS = NOTE_NAMES.map((root) => buildChord(`${root}5`, root, "power5", "5 / Power Chord"));
+
 const SLASH_CHORDS = [
   buildChord("A/C#", "A", "major", "Slash Chord"),
   buildChord("C/E", "C", "major", "Slash Chord"),
@@ -320,7 +353,7 @@ const SLASH_CHORDS = [
   buildChord("F/A", "F", "major", "Slash Chord"),
 ];
 
-export const CHORD_LIBRARY: ChordDefinition[] = [...CORE_CHORDS, ...SLASH_CHORDS];
+export const CHORD_LIBRARY: ChordDefinition[] = [...CORE_CHORDS, ...POWER_CHORDS, ...SLASH_CHORDS];
 
 export function getScaleNotes(root: string, scaleId: string) {
   const scale = SCALE_FORMULAS.find((item) => item.id === scaleId) ?? SCALE_FORMULAS[0];
