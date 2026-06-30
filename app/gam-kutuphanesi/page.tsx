@@ -71,7 +71,7 @@ export default function GamKutuphanesi() {
             </div>
 
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-              {["Tümü", "Major", "Minor", "Pentatonik", "Blues", "Mod"].map((item) => (
+              {["Tümü", "Common", "Rare", "Exotic"].map((item) => (
                 <button
                   key={item}
                   onClick={() => setCategory(item)}

@@ -1,4 +1,5 @@
 import { ALL_GUITAR_CHORD_POSITIONS } from "@/lib/all-guitar-chords-data";
+import { ALL_GUITAR_SCALES } from "@/lib/all-guitar-scales-data";
 
 export const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"] as const;
 
@@ -59,8 +60,10 @@ const INTERVAL_STEPS: Record<string, number> = {
   "1": 0,
   b2: 1,
   "2": 2,
+  "#2": 3,
   b3: 3,
   "3": 4,
+  b4: 4,
   "4": 5,
   "#4": 6,
   b5: 6,
@@ -68,6 +71,7 @@ const INTERVAL_STEPS: Record<string, number> = {
   "#5": 8,
   b6: 8,
   "6": 9,
+  "#6": 10,
   bb7: 9,
   b7: 10,
   "7": 11,
@@ -94,20 +98,7 @@ export const CHORD_FORMULAS: Record<string, { label: string; formula: string[] }
   "13": { label: "13", formula: ["1", "3", "5", "b7", "9", "11", "13"] },
 };
 
-export const ALL_GUITAR_CHORDS_SCALE_TYPES = [
-  { id: "major", scaleSlug: "major", name: "Major", category: "Major", formula: ["1", "2", "3", "4", "5", "6", "7"], character: "Parlak, merkezli ve mutlu.", genres: ["Pop", "Rock", "Folk"] },
-  { id: "harmonic-minor", scaleSlug: "harmonic-minor", name: "Harmonic Minor", category: "Minor", formula: ["1", "2", "b3", "4", "5", "b6", "7"], character: "Klasik, dramatik ve doğu tınılı.", genres: ["Metal", "Klasik", "Fusion"] },
-  { id: "melodic-minor", scaleSlug: "melodic-minor", name: "Melodic Minor", category: "Minor", formula: ["1", "2", "b3", "4", "5", "6", "7"], character: "Minor ama modern/jazz rengi güçlü.", genres: ["Jazz", "Fusion"] },
-  { id: "minor", scaleSlug: "natural-minor", name: "Natural Minor", category: "Minor", formula: ["1", "2", "b3", "4", "5", "b6", "b7"], character: "Karanlık ve hüzünlü.", genres: ["Rock", "Metal", "Pop ballad"] },
-  { id: "pentatonic-major", scaleSlug: "pentatonic-major", name: "Pentatonic Major", category: "Pentatonik", formula: ["1", "2", "3", "5", "6"], character: "Country/blues tadında güvenli major ses.", genres: ["Country", "Blues", "Rock"] },
-  { id: "pentatonic-minor", scaleSlug: "pentatonic-minor", name: "Pentatonic Minor", category: "Pentatonik", formula: ["1", "b3", "4", "5", "b7"], character: "Solo için en pratik blues-rock havuzu.", genres: ["Blues", "Rock", "Metal"] },
-  { id: "blues", scaleSlug: "pentatonic-blues", name: "Pentatonic Blues", category: "Blues", formula: ["1", "b3", "4", "b5", "5", "b7"], character: "Kirli, gergin ve cevaplı blues hissi.", genres: ["Blues", "Rock", "Jazz"] },
-  { id: "dorian", scaleSlug: "dorian", name: "Dorian", category: "Mod", formula: ["1", "2", "b3", "4", "5", "6", "b7"], character: "Minor ama umutlu; min7 vamp üstünde çok güçlü.", genres: ["Jazz", "Blues", "Fusion", "Rock"] },
-  { id: "phrygian", scaleSlug: "phrygian", name: "Phrygian", category: "Mod", formula: ["1", "b2", "b3", "4", "5", "b6", "b7"], character: "Karanlık, İspanyol/Doğu tınısı.", genres: ["Flamenco", "Metal"] },
-  { id: "lydian", scaleSlug: "lydian", name: "Lydian", category: "Mod", formula: ["1", "2", "3", "#4", "5", "6", "7"], character: "Rüya gibi, havada ve sinematik.", genres: ["Film", "Fusion", "Progressive"] },
-  { id: "mixolydian", scaleSlug: "mixolydian", name: "Mixolydian", category: "Mod", formula: ["1", "2", "3", "4", "5", "6", "b7"], character: "Major ama bluesy/rock; dominant duygu.", genres: ["Blues", "Rock", "Funk"] },
-  { id: "locrian", scaleSlug: "locrian", name: "Locrian", category: "Mod", formula: ["1", "b2", "b3", "4", "b5", "b6", "b7"], character: "Dengesiz, gerilimli; m7b5 üstünde kullanılır.", genres: ["Jazz", "Metal", "Deneysel"] },
-] satisfies ScaleDefinition[];
+export const ALL_GUITAR_CHORDS_SCALE_TYPES = ALL_GUITAR_SCALES;
 
 export const SCALE_FORMULAS: ScaleDefinition[] = ALL_GUITAR_CHORDS_SCALE_TYPES;
 
