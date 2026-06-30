@@ -8,7 +8,6 @@ const fretboard = readFileSync(join(__dirname, "..", "app", "components", "Fretb
 const haystack = `${page}\n${fretboard}`;
 
 const required = [
-  'type FretboardOrientation = "horizontal" | "vertical"',
   'const FRET_MARKS = new Set([3, 5, 7, 9, 15, 17, 19, 21])',
   'const DOUBLE_FRET_MARKS = new Set([12])',
   'agcRootNote',
@@ -16,15 +15,19 @@ const required = [
   'bg-[#333]',
   'bg-[#ffc107]',
   'bg-[#ff8300]',
+  'data-agc-fretboard="horizontal"',
+];
+const forbidden = [
+  'type FretboardOrientation = "horizontal" | "vertical"',
   'Fretboard yönü',
-  'Horizontal',
   'orientation === "vertical"',
-  'data-agc-fretboard',
 ];
 const missing = required.filter((snippet) => !haystack.includes(snippet));
-if (missing.length) {
-  console.error(`Missing All-Guitar-Chords fretboard snippets:\n${missing.join("\n")}`);
+const presentForbidden = forbidden.filter((snippet) => haystack.includes(snippet));
+if (missing.length || presentForbidden.length) {
+  if (missing.length) console.error(`Missing All-Guitar-Chords fretboard snippets:\n${missing.join("\n")}`);
+  if (presentForbidden.length) console.error(`Forbidden fretboard snippets still present:\n${presentForbidden.join("\n")}`);
   process.exit(1);
 }
 
-console.log("All-Guitar-Chords-like fretboard rendering hooks are present.");
+console.log("All-Guitar-Chords-like horizontal fretboard rendering hooks are present.");

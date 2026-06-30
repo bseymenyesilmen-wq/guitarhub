@@ -6,8 +6,6 @@ const stringLabels = ["E", "B", "G", "D", "A", "E"];
 const FRET_MARKS = new Set([3, 5, 7, 9, 15, 17, 19, 21]);
 const DOUBLE_FRET_MARKS = new Set([12]);
 
-type FretboardOrientation = "horizontal" | "vertical";
-
 type Props = {
   root: string;
   scaleId: string;
@@ -15,18 +13,27 @@ type Props = {
   startFret?: number;
   displayFrets?: number;
   viewMode?: ScaleViewMode;
-  orientation?: FretboardOrientation;
+  positionStartFret?: number | null;
+  positionEndFret?: number | null;
 };
 
 function diagonalWindow(stringNumber: number, startFret: number) {
   return startFret + Math.max(0, 6 - stringNumber);
 }
 
-function shouldShowScaleNote(viewMode: ScaleViewMode, stringNumber: number, fret: number, startFret: number, inScale: boolean) {
+function getStringFretRange(viewMode: ScaleViewMode, stringNumber: number, positionStartFret: number | null, positionEndFret: number | null) {
+  if (positionStartFret === null || positionEndFret === null || viewMode === "full") return { start: 0, end: 21 };
+  if (viewMode === "diagonal") {
+    const start = diagonalWindow(stringNumber, positionStartFret);
+    return { start, end: Math.min(21, start + 7) };
+  }
+  return { start: positionStartFret, end: positionEndFret };
+}
+
+function shouldShowScaleNote(viewMode: ScaleViewMode, stringNumber: number, fret: number, inScale: boolean, positionStartFret: number | null, positionEndFret: number | null) {
   if (!inScale) return false;
-  if (viewMode !== "diagonal") return true;
-  const diagonalStart = diagonalWindow(stringNumber, startFret);
-  return fret >= diagonalStart && fret <= diagonalStart + 7;
+  const range = getStringFretRange(viewMode, stringNumber, positionStartFret, positionEndFret);
+  return fret >= range.start && fret <= range.end;
 }
 
 function NoteDot({ marker, isRoot }: { marker: string; isRoot: boolean }) {
@@ -56,49 +63,12 @@ function FretMarker({ fret }: { fret: number }) {
   return null;
 }
 
-export function Fretboard({ root, scaleId, showIntervals = false, startFret = 0, displayFrets = 21, viewMode = "full", orientation = "horizontal" }: Props) {
+export function Fretboard({ root, scaleId, showIntervals = false, startFret = 0, displayFrets = 21, viewMode = "full", positionStartFret = null, positionEndFret = null }: Props) {
   const notes = buildScaleFretboard(root, scaleId, startFret, displayFrets);
   const scaleNotes = getScaleNotes(root, scaleId);
   const frets = Array.from({ length: displayFrets + 1 }, (_, index) => startFret + index);
 
   const noteFor = (stringNumber: number, fret: number) => notes.find((note) => note.stringNumber === stringNumber && note.fret === fret);
-
-  if (orientation === "vertical") {
-    return (
-      <div data-agc-fretboard="vertical" className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-2xl shadow-black/30">
-        <div className="mb-3 flex flex-wrap gap-1.5 text-[11px] text-zinc-400 sm:text-xs">
-          {scaleNotes.map((item) => (
-            <span key={`${item.interval}-${item.note}`} className={`rounded-full px-2.5 py-1 font-bold ${item.note === root ? "bg-[#ff8300] text-black" : "bg-zinc-900 text-zinc-100"}`}>
-              {item.interval}: {item.note}
-            </span>
-          ))}
-        </div>
-        <div className="mx-auto w-full max-w-[360px] overflow-hidden rounded bg-[#333] p-2">
-          <div className="grid grid-cols-[34px_repeat(6,minmax(0,1fr))] text-center text-[10px] font-bold text-zinc-200">
-            <span />
-            {stringLabels.map((label, index) => <span key={`${label}-${index}`}>{label}</span>)}
-          </div>
-          {frets.map((fret) => (
-            <div key={fret} className="grid grid-cols-[34px_repeat(6,minmax(0,1fr))] items-center text-center text-[10px] text-zinc-200">
-              <span className="font-bold">{fret}</span>
-              {stringLabels.map((label, visualIndex) => {
-                const stringNumber = 1 + visualIndex;
-                const note = noteFor(stringNumber, fret);
-                const show = note ? shouldShowScaleNote(viewMode, stringNumber, fret, startFret, note.inScale) : false;
-                return (
-                  <div key={`${label}-${fret}`} className="relative flex h-8 items-center justify-center border-t border-[#777] bg-[#333]">
-                    <span className="absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2 bg-gradient-to-r from-[#eee] to-[#999]" />
-                    <FretMarker fret={fret} />
-                    {show && note ? <NoteDot marker={showIntervals ? note.interval ?? note.note : note.note} isRoot={note.isRoot} /> : null}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div data-agc-fretboard="horizontal" className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-2xl shadow-black/30">
@@ -122,7 +92,7 @@ export function Fretboard({ root, scaleId, showIntervals = false, startFret = 0,
               <span className="text-xs font-medium text-zinc-100">{label}</span>
               {frets.map((fret) => {
                 const note = noteFor(stringNumber, fret);
-                const show = note ? shouldShowScaleNote(viewMode, stringNumber, fret, startFret, note.inScale) : false;
+                const show = note ? shouldShowScaleNote(viewMode, stringNumber, fret, note.inScale, positionStartFret, positionEndFret) : false;
                 return (
                   <div key={`${stringNumber}-${fret}`} className="relative flex h-8 items-center justify-center border-l border-[#9b8f79] bg-[#333] first:border-l-4 first:border-zinc-300 sm:h-9">
                     <span className="absolute left-0 right-0 top-1/2 z-10 h-[2px] -translate-y-1/2 bg-gradient-to-b from-[#787878] to-[#bbaf9b] shadow-sm" />

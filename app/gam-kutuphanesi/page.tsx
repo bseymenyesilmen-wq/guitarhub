@@ -11,15 +11,12 @@ const VIEW_MODES: Array<{ id: ScaleViewMode; label: string; description: string 
   { id: "diagonal", label: "Diagonal", description: "Sap boyunca çapraz hat" },
 ];
 
-type FretboardOrientation = "horizontal" | "vertical";
-
 export default function GamKutuphanesi() {
   const [root, setRoot] = useState("C");
   const [scaleId, setScaleId] = useState("major");
   const [category, setCategory] = useState("Tümü");
   const [showIntervals, setShowIntervals] = useState(false);
   const [viewMode, setViewMode] = useState<ScaleViewMode>("vertical");
-  const [fretboardOrientation, setFretboardOrientation] = useState<FretboardOrientation>("horizontal");
   const [positionIndex, setPositionIndex] = useState(0);
 
   const scale = SCALE_FORMULAS.find((item) => item.id === scaleId) ?? SCALE_FORMULAS[0];
@@ -29,8 +26,9 @@ export default function GamKutuphanesi() {
   );
   const positions = useMemo(() => getScalePositions(root, scaleId, viewMode), [root, scaleId, viewMode]);
   const selectedPosition = positions[Math.min(positionIndex, positions.length - 1)] ?? positions[0];
-  const fretboardStart = viewMode === "full" ? 0 : selectedPosition?.startFret ?? 0;
-  const displayFrets = viewMode === "full" ? 21 : selectedPosition?.displayFrets ?? 4;
+  const displayFrets = 21;
+  const positionStartFret = viewMode === "full" ? null : selectedPosition?.startFret ?? null;
+  const positionEndFret = positionStartFret === null ? null : Math.min(21, positionStartFret + (selectedPosition?.displayFrets ?? 4));
 
   return (
     <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
@@ -85,7 +83,7 @@ export default function GamKutuphanesi() {
               ))}
             </div>
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid max-h-[520px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
               {filteredScales.map((item) => (
                 <button
                   key={item.id}
@@ -132,23 +130,6 @@ export default function GamKutuphanesi() {
                   </button>
                 ))}
               </div>
-              <div className="mt-3">
-                <h3 className="font-black">Fretboard yönü</h3>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {([
-                    ["horizontal", "Horizontal"],
-                    ["vertical", "Vertical"],
-                  ] as const).map(([id, label]) => (
-                    <button
-                      key={id}
-                      onClick={() => setFretboardOrientation(id)}
-                      className={`rounded-2xl px-3 py-3 text-sm font-black ${fretboardOrientation === id ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             <div>
@@ -162,9 +143,11 @@ export default function GamKutuphanesi() {
                 {positions.map((position) => (
                   <button
                     key={`${viewMode}-${position.index}-${position.startFret}`}
-                    onClick={() => setPositionIndex(position.index)}
+                    onClick={() => {
+                      setViewMode("vertical");
+                      setPositionIndex(position.index);
+                    }}
                     className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-black ${positionIndex === position.index && viewMode !== "full" ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
-                    disabled={viewMode === "full"}
                   >
                     {position.label}
                   </button>
@@ -173,8 +156,8 @@ export default function GamKutuphanesi() {
             </div>
           </div>
 
-          <Fretboard root={root} scaleId={scaleId} showIntervals={showIntervals} startFret={fretboardStart} displayFrets={displayFrets} viewMode={viewMode} orientation={fretboardOrientation} />
-          <p className="mt-3 text-sm text-zinc-500">All-Guitar-Chords tarzı gerçek gitar klavyesi: 0-21 perde. Root turuncu, diğer gam notaları sarı. Horizontal/Vertical yön ve Full/Vertical/Diagonal pattern seçilebilir.</p>
+          <Fretboard root={root} scaleId={scaleId} showIntervals={showIntervals} startFret={0} displayFrets={displayFrets} viewMode={viewMode} positionStartFret={positionStartFret} positionEndFret={positionEndFret} />
+          <p className="mt-3 text-sm text-zinc-500">All-Guitar-Chords tarzı gerçek gitar klavyesi: 0-21 perde sabit kalır. Pozisyon seçince sadece o pozisyondaki gam notaları görünür.</p>
         </section>
       </div>
     </main>

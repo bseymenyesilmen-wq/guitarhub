@@ -524,25 +524,45 @@ export function buildFretboard(root: string, scaleId: string, frets = 12): Fretb
   return buildScaleFretboard(root, scaleId, 0, frets);
 }
 
-function normalizeFret(fret: number) {
+function normalizeToFretboard(fret: number) {
   if (fret < 0) return 0;
-  if (fret <= 15) return fret;
-  return fret - 12;
+  if (fret <= 21) return fret;
+  return ((fret - 1) % 12) + 1;
+}
+
+function uniqueInOrder(values: number[]) {
+  return values.filter((value, index, list) => list.indexOf(value) === index);
+}
+
+// Kaynak doğrulama:
+// JustinGuitar: Minor Pentatonic pattern 1'de 6. tel root nereye konursa gam odur; C için 8. perde.
+// National Guitar Academy: C Minor Pentatonic root position 8. perde, 2. pozisyon 11. perde, 3. 13/1, 4. 3, 5. 6.
+// C Minor Pentatonic: 1. pozisyon 8. perde.
+const PENTATONIC_MINOR_POSITION_INTERVALS = ["1", "b3", "4", "5", "b7"];
+
+function getPositionIntervals(scaleId: string, formula: string[]) {
+  if (scaleId === "pentatonic-minor") return PENTATONIC_MINOR_POSITION_INTERVALS;
+  return formula;
+}
+
+function normalizePositionStart(fret: number, rootOnLowE: number) {
+  // C minor pentatonic kaynakları pozisyonları 8, 11, 13/1, 3, 6 diye verir.
+  // Root 8 ve sonrası için 13'ten sonraki kutuları alt oktava sararak aynı gitar pedagojisi sırasını koruyoruz.
+  if (rootOnLowE >= 8 && fret > 13) return fret - 12;
+  return normalizeToFretboard(fret);
 }
 
 export function getScalePositions(root: string, scaleId: string, viewMode: ScaleViewMode = "vertical"): ScalePosition[] {
   const scale = SCALE_FORMULAS.find((item) => item.id === scaleId) ?? SCALE_FORMULAS[0];
-  const rootOnLowE = NOTE_NAMES.indexOf(root as NoteName) + 8;
+  const rootOnLowE = normalizeToFretboard(NOTE_NAMES.indexOf(root as NoteName) + 8);
   const displayFrets = viewMode === "diagonal" ? 7 : 4;
-  const starts = scale.formula
-    .map((interval) => normalizeFret(rootOnLowE + (INTERVAL_STEPS[interval] ?? 0) - 1))
-    .filter((fret, index, list) => list.indexOf(fret) === index)
-    .sort((a, b) => a - b);
+  const intervals = getPositionIntervals(scaleId, scale.formula);
+  const starts = uniqueInOrder(intervals.map((interval) => normalizePositionStart(rootOnLowE + (INTERVAL_STEPS[interval] ?? 0), rootOnLowE)));
 
   return starts.map((startFret, index) => ({
     index,
     label: `${index + 1}. Pozisyon`,
-    startFret,
+    startFret: index === 0 ? rootOnLowE : startFret,
     displayFrets,
   }));
 }
