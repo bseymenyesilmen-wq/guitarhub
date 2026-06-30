@@ -6,7 +6,15 @@ import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
 import { ChordDiagram } from "@/app/components/ChordDiagram";
 import { CHORD_LIBRARY, type ChordDefinition } from "@/lib/music-theory";
 
-const FAMILY_FILTERS = ["Tümü", "Major", "Minor", "7", "Maj7", "Min7", "Sus", "Add9", "Slash", "Barre", "Dim", "Aug"];
+const FAMILY_FILTERS = ["Tümü", "Kolay", "Baresiz", "Major", "Minor", "7", "Maj7", "Min7", "Sus", "Add9", "Slash", "Barre", "Dim", "Aug"];
+
+function hasBeginnerPosition(chord: ChordDefinition) {
+  return chord.positions.some((position) => position.difficulty === "beginner");
+}
+
+function hasNoBarrePosition(chord: ChordDefinition) {
+  return chord.positions.some((position) => !position.barre);
+}
 
 export default function AkorKutuphanesi() {
   const [query, setQuery] = useState("");
@@ -18,8 +26,11 @@ export default function AkorKutuphanesi() {
     return CHORD_LIBRARY.filter((chord) => {
       const familyMatch =
         family === "Tümü" ||
+        (family === "Kolay" && hasBeginnerPosition(chord)) ||
+        (family === "Baresiz" && hasNoBarrePosition(chord)) ||
         chord.family.toLowerCase().includes(family.toLowerCase()) ||
-        chord.name.toLowerCase().includes(family.toLowerCase());
+        chord.name.toLowerCase().includes(family.toLowerCase()) ||
+        (family === "Barre" && chord.positions.some((position) => position.barre));
       const textMatch =
         !normalized ||
         chord.name.toLowerCase().includes(normalized) ||
@@ -66,7 +77,9 @@ export default function AkorKutuphanesi() {
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {chords.map((chord) => {
-            const mainPosition = chord.positions[0];
+            const mainPosition = chord.positions.find((position) => position.difficulty === "beginner") ?? chord.positions[0];
+            const beginnerCount = chord.positions.filter((position) => position.difficulty === "beginner").length;
+            const noBarreCount = chord.positions.filter((position) => !position.barre).length;
             return (
               <button
                 key={chord.name}
@@ -81,6 +94,12 @@ export default function AkorKutuphanesi() {
                   <span className="rounded-2xl bg-red-600 px-3 py-2 text-sm font-bold">
                     {chord.notes.join(" · ")}
                   </span>
+                </div>
+
+                <div className="mb-3 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold text-zinc-300">{chord.positions.length} varyasyon</span>
+                  {beginnerCount > 0 && <span className="rounded-full bg-emerald-600/20 px-3 py-1 text-xs font-bold text-emerald-300">{beginnerCount} kolay</span>}
+                  {noBarreCount > 0 && <span className="rounded-full bg-sky-600/20 px-3 py-1 text-xs font-bold text-sky-300">{noBarreCount} baresiz</span>}
                 </div>
 
                 <ChordDiagram position={mainPosition} title={chord.name} />

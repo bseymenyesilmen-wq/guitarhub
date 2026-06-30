@@ -17,6 +17,9 @@ const difficultyLabel: Record<string, string> = {
 export function ChordBottomSheet({ chord, onClose }: Props) {
   if (!chord) return null;
 
+  const beginnerCount = chord.positions.filter((position) => position.difficulty === "beginner").length;
+  const noBarreCount = chord.positions.filter((position) => !position.barre).length;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <section
@@ -34,7 +37,7 @@ export function ChordBottomSheet({ chord, onClose }: Props) {
           </button>
         </div>
 
-        <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <div className="mb-5 grid gap-3 sm:grid-cols-4">
           <div className="rounded-2xl bg-zinc-900 p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Notalar</p>
             <p className="mt-2 text-lg font-black text-red-300">{chord.notes.join(" · ")}</p>
@@ -46,6 +49,10 @@ export function ChordBottomSheet({ chord, onClose }: Props) {
           <div className="rounded-2xl bg-zinc-900 p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Barre</p>
             <p className="mt-2 text-lg font-black">{chord.positions.some((position) => position.barre) ? "Var" : "Yok"}</p>
+          </div>
+          <div className="rounded-2xl bg-zinc-900 p-4">
+            <p className="text-xs uppercase tracking-wide text-zinc-500">Kolay</p>
+            <p className="mt-2 text-lg font-black">{beginnerCount} kolay · {noBarreCount} baresiz</p>
           </div>
         </div>
 
