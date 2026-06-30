@@ -6,7 +6,7 @@ import { Fretboard } from "@/app/components/Fretboard";
 import { getScalePositions, NOTE_NAMES, SCALE_FORMULAS, type ScaleViewMode } from "@/lib/music-theory";
 
 const VIEW_MODES: Array<{ id: ScaleViewMode; label: string; description: string }> = [
-  { id: "full", label: "Full", description: "0-12 arası genel harita" },
+  { id: "full", label: "Full", description: "0-21 gerçek gitar klavyesi" },
   { id: "vertical", label: "Vertical", description: "Seçili pozisyon kutusu" },
   { id: "diagonal", label: "Diagonal", description: "Sap boyunca çapraz hat" },
 ];
@@ -27,7 +27,7 @@ export default function GamKutuphanesi() {
   const positions = useMemo(() => getScalePositions(root, scaleId, viewMode), [root, scaleId, viewMode]);
   const selectedPosition = positions[Math.min(positionIndex, positions.length - 1)] ?? positions[0];
   const fretboardStart = viewMode === "full" ? 0 : selectedPosition?.startFret ?? 0;
-  const displayFrets = viewMode === "full" ? 12 : selectedPosition?.displayFrets ?? 4;
+  const displayFrets = viewMode === "full" ? 21 : selectedPosition?.displayFrets ?? 4;
 
   return (
     <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
@@ -154,7 +154,7 @@ export default function GamKutuphanesi() {
           </div>
 
           <Fretboard root={root} scaleId={scaleId} showIntervals={showIntervals} startFret={fretboardStart} displayFrets={displayFrets} viewMode={viewMode} />
-          <p className="mt-3 text-sm text-zinc-500">Kompakt görünümde sağa-sola kaydırmadan çalış. Root kırmızı, gam notaları mavi; interval kapalıysa nota adları görünür.</p>
+          <p className="mt-3 text-sm text-zinc-500">Gerçek gitar klavyesi: 0-21 perde. Sadece gam notaları görünür; root kırmızı, diğer gam notaları mavi.</p>
         </section>
       </div>
     </main>

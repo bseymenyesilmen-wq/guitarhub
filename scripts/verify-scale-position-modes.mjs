@@ -19,7 +19,6 @@ const required = [
   "overflow-hidden",
   "minmax(0, 1fr)",
   "text-white",
-  "showGhostNotes",
   "diagonalWindow",
 ];
 
