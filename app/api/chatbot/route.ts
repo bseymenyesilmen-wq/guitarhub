@@ -46,24 +46,38 @@ async function callHermes(input: string, history: ChatMessage[], conversationId?
   const { apiKey, baseUrl, model } = getHermesConfig();
   if (!apiKey || !baseUrl) return null;
 
-  const response = await fetch(chatCompletionsUrl(baseUrl), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      ...(conversationId ? { "X-Hermes-Session-Key": `guitarhub:${conversationId.slice(0, 180)}` } : {}),
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.45,
-      messages: buildConversationMessages(input, history),
-    }),
-  });
+  const candidateBaseUrls = Array.from(new Set([
+    baseUrl,
+    baseUrl.replace(":8642", ""),
+  ])).filter(Boolean);
 
-  if (!response.ok) return null;
+  for (const candidateBaseUrl of candidateBaseUrls) {
+    try {
+      const response = await fetch(chatCompletionsUrl(candidateBaseUrl), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          ...(conversationId ? { "X-Hermes-Session-Key": `guitarhub:${conversationId.slice(0, 180)}` } : {}),
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.45,
+          messages: buildConversationMessages(input, history),
+        }),
+      });
 
-  const payload = (await response.json().catch(() => null)) as HermesChatResponse | null;
-  return payload?.choices?.[0]?.message?.content?.trim() || null;
+      if (!response.ok) continue;
+
+      const payload = (await response.json().catch(() => null)) as HermesChatResponse | null;
+      const reply = payload?.choices?.[0]?.message?.content?.trim();
+      if (reply) return reply;
+    } catch {
+      // Try the next URL. Netlify functions can fail outbound fetches to non-standard ports.
+    }
+  }
+
+  return null;
 }
 
 export async function POST(request: Request) {
