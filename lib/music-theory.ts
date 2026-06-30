@@ -1,3 +1,5 @@
+import { ALL_GUITAR_CHORD_POSITIONS } from "@/lib/all-guitar-chords-data";
+
 export const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"] as const;
 
 export type NoteName = (typeof NOTE_NAMES)[number];
@@ -426,6 +428,7 @@ export function buildChord(name: string, root: string, formulaKey: keyof typeof 
   const generated = generatedPositions(root, String(formulaKey)).filter(
     (position) => !existing.some((item) => item.id === position.id),
   );
+  const sitePositions = ALL_GUITAR_CHORD_POSITIONS[name];
   const positions = generated.length >= 5 && family !== "Slash Chord" ? generated : [...existing, ...generated];
 
   return {
@@ -434,12 +437,12 @@ export function buildChord(name: string, root: string, formulaKey: keyof typeof 
     family: family ?? CHORD_FORMULAS[formulaKey].label,
     formula,
     notes: buildNotes(root, formula),
-    positions: positions.slice(0, 5),
+    positions: sitePositions ?? positions.slice(0, 5),
   };
 }
 
 const CORE_CHORDS = NOTE_NAMES.flatMap((root) =>
-  (["major", "minor", "7", "maj7", "min7", "dim", "aug", "sus2", "sus4", "add9", "6", "9"] as const).map((quality) =>
+  (["major", "minor", "7", "maj7", "min7", "dim", "aug", "sus2", "sus4", "add9", "6", "9", "11", "13"] as const).map((quality) =>
     buildChord(`${root}${QUALITY_SUFFIX[quality]}`, root, quality, quality === "7" ? "Dominant 7" : undefined),
   ),
 );
