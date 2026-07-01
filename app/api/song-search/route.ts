@@ -18,6 +18,7 @@ const REPERTUARIM_URL = "https://www.repertuarim.com";
 const ULTIMATE_GUITAR_URL = "https://www.ultimate-guitar.com";
 const ULTIMATE_TABS_URL = "https://tabs.ultimate-guitar.com";
 const UAKOR_URL = "https://uakor.com";
+const UAKOR_API_URL = "https://api.uakor.com/api";
 const ULTIMATE_GUITAR_API_URL = "https://api.ultimate-guitar.com/api/v1";
 const REQUEST_HEADERS = {
   "User-Agent":
@@ -339,6 +340,59 @@ function buildUltimateGuitarHeaders() {
   };
 }
 
+type UakorApiArtist = {
+  id?: string;
+  name?: string;
+  slug?: string;
+  image?: string;
+  chord_count?: number;
+};
+
+type UakorApiChord = {
+  id?: string;
+  title?: string;
+  slug?: string;
+  tone?: string;
+  content?: string;
+  url?: string;
+  artistName?: string;
+  artistSlug?: string;
+  artist?: UakorApiArtist;
+};
+
+type UakorSearchApiResponse = {
+  success?: boolean;
+  data?: {
+    akords?: UakorApiChord[];
+    chords?: UakorApiChord[];
+    artists?: UakorApiArtist[];
+  };
+};
+
+type UakorArtistSearchApiResponse = {
+  success?: boolean;
+  data?: UakorApiArtist[];
+};
+
+type UakorArtistChordsApiResponse = {
+  success?: boolean;
+  data?: { data?: UakorApiChord[] } | UakorApiChord[];
+};
+
+function buildUakorSongItem(chord: UakorApiChord, fallbackArtist = ""): SongSearchListItem | null {
+  const title = chord.title?.trim() ?? "";
+  const artist = chord.artist?.name?.trim() || chord.artistName?.trim() || fallbackArtist.trim();
+  const slug = chord.slug?.trim() ?? "";
+  if (!title || !artist || !slug) return null;
+  return {
+    title,
+    artist,
+    source: `${UAKOR_URL}/akor/${chord.slug}`,
+    provider: "uakor",
+    cover: chord.artist?.image ? absoluteUrl(chord.artist.image, UAKOR_URL) : undefined,
+  };
+}
+
 type UltimateGuitarTab = {
   id: number;
   song_name: string;
@@ -408,6 +462,20 @@ async function buildSystemWideRecommendations(artist: string, title: string, exi
   }
 
   return dedupeBySongIdentity(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6);
+}
+
+async function getUakorJson<T>(url: string) {
+  const response = await axios.get<T>(url, {
+    headers: {
+      ...REQUEST_HEADERS,
+      Accept: "application/json",
+      Origin: UAKOR_URL,
+      Referer: `${UAKOR_URL}/`,
+    },
+    timeout: 12_000,
+    validateStatus: (status) => status >= 200 && status < 400,
+  });
+  return response.data;
 }
 
 async function getUltimateGuitarJson<T>(path: string, params: Record<string, string | number | undefined>) {
@@ -568,13 +636,60 @@ async function searchUltimateGuitar(query: string) {
   ).slice(0, 20);
 }
 
+function uakorSearchQueryVariants(query: string) {
+  const variants = new Set([query]);
+  const turkishInitialI = query.replace(/\bi/g, "İ");
+  variants.add(turkishInitialI);
+  return [...variants].filter(Boolean);
+}
+
+async function searchUakorApi(query: string) {
+  const results = await Promise.all(
+    uakorSearchQueryVariants(query).map(async (searchQuery) => {
+      const queryParams = new URLSearchParams({ q: searchQuery, limit: "60", offset: "0" });
+      const result = await getUakorJson<UakorSearchApiResponse>(`${UAKOR_API_URL}/search?${queryParams.toString()}`);
+      const chords = [...(result.data?.akords ?? []), ...(result.data?.chords ?? [])];
+      return chords.map((chord) => buildUakorSongItem(chord)).filter((song): song is SongSearchListItem => Boolean(song));
+    }),
+  );
+  return dedupeSongs(results.flat()).slice(0, 80);
+}
+
+async function searchUakorArtistCatalogApi(query: string) {
+  const queryParams = new URLSearchParams({ q: query, limit: "10" });
+  const artistSearch = await getUakorJson<UakorArtistSearchApiResponse>(`${UAKOR_API_URL}/artists/search?${queryParams.toString()}`);
+  const wanted = normalizeText(query);
+  const artists = (artistSearch.data ?? [])
+    .filter((artist) => artist.slug && artist.name)
+    .filter((artist) => {
+      const name = normalizeText(artist.name ?? "");
+      return name === wanted || name.includes(wanted) || wanted.includes(name);
+    })
+    .slice(0, 3);
+
+  const results = await Promise.all(
+    artists.map(async (artist) => {
+      const catalog = await getUakorJson<UakorArtistChordsApiResponse>(`${UAKOR_API_URL}/artists/${encodeURIComponent(artist.slug ?? "")}/chords`);
+      const chords = Array.isArray(catalog.data) ? catalog.data : (catalog.data?.data ?? []);
+      return chords.map((chord) => buildUakorSongItem(chord, artist.name ?? "")).filter((song): song is SongSearchListItem => Boolean(song));
+    }),
+  );
+  return dedupeSongs(results.flat()).slice(0, 180);
+}
+
 async function searchUakor(query: string) {
   const searchUrls = [
     `${UAKOR_URL}/arama?q=${encodeURIComponent(query)}`,
+    `${UAKOR_URL}/akor/${slugify(query)}`,
     `${UAKOR_URL}/akor/${slugify(query)}-akor`,
     `${UAKOR_URL}/sanatci/${encodeURIComponent(slugify(query))}`,
   ];
   const songs: SongSearchListItem[] = [];
+  const [apiSongs, artistCatalogSongs] = await Promise.all([
+    searchUakorApi(query).catch(() => []),
+    searchUakorArtistCatalogApi(query).catch(() => []),
+  ]);
+  songs.push(...apiSongs, ...artistCatalogSongs);
   for (const url of searchUrls) {
     try {
       const html = await getHtml(url, UAKOR_URL);
