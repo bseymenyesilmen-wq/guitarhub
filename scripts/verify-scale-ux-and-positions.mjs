@@ -16,7 +16,7 @@ const required = [
   'positionStartFret',
   'positionEndFret',
   'getStringFretRange',
-  'PENTATONIC_MINOR_POSITION_INTERVALS',
+  'COMMON_SCALE_POSITION_INTERVALS',
   'index === 0 ? rootOnLowE : startFret',
   'rootOnLowE = normalizeToFretboard(NOTE_NAMES.indexOf(root as NoteName) + 8)',
   'C Minor Pentatonic: 1. pozisyon 8. perde',

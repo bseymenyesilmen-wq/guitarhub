@@ -534,15 +534,56 @@ function uniqueInOrder(values: number[]) {
   return values.filter((value, index, list) => list.indexOf(value) === index);
 }
 
-// Kaynak doğrulama:
-// JustinGuitar: Minor Pentatonic pattern 1'de 6. tel root nereye konursa gam odur; C için 8. perde.
-// National Guitar Academy: C Minor Pentatonic root position 8. perde, 2. pozisyon 11. perde, 3. 13/1, 4. 3, 5. 6.
+// source-backed Common scale positions
+// Kaynak mantığı:
+// - GuitarScale.org C Major / C Minor / C Dorian / C Pentatonic / C Blues sayfaları: C root 6. tel 8. perde, full fretboard ve shape bilgileri.
+//   https://www.guitarscale.org/c-major.html
+//   https://www.guitarscale.org/c-minor.html
+//   https://www.guitarscale.org/c-dorian.html
+//   https://www.guitarscale.org/c-pentatonic-minor.html
+//   https://www.guitarscale.org/c-pentatonic-major.html
+//   https://www.guitarscale.org/c-blues.html
+// - FretJam Major/Natural Minor pozisyon dersleri: pozisyon noktaları gam derecelerinin low-E string üzerindeki yerlerinden kurulur.
+//   https://www.fretjam.com/major-scale-positions.html
+//   https://www.fretjam.com/natural-minor-scale-positions.html
+// - JustinGuitar / National Guitar Academy: C Minor Pentatonic 1. pozisyon root C = 6. tel 8. perde; sonraki kutular scale derecelerinden gelir.
 // C Minor Pentatonic: 1. pozisyon 8. perde.
-const PENTATONIC_MINOR_POSITION_INTERVALS = ["1", "b3", "4", "5", "b7"];
+export const COMMON_SCALE_POSITION_SOURCES = {
+  guitarScale: "www.guitarscale.org/c-major.html / c-minor.html / c-dorian.html / c-pentatonic-minor.html / c-blues.html",
+  fretJam: "www.fretjam.com/major-scale-positions.html / natural-minor-scale-positions.html",
+  justinGuitar: "www.justinguitar.com/guitar-lessons/minor-pentatonic-the-5-patterns-sc-304",
+  nationalGuitarAcademy: "nationalguitaracademy.com/scales/c-minor-pentatonic-scale/",
+} as const;
+
+const COMMON_SCALE_POSITION_INTERVALS: Record<string, string[]> = {
+  major: ["1", "2", "3", "4", "5", "6", "7"],
+  ionian: ["1", "2", "3", "4", "5", "6", "7"],
+  "harmonic-minor": ["1", "2", "b3", "4", "5", "b6", "7"],
+  "melodic-minor": ["1", "2", "b3", "4", "5", "6", "7"],
+  "natural-minor": ["1", "2", "b3", "4", "5", "b6", "b7"],
+  aeolian: ["1", "2", "b3", "4", "5", "b6", "b7"],
+  dorian: ["1", "2", "b3", "4", "5", "6", "b7"],
+  phrygian: ["1", "b2", "b3", "4", "5", "b6", "b7"],
+  lydian: ["1", "2", "3", "#4", "5", "6", "7"],
+  mixolydian: ["1", "2", "3", "4", "5", "6", "b7"],
+  locrian: ["1", "b2", "b3", "4", "b5", "b6", "b7"],
+  "pentatonic-major": ["1", "2", "3", "5", "6"],
+  "pentatonic-minor": ["1", "b3", "4", "5", "b7"],
+  "pentatonic-blues": ["1", "b3", "4", "b5", "5", "b7"],
+  "pentatonic-neutral": ["1", "2", "4", "5", "b7"],
+  diatonic: ["1", "2", "3", "5", "6"],
+  diminished: ["1", "2", "b3", "4", "b5", "b6", "6", "7"],
+  "diminished-half": ["1", "b2", "b3", "3", "b5", "5", "6", "b7"],
+  "diminished-whole": ["1", "2", "b3", "4", "b5", "b6", "6", "7"],
+  "diminished-whole-tone": ["1", "b2", "b3", "3", "b5", "b6", "b7"],
+  "dominant-7th": ["1", "2", "3", "4", "5", "6", "b7"],
+  "lydian-augmented": ["1", "2", "3", "#4", "#5", "6", "7"],
+  "lydian-minor": ["1", "2", "3", "#4", "5", "b6", "b7"],
+  "lydian-diminished": ["1", "2", "b3", "#4", "5", "6", "7"],
+};
 
 function getPositionIntervals(scaleId: string, formula: string[]) {
-  if (scaleId === "pentatonic-minor") return PENTATONIC_MINOR_POSITION_INTERVALS;
-  return formula;
+  return COMMON_SCALE_POSITION_INTERVALS[scaleId] ?? formula;
 }
 
 function normalizePositionStart(fret: number, rootOnLowE: number) {
