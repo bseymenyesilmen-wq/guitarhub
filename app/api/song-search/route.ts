@@ -29,6 +29,20 @@ const REQUEST_HEADERS = {
   Pragma: "no-cache",
 };
 
+const SIMILAR_ARTISTS: Record<string, string[]> = {
+  duman: ["Mor ve Ötesi", "Manga", "Teoman", "Şebnem Ferah", "Yüzyüzeyken Konuşuruz"],
+  "mor ve otesi": ["Duman", "Manga", "Teoman", "Şebnem Ferah", "Athena"],
+  manga: ["Duman", "Mor ve Ötesi", "Athena", "Şebnem Ferah", "Model"],
+  teoman: ["Duman", "Mor ve Ötesi", "Şebnem Ferah", "Yüksek Sadakat", "Pinhani"],
+  radiohead: ["Nirvana", "Arctic Monkeys", "Coldplay", "Muse", "The Smashing Pumpkins"],
+  nirvana: ["Radiohead", "Pearl Jam", "Foo Fighters", "Alice In Chains", "Soundgarden"],
+  "chris isaak": ["Radiohead", "Nirvana", "Arctic Monkeys", "Coldplay", "The Cranberries"],
+  "arctic monkeys": ["Radiohead", "The Strokes", "Muse", "Nirvana", "Coldplay"],
+};
+
+const FOREIGN_PLAY_NEXT_QUERIES = ["Radiohead Creep", "Chris Isaak Wicked Game", "Arctic Monkeys Do I Wanna Know", "Nirvana Heart Shaped Box", "Coldplay Yellow"];
+const TURKISH_PLAY_NEXT_QUERIES = ["Duman Senden Daha Guzel", "Mor ve Ötesi Bir Derdim Var", "Manga Bir Kadin Cizeceksin", "Teoman Paramparca", "Şebnem Ferah Sil Baştan"];
+
 function cleanPreContent(content: string) {
   return content
     .replace(/\t/g, "    ")
@@ -217,7 +231,37 @@ function buildUltimateGuitarRecommendations(tab: UltimateGuitarTab) {
         cover: item.album_cover?.app_album_cover?.small ?? item.artist_cover?.app_artist_cover?.small,
       })),
   ).slice(0, 6);
-};
+}
+
+function isLikelyForeignSong(artist: string, title: string) {
+  const text = normalizeText(`${artist} ${title}`);
+  const turkishMarkers = ["duman", "mor ve otesi", "manga", "teoman", "sebnem", "yuksek sadakat", "pinhani", "athena", "model", "yuzyuzeyken"];
+  if (turkishMarkers.some((marker) => text.includes(marker))) return false;
+  return /^[a-z0-9\s]+$/.test(text) && !/[çğıöşü]/i.test(`${artist} ${title}`);
+}
+
+async function searchUltimateGuitarFirst(query: string) {
+  const songs = await searchUltimateGuitar(query).catch(() => []);
+  return songs[0] ?? null;
+}
+
+async function buildSystemWideRecommendations(artist: string, title: string, existing: SongSearchListItem[] = []) {
+  const recommendations: SongSearchListItem[] = [...existing];
+  const artistKey = normalizeText(artist);
+  const querySeeds = [
+    artist ? `${artist}` : "",
+    ...(SIMILAR_ARTISTS[artistKey] ?? []).map((similarArtist) => `${similarArtist}`),
+    ...(isLikelyForeignSong(artist, title) ? FOREIGN_PLAY_NEXT_QUERIES : TURKISH_PLAY_NEXT_QUERIES),
+  ].filter(Boolean);
+
+  for (const seed of querySeeds) {
+    if (recommendations.length >= 6) break;
+    const result = await searchUltimateGuitarFirst(seed);
+    if (result && normalizeText(result.title) !== normalizeText(title)) recommendations.push(result);
+  }
+
+  return dedupeSongs(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6);
+}
 
 async function getUltimateGuitarJson<T>(path: string, params: Record<string, string | number | undefined>) {
   const query = new URLSearchParams();
@@ -257,17 +301,19 @@ async function fetchRepertuarimSongByUrl(songUrl: string, fallbackArtist = ""): 
   const rawPreContent = $songPage("pre#key.chords").text() || $songPage("pre.chords").text() || $songPage("pre").first().text();
   const fullPreContent = cleanPreContent(rawPreContent);
   if (!fullPreContent) return { found: false, message: "Şarkı içeriği boş veya okunamadı." };
+  const artist = extractArtistFromTitle(scrapedTitle, fallbackArtist);
   return {
     found: true,
     song: {
       title: scrapedTitle,
-      artist: extractArtistFromTitle(scrapedTitle, fallbackArtist),
+      artist,
       key: defaultKey,
       capo: "0",
       chords: fullPreContent,
       lyrics: fullPreContent,
       source: songUrl,
       provider: "Repertuarım",
+      recommendations: await buildSystemWideRecommendations(artist, scrapedTitle),
     },
   };
 }
@@ -281,17 +327,19 @@ async function fetchUakorSongByUrl(songUrl: string, fallbackArtist = ""): Promis
   if (!content) return { found: false, message: NOT_FOUND_MESSAGE };
   const parsed = parseSongTitle(heading, fallbackArtist);
   const toneMatch = html.match(/\\"tone\\":\\"([^\\"]*)/);
+  const artist = parsed.artist || fallbackArtist;
   return {
     found: true,
     song: {
       title: parsed.title,
-      artist: parsed.artist || fallbackArtist,
+      artist,
       key: toneMatch?.[1] ?? "",
       capo: "0",
       chords: content,
       lyrics: content,
       source: songUrl,
       provider: "uAkor",
+      recommendations: await buildSystemWideRecommendations(artist, parsed.title),
     },
   };
 }
@@ -305,17 +353,19 @@ async function fetchAkorlarSongByUrl(songUrl: string, fallbackArtist = ""): Prom
   if (!content) return { found: false, message: NOT_FOUND_MESSAGE };
   const parsed = parseSongTitle(heading.replace(/\s+Akor.*$/i, ""), fallbackArtist);
   const keyText = $("body").text().match(/Orjinal Ton:\s*([A-G][#b]?)/i)?.[1] ?? "";
+  const artist = parsed.artist || fallbackArtist;
   return {
     found: true,
     song: {
       title: parsed.title,
-      artist: parsed.artist || fallbackArtist,
+      artist,
       key: keyText,
       capo: "0",
       chords: content,
       lyrics: content,
       source: songUrl,
       provider: "Akorlar.com",
+      recommendations: await buildSystemWideRecommendations(artist, parsed.title),
     },
   };
 }
@@ -330,6 +380,7 @@ async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""
   });
   const content = stripUltimateGuitarMarkup(tab.content ?? "");
   if (!content) return { found: false, message: NOT_FOUND_MESSAGE };
+  const existingRecommendations = buildUltimateGuitarRecommendations(tab);
 
   return {
     found: true,
@@ -342,7 +393,7 @@ async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""
       lyrics: content,
       source: tab.urlWeb || `ug:${tabId}`,
       provider: "Ultimate Guitar",
-      recommendations: buildUltimateGuitarRecommendations(tab),
+      recommendations: await buildSystemWideRecommendations(tab.artist_name || fallbackArtist || "", tab.song_name || "", existingRecommendations),
     },
   };
 }
@@ -389,6 +440,7 @@ async function searchUltimateGuitar(query: string) {
         artist: tab.artist_name,
         source: `ug:${tab.id}`,
         provider: "ultimate-guitar",
+        cover: tab.album_cover?.app_album_cover?.small ?? tab.artist_cover?.app_artist_cover?.small,
       }))
       .filter((song) => song.title && song.artist && song.source),
   ).slice(0, 20);
