@@ -11,7 +11,7 @@ const required = [
   "const tabBlocks: string[] = []",
   "if (isUltimateGuitarTabBlock(cleanedBlock))",
   "lyricsBlocks.push(cleanedBlock)",
-  "const lyricsAndChords = cleanPreContent([outsideContent, ...lyricsBlocks]",
+  "const lyricsAndChords = cleanChordLyricsContent([outsideContent, ...lyricsBlocks",
 ];
 const missing = required.filter((snippet) => !route.includes(snippet));
 if (missing.length) {

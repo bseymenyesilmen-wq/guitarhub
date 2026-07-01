@@ -52,6 +52,46 @@ function cleanPreContent(content: string) {
     .trim();
 }
 
+function compactChordLyricsContent(content: string) {
+  return cleanPreContent(content)
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
+function stripTabLegendFromLyrics(content: string) {
+  return content
+    .replace(/\n?\*{8,}[\s\S]*?\*{8,}\n?/g, "\n")
+    .replace(/^\s*\|\s*(?:h|p|\\|\/|s|\(|\))\s+.*$/gim, "");
+}
+
+function removeEmptySectionMarkers(content: string) {
+  const lines = compactChordLyricsContent(content).split("\n");
+  const kept: string[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const current = lines[index].trim();
+    if (new RegExp("^[\\\\/~x()]+$", "i").test(current)) continue;
+    if (!/^\[[^\]]+\]$/.test(current)) {
+      kept.push(lines[index]);
+      continue;
+    }
+
+    let next = index + 1;
+    while (next < lines.length && !lines[next].trim()) next += 1;
+    const nextNonEmpty = lines[next]?.trim() ?? "";
+    if (!nextNonEmpty || /^\[[^\]]+\]$/.test(nextNonEmpty)) continue;
+    kept.push(lines[index]);
+  }
+
+  return compactChordLyricsContent(kept.join("\n"));
+}
+
+function cleanChordLyricsContent(content: string) {
+  return removeEmptySectionMarkers(stripTabLegendFromLyrics(compactChordLyricsContent(content)));
+}
+
 function cleanAnchorText(text: string) {
   return text.replace(/\s+/g, " ").trim().replace(/^[ASR](?=[A-ZÇĞİÖŞÜ0-9])/u, "");
 }
@@ -196,6 +236,17 @@ function isUltimateGuitarTabBlock(block: string) {
   return tabStaffLines.length >= 2 || dashedStaffLines.length >= 3;
 }
 
+function isSectionMarkerOnlyBlock(block: string) {
+  const meaningfulLines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+  return meaningfulLines.length > 0 && meaningfulLines.every((line) => /^\[[^\]]+\]$/.test(line));
+}
+
+function isTabLegendBlock(block: string) {
+  const text = block.toLowerCase();
+  const legendMarkers = ["hammer-on", "pull-off", "slide down", "dip w/bar", "don't pick"];
+  return text.includes("********") && legendMarkers.some((marker) => text.includes(marker));
+}
+
 function splitUltimateGuitarContent(content: string) {
   const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const lyricsBlocks: string[] = [];
@@ -208,11 +259,12 @@ function splitUltimateGuitarContent(content: string) {
     if (isUltimateGuitarTabBlock(cleanedBlock)) {
       tabBlocks.push(cleanedBlock);
     } else {
+      if (isSectionMarkerOnlyBlock(cleanedBlock) || isTabLegendBlock(cleanedBlock)) continue;
       lyricsBlocks.push(cleanedBlock);
     }
   }
 
-  const lyricsAndChords = cleanPreContent([outsideContent, ...lyricsBlocks].filter(Boolean).join("\n\n"));
+  const lyricsAndChords = cleanChordLyricsContent([outsideContent, ...lyricsBlocks.map(cleanChordLyricsContent)].filter(Boolean).join("\n\n"));
   const tab = cleanPreContent(tabBlocks.filter(Boolean).join("\n\n"));
   return { lyricsAndChords, tab };
 }
