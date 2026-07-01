@@ -52,46 +52,6 @@ function cleanPreContent(content: string) {
     .trim();
 }
 
-function compactChordLyricsContent(content: string) {
-  return cleanPreContent(content)
-    .split("\n")
-    .map((line) => line.trimEnd())
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n");
-}
-
-function stripTabLegendFromLyrics(content: string) {
-  return content
-    .replace(/\n?\*{8,}[\s\S]*?\*{8,}\n?/g, "\n")
-    .replace(/^\s*\|\s*(?:h|p|\\|\/|s|\(|\))\s+.*$/gim, "");
-}
-
-function removeEmptySectionMarkers(content: string) {
-  const lines = compactChordLyricsContent(content).split("\n");
-  const kept: string[] = [];
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const current = lines[index].trim();
-    if (new RegExp("^[\\\\/~x()]+$", "i").test(current)) continue;
-    if (!/^\[[^\]]+\]$/.test(current)) {
-      kept.push(lines[index]);
-      continue;
-    }
-
-    let next = index + 1;
-    while (next < lines.length && !lines[next].trim()) next += 1;
-    const nextNonEmpty = lines[next]?.trim() ?? "";
-    if (!nextNonEmpty || /^\[[^\]]+\]$/.test(nextNonEmpty)) continue;
-    kept.push(lines[index]);
-  }
-
-  return compactChordLyricsContent(kept.join("\n"));
-}
-
-function cleanChordLyricsContent(content: string) {
-  return removeEmptySectionMarkers(stripTabLegendFromLyrics(compactChordLyricsContent(content)));
-}
-
 function cleanAnchorText(text: string) {
   return text.replace(/\s+/g, " ").trim().replace(/^[ASR](?=[A-ZÇĞİÖŞÜ0-9])/u, "");
 }
@@ -229,44 +189,8 @@ function stripUltimateGuitarMarkup(content: string) {
   );
 }
 
-function isUltimateGuitarTabBlock(block: string) {
-  const lines = block.split("\n").map((line) => line.trimEnd());
-  const tabStaffLines = lines.filter((line) => /^\s*(?:e|B|G|D|A|E)\|[-0-9hHpPsSbBrR/\\~xX()|\s.]+$/.test(line));
-  const dashedStaffLines = lines.filter((line) => /^\s*[-|0-9hHpPsSbBrR/\\~xX()\s.]{12,}$/.test(line) && line.includes("|"));
-  return tabStaffLines.length >= 2 || dashedStaffLines.length >= 3;
-}
-
-function isSectionMarkerOnlyBlock(block: string) {
-  const meaningfulLines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-  return meaningfulLines.length > 0 && meaningfulLines.every((line) => /^\[[^\]]+\]$/.test(line));
-}
-
-function isTabLegendBlock(block: string) {
-  const text = block.toLowerCase();
-  const legendMarkers = ["hammer-on", "pull-off", "slide down", "dip w/bar", "don't pick"];
-  return text.includes("********") && legendMarkers.some((marker) => text.includes(marker));
-}
-
-function splitUltimateGuitarContent(content: string) {
-  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  const lyricsBlocks: string[] = [];
-  const tabBlocks: string[] = [];
-  const outsideContent = stripUltimateGuitarMarkup(normalized.replace(/\[tab\][\s\S]*?\[\/tab\]/gi, "\n"));
-
-  for (const match of normalized.matchAll(/\[tab\]([\s\S]*?)\[\/tab\]/gi)) {
-    const cleanedBlock = stripUltimateGuitarMarkup(match[1]);
-    if (!cleanedBlock) continue;
-    if (isUltimateGuitarTabBlock(cleanedBlock)) {
-      tabBlocks.push(cleanedBlock);
-    } else {
-      if (isSectionMarkerOnlyBlock(cleanedBlock) || isTabLegendBlock(cleanedBlock)) continue;
-      lyricsBlocks.push(cleanedBlock);
-    }
-  }
-
-  const lyricsAndChords = cleanChordLyricsContent([outsideContent, ...lyricsBlocks.map(cleanChordLyricsContent)].filter(Boolean).join("\n\n"));
-  const tab = cleanPreContent(tabBlocks.filter(Boolean).join("\n\n"));
-  return { lyricsAndChords, tab };
+function isUltimateGuitarChordType(type: string | number | undefined) {
+  return String(type ?? "").toLowerCase().includes("chord") || Number(type) === 300;
 }
 
 function buildUltimateGuitarHeaders() {
@@ -459,8 +383,9 @@ async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""
     tab_id: tabId,
     tab_access_type: "private",
   });
-  const splitContent = splitUltimateGuitarContent(tab.content ?? "");
-  if (!splitContent.lyricsAndChords && !splitContent.tab) return { found: false, message: NOT_FOUND_MESSAGE };
+  if (!isUltimateGuitarChordType(tab.type)) return { found: false, message: NOT_FOUND_MESSAGE };
+  const content = stripUltimateGuitarMarkup(tab.content ?? "");
+  if (!content) return { found: false, message: NOT_FOUND_MESSAGE };
   const existingRecommendations = buildUltimateGuitarRecommendations(tab);
 
   return {
@@ -470,9 +395,8 @@ async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""
       artist: tab.artist_name || fallbackArtist || "Bilinmeyen Sanatçı",
       key: tab.tonality_name ?? "",
       capo: tab.capo ? String(tab.capo) : "0",
-      chords: splitContent.lyricsAndChords,
-      lyrics: splitContent.lyricsAndChords,
-      tab: splitContent.tab,
+      chords: content,
+      lyrics: content,
       source: tab.urlWeb || `ug:${tabId}`,
       provider: "Ultimate Guitar",
       recommendations: await buildSystemWideRecommendations(tab.artist_name || fallbackArtist || "", tab.song_name || "", existingRecommendations),

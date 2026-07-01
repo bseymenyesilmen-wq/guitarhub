@@ -5,7 +5,6 @@ export type SongSearchResult = {
   capo: string;
   chords: string;
   lyrics: string;
-  tab?: string;
   source?: string;
   provider?: string;
   recommendations?: SongSearchListItem[];
@@ -47,9 +46,8 @@ export function normalizeSongSearchResult(value: unknown): SongSearchResult | nu
   const artist = typeof record.artist === "string" ? record.artist.trim() : "";
   const chords = typeof record.chords === "string" ? record.chords.trim() : "";
   const lyrics = typeof record.lyrics === "string" ? record.lyrics.trim() : "";
-  const tab = typeof record.tab === "string" ? record.tab.trim() : "";
 
-  if (!title || !artist || (!chords && !lyrics && !tab)) {
+  if (!title || !artist || (!chords && !lyrics)) {
     return null;
   }
 
@@ -58,7 +56,6 @@ export function normalizeSongSearchResult(value: unknown): SongSearchResult | nu
     artist,
     chords,
     lyrics,
-    tab,
     key: typeof record.key === "string" ? record.key.trim() : "",
     capo: typeof record.capo === "string" ? record.capo.trim() : "",
     source: typeof record.source === "string" ? record.source.trim() : undefined,
