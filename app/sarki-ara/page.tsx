@@ -49,6 +49,7 @@ export default function SarkiAra() {
   const [artist, setArtist] = useState("");
   const [artistResults, setArtistResults] = useState<SongArtistResult[]>([]);
   const [songResults, setSongResults] = useState<SongSearchListItem[]>([]);
+  const [providerChoices, setProviderChoices] = useState<SongSearchListItem[] | null>(null);
   const [favorite, setFavorite] = useState(false);
   const [result, setResult] = useState<SongSearchResult | null>(null);
   const [editedChords, setEditedChords] = useState("");
@@ -72,6 +73,7 @@ export default function SarkiAra() {
   function resetSongView() {
     setResult(null);
     setEditedChords("");
+    setProviderChoices(null);
     setTransposeSteps(0);
   }
 
@@ -162,6 +164,10 @@ export default function SarkiAra() {
 
   async function selectSong(song: SongSearchListItem) {
     setMessage("");
+    if (song.variants?.length) {
+      setProviderChoices(song.variants);
+      return;
+    }
     resetSongView();
     setLoading(true);
 
@@ -312,10 +318,37 @@ export default function SarkiAra() {
                     <span className="block font-black">{song.title}</span>
                     <span className="mt-1 block text-sm text-zinc-500">
                       {song.artist}{song.provider ? ` - ${song.provider}` : ""}
+                      {song.variants?.length ? ` - ${song.variants.length} kaynak` : ""}
                     </span>
                   </button>
                 ))}
               </div>
+            </div>
+          </section>
+        )}
+
+        {providerChoices && (
+          <section className="mt-4 rounded-3xl border border-red-900/60 bg-zinc-900 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Kaynak seç</p>
+                <h3 className="mt-1 text-xl font-black">Bu şarkı birkaç sitede var</h3>
+              </div>
+              <button onClick={() => setProviderChoices(null)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-bold hover:bg-zinc-700">
+                Kapat
+              </button>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {providerChoices.map((variant) => (
+                <button
+                  key={variant.source}
+                  onClick={() => selectSong(variant)}
+                  className="rounded-2xl bg-zinc-950 p-4 text-left hover:bg-zinc-800"
+                >
+                  <span className="block font-black">{variant.provider ?? "Kaynak"}</span>
+                  <span className="mt-1 block text-sm text-zinc-500">{variant.artist} - {variant.title}</span>
+                </button>
+              ))}
             </div>
           </section>
         )}

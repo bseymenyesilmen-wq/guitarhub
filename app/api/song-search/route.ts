@@ -40,8 +40,29 @@ const SIMILAR_ARTISTS: Record<string, string[]> = {
   "arctic monkeys": ["Radiohead", "The Strokes", "Muse", "Nirvana", "Coldplay"],
 };
 
-const FOREIGN_PLAY_NEXT_QUERIES = ["Radiohead Creep", "Chris Isaak Wicked Game", "Arctic Monkeys Do I Wanna Know", "Nirvana Heart Shaped Box", "Coldplay Yellow"];
-const TURKISH_PLAY_NEXT_QUERIES = ["Duman Senden Daha Guzel", "Mor ve Ötesi Bir Derdim Var", "Manga Bir Kadin Cizeceksin", "Teoman Paramparca", "Şebnem Ferah Sil Baştan"];
+const FOREIGN_PLAY_NEXT_QUERIES = [
+  "Radiohead Creep",
+  "Chris Isaak Wicked Game",
+  "Arctic Monkeys Do I Wanna Know",
+  "Nirvana Heart Shaped Box",
+  "Coldplay Yellow",
+  "Eagles Hotel California",
+  "Jeff Buckley Hallelujah",
+];
+const TURKISH_PLAY_NEXT_QUERIES = [
+  "Duman Senden Daha Guzel",
+  "Duman Hayati Yasa",
+  "Duman Tovbe",
+  "Mor ve Ötesi Bir Derdim Var",
+  "Manga Cevapsiz Sorular",
+  "Teoman Paramparca",
+  "Şebnem Ferah Sil Baştan",
+  "Yüzyüzeyken Konuşuruz Uykusuz Ve Dengesiz",
+];
+
+const ARTIST_DISCOVERY_QUERIES: Record<string, string[]> = {
+  duman: ["Duman Hayati Yasa", "Duman Tovbe", "Duman Senden Daha Guzel", "Duman Halimiz Duman", "Duman Aman Aman"],
+};
 
 function cleanPreContent(content: string) {
   return content
@@ -131,6 +152,35 @@ function dedupeSongs(songs: SongSearchListItem[]) {
     seen.add(key);
     return true;
   });
+}
+
+function recommendationIdentity(song: Pick<SongSearchListItem, "artist" | "title">) {
+  return `${normalizeText(song.artist)}-${normalizeText(song.title)}`;
+}
+
+function dedupeBySongIdentity(songs: SongSearchListItem[]) {
+  const seen = new Set<string>();
+  return songs.filter((song) => {
+    const key = recommendationIdentity(song);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function groupSongVariants(songs: SongSearchListItem[]) {
+  const grouped = new Map<string, SongSearchListItem[]>();
+  for (const song of songs) {
+    const key = recommendationIdentity(song);
+    const variants = grouped.get(key) ?? [];
+    if (!variants.some((variant) => variant.source === song.source)) variants.push(song);
+    grouped.set(key, variants);
+  }
+
+  return Array.from(grouped.values()).map((variants) => ({
+    ...variants[0],
+    variants: variants.length > 1 ? variants : undefined,
+  }));
 }
 
 function dedupeArtists(artists: SongArtistResult[]) {
@@ -265,7 +315,7 @@ async function buildSystemWideRecommendations(artist: string, title: string, exi
     if (result && normalizeText(result.title) !== normalizeText(title)) recommendations.push(result);
   }
 
-  return dedupeSongs(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6);
+  return dedupeBySongIdentity(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6);
 }
 
 async function getUltimateGuitarJson<T>(path: string, params: Record<string, string | number | undefined>) {
@@ -528,15 +578,18 @@ function filterByExplicitFields(songs: SongSearchListItem[], title: string, arti
 }
 
 async function searchSongs(query: string, title = "", artist = ""): Promise<SongSearchResponse> {
-  const [repertuarim, ugSongs, uakorSongs, akorlarSongs] = await Promise.all([
+  const artistKey = normalizeText(artist || query);
+  const discoveryQueries = !title && artist ? (ARTIST_DISCOVERY_QUERIES[artistKey] ?? []) : [];
+  const [repertuarim, ugSongs, uakorSongs, akorlarSongs, discoveredSongs] = await Promise.all([
     searchRepertuarim(query).catch(() => ({ songs: [], artists: [] as SongArtistResult[] })),
     searchUltimateGuitar(query).catch(() => []),
     searchUakor(query).catch(() => []),
     searchAkorlar(query).catch(() => []),
+    Promise.all(discoveryQueries.map((seed) => searchUltimateGuitar(seed).catch(() => []))).then((results) => results.flat()),
   ]);
 
-  const allSongs = [...repertuarim.songs, ...ugSongs, ...uakorSongs, ...akorlarSongs];
-  const songs = sortByQuery(filterByExplicitFields(allSongs, title, artist), query).slice(0, 80);
+  const allSongs = [...repertuarim.songs, ...ugSongs, ...discoveredSongs, ...uakorSongs, ...akorlarSongs];
+  const songs = groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 80);
   const artists = title
     ? []
     : repertuarim.artists

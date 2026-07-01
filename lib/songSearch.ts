@@ -16,6 +16,7 @@ export type SongSearchListItem = {
   source: string;
   provider?: string;
   cover?: string;
+  variants?: SongSearchListItem[];
 };
 
 export type SongArtistResult = {
