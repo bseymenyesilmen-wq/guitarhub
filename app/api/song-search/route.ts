@@ -189,10 +189,30 @@ function stripUltimateGuitarMarkup(content: string) {
   );
 }
 
+function isUltimateGuitarTabBlock(block: string) {
+  const lines = block.split("\n").map((line) => line.trimEnd());
+  const tabStaffLines = lines.filter((line) => /^\s*(?:e|B|G|D|A|E)\|[-0-9hHpPsSbBrR/\\~xX()|\s.]+$/.test(line));
+  const dashedStaffLines = lines.filter((line) => /^\s*[-|0-9hHpPsSbBrR/\\~xX()\s.]{12,}$/.test(line) && line.includes("|"));
+  return tabStaffLines.length >= 2 || dashedStaffLines.length >= 3;
+}
+
 function splitUltimateGuitarContent(content: string) {
   const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  const tabBlocks = [...normalized.matchAll(/\[tab\]([\s\S]*?)\[\/tab\]/gi)].map((match) => stripUltimateGuitarMarkup(match[1]));
-  const lyricsAndChords = stripUltimateGuitarMarkup(normalized.replace(/\[tab\][\s\S]*?\[\/tab\]/gi, "\n"));
+  const lyricsBlocks: string[] = [];
+  const tabBlocks: string[] = [];
+  const outsideContent = stripUltimateGuitarMarkup(normalized.replace(/\[tab\][\s\S]*?\[\/tab\]/gi, "\n"));
+
+  for (const match of normalized.matchAll(/\[tab\]([\s\S]*?)\[\/tab\]/gi)) {
+    const cleanedBlock = stripUltimateGuitarMarkup(match[1]);
+    if (!cleanedBlock) continue;
+    if (isUltimateGuitarTabBlock(cleanedBlock)) {
+      tabBlocks.push(cleanedBlock);
+    } else {
+      lyricsBlocks.push(cleanedBlock);
+    }
+  }
+
+  const lyricsAndChords = cleanPreContent([outsideContent, ...lyricsBlocks].filter(Boolean).join("\n\n"));
   const tab = cleanPreContent(tabBlocks.filter(Boolean).join("\n\n"));
   return { lyricsAndChords, tab };
 }
