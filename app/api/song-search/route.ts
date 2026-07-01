@@ -150,6 +150,27 @@ function parseUakorSongLink(href: string, text: string, titleAttr = ""): SongSea
   return { ...parsed, provider: "uakor", source: absoluteUrl(href, UAKOR_URL) };
 }
 
+function titleFromUakorSlug(href: string, artist = "") {
+  const slug = href
+    .split("/akor/")[1]
+    ?.split(/[?#]/)[0]
+    ?.replace(/-akor-orijinalton$/i, "")
+    ?.replace(/-orijinalton$/i, "")
+    ?.replace(/-akor(?:lar)?$/i, "")
+    .replace(/-chords$/i, "")
+    .replace(/-\d+$/g, "")
+    .replace(/-akor(?:lar)?$/i, "")
+    .replace(new RegExp(`^${slugify(artist)}-`, "i"), "")
+    .replace(/-/g, " ")
+    .trim();
+  if (!slug) return "";
+  return slug.replace(/\b\w/g, (char) => char.toLocaleUpperCase("tr-TR"));
+}
+
+function extractUakorPlainAkorLinks(html: string) {
+  return Array.from(new Set([...html.matchAll(/\/akor\/[a-z0-9-]+/gi)].map((match) => match[0])));
+}
+
 function dedupeSongs(songs: SongSearchListItem[]) {
   const seen = new Set<string>();
   return songs.filter((song) => {
@@ -557,6 +578,7 @@ async function searchUakor(query: string) {
   for (const url of searchUrls) {
     try {
       const html = await getHtml(url, UAKOR_URL);
+      const isArtistCatalogPage = url.includes("/sanatci/");
       const preload = extractUakorPreload(html);
       if (preload?.data?.title && preload.data.artist?.name) {
         songs.push({
@@ -571,11 +593,24 @@ async function searchUakor(query: string) {
         const song = parseUakorSongLink(match[1], match[3].replace(/<[^>]+>/g, " "), match[2] ?? "");
         if (song) songs.push(song);
       }
+      if (isArtistCatalogPage) {
+        for (const href of extractUakorPlainAkorLinks(html)) {
+          const title = titleFromUakorSlug(href, query);
+          if (!title || normalizeText(title) === normalizeText(query)) continue;
+          const parsed = parseSongTitle(`${query} - ${title}`, query);
+          songs.push({
+            title: parsed.title,
+            artist: isArtistCatalogPage ? query : parsed.artist,
+            source: `${UAKOR_URL}${href}`,
+            provider: "uakor",
+          });
+        }
+      }
     } catch {
       // uAkor search URL may not exist for every query; continue to next fallback.
     }
   }
-  return dedupeSongs(songs).slice(0, 40);
+  return dedupeSongs(songs).slice(0, 180);
 }
 
 function sortByQuery(songs: SongSearchListItem[], query: string) {
@@ -626,7 +661,7 @@ async function searchSongs(query: string, title = "", artist = ""): Promise<Song
   ]);
 
   const allSongs = [...repertuarim.songs, ...ugSongs, ...discoveredSongs, ...uakorSongs];
-  const songs = groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 80);
+  const songs = groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 180);
   const artists = title
     ? []
     : repertuarim.artists
