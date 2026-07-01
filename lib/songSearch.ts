@@ -7,6 +7,7 @@ export type SongSearchResult = {
   lyrics: string;
   source?: string;
   provider?: string;
+  recommendations?: SongSearchListItem[];
 };
 
 export type SongSearchListItem = {
@@ -14,6 +15,7 @@ export type SongSearchListItem = {
   artist: string;
   source: string;
   provider?: string;
+  cover?: string;
 };
 
 export type SongArtistResult = {
@@ -58,5 +60,6 @@ export function normalizeSongSearchResult(value: unknown): SongSearchResult | nu
     capo: typeof record.capo === "string" ? record.capo.trim() : "",
     source: typeof record.source === "string" ? record.source.trim() : undefined,
     provider: typeof record.provider === "string" ? record.provider.trim() : undefined,
+    recommendations: Array.isArray(record.recommendations) ? (record.recommendations as SongSearchListItem[]) : undefined,
   };
 }

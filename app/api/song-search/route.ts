@@ -200,6 +200,23 @@ type UltimateGuitarTab = {
   capo?: number | string;
   urlWeb?: string;
   rating?: number;
+  recommended?: UltimateGuitarTab[];
+  album_cover?: { app_album_cover?: { small?: string } };
+  artist_cover?: { app_artist_cover?: { small?: string } };
+};
+
+function buildUltimateGuitarRecommendations(tab: UltimateGuitarTab) {
+  return dedupeSongs(
+    (tab.recommended ?? [])
+      .filter((item) => item.id && item.song_name && item.artist_name)
+      .map((item) => ({
+        title: item.song_name,
+        artist: item.artist_name,
+        source: `ug:${item.id}`,
+        provider: "ultimate-guitar",
+        cover: item.album_cover?.app_album_cover?.small ?? item.artist_cover?.app_artist_cover?.small,
+      })),
+  ).slice(0, 6);
 };
 
 async function getUltimateGuitarJson<T>(path: string, params: Record<string, string | number | undefined>) {
@@ -325,6 +342,7 @@ async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""
       lyrics: content,
       source: tab.urlWeb || `ug:${tabId}`,
       provider: "Ultimate Guitar",
+      recommendations: buildUltimateGuitarRecommendations(tab),
     },
   };
 }

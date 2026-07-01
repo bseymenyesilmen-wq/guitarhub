@@ -320,54 +320,85 @@ export default function SarkiAra() {
         )}
 
         {result && (
-          <section className="mt-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-black">{result.title}</h2>
-                <p className="mt-1 text-zinc-400">
-                  {result.artist}
-                  {transposedKey ? ` - Ton: ${transposedKey}` : ""}
-                  {result.capo ? ` - Capo: ${result.capo}` : ""}
-                  {result.provider ? ` - Kaynak: ${result.provider}` : ""}
-                </p>
+          <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-black">{result.title}</h2>
+                  <p className="mt-1 text-zinc-400">
+                    {result.artist}
+                    {transposedKey ? ` - Ton: ${transposedKey}` : ""}
+                    {result.capo ? ` - Capo: ${result.capo}` : ""}
+                    {result.provider ? ` - Kaynak: ${result.provider}` : ""}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setTransposeSteps((value) => value - 1)} className="min-h-11 rounded-lg bg-zinc-800 px-4 py-3 font-bold hover:bg-zinc-700">
+                    -1
+                  </button>
+                  <button onClick={() => setTransposeSteps(0)} className="min-h-11 rounded-lg bg-zinc-800 px-4 py-3 font-bold hover:bg-zinc-700">
+                    {transposeSteps > 0 ? `+${transposeSteps}` : transposeSteps}
+                  </button>
+                  <button onClick={() => setTransposeSteps((value) => value + 1)} className="min-h-11 rounded-lg bg-zinc-800 px-4 py-3 font-bold hover:bg-zinc-700">
+                    +1
+                  </button>
+                  <button
+                    onClick={() => setFavorite((value) => !value)}
+                    className={`min-h-11 rounded-lg px-4 py-3 font-bold ${favorite ? "bg-red-600 hover:bg-red-500" : "bg-zinc-800 hover:bg-zinc-700"}`}
+                  >
+                    {favorite ? "Favoride" : "Favorilere Ekle"}
+                  </button>
+                  <button
+                    onClick={addToRepertoire}
+                    disabled={saving}
+                    className="min-h-11 rounded-lg bg-red-600 px-5 py-3 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {saving ? "Ekleniyor..." : "Repertuara Ekle"}
+                  </button>
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => setTransposeSteps((value) => value - 1)} className="min-h-11 rounded-lg bg-zinc-800 px-4 py-3 font-bold hover:bg-zinc-700">
-                  -1
-                </button>
-                <button onClick={() => setTransposeSteps(0)} className="min-h-11 rounded-lg bg-zinc-800 px-4 py-3 font-bold hover:bg-zinc-700">
-                  {transposeSteps > 0 ? `+${transposeSteps}` : transposeSteps}
-                </button>
-                <button onClick={() => setTransposeSteps((value) => value + 1)} className="min-h-11 rounded-lg bg-zinc-800 px-4 py-3 font-bold hover:bg-zinc-700">
-                  +1
-                </button>
-                <button
-                  onClick={() => setFavorite((value) => !value)}
-                  className={`min-h-11 rounded-lg px-4 py-3 font-bold ${favorite ? "bg-red-600 hover:bg-red-500" : "bg-zinc-800 hover:bg-zinc-700"}`}
-                >
-                  {favorite ? "Favoride" : "Favorilere Ekle"}
-                </button>
-                <button
-                  onClick={addToRepertoire}
-                  disabled={saving}
-                  className="min-h-11 rounded-lg bg-red-600 px-5 py-3 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? "Ekleniyor..." : "Repertuara Ekle"}
-                </button>
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+                <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-zinc-400">Akorlar ve Sözler</h3>
+                <ChordTextViewer text={transposedChords} onChordClick={openChord} size="compact" />
+                {result.lyrics && result.lyrics.trim() && result.lyrics.trim() !== editedChords.trim() && (
+                  <details className="mt-4 rounded-2xl bg-zinc-950 p-4 text-zinc-300">
+                    <summary className="cursor-pointer font-bold text-zinc-200">Sözleri ayrıca göster</summary>
+                    <pre className="mt-3 whitespace-pre-wrap text-sm leading-7">{result.lyrics}</pre>
+                  </details>
+                )}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
-              <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-zinc-400">Akorlar ve Sözler</h3>
-              <ChordTextViewer text={transposedChords} onChordClick={openChord} size="compact" />
-              {result.lyrics && result.lyrics.trim() && result.lyrics.trim() !== editedChords.trim() && (
-                <details className="mt-4 rounded-2xl bg-zinc-950 p-4 text-zinc-300">
-                  <summary className="cursor-pointer font-bold text-zinc-200">Sözleri ayrıca göster</summary>
-                  <pre className="mt-3 whitespace-pre-wrap text-sm leading-7">{result.lyrics}</pre>
-                </details>
-              )}
-            </div>
+            <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Play next</p>
+                <h3 className="mt-1 text-xl font-black">Sıradaki şarkılar</h3>
+                <div className="mt-4 space-y-2">
+                  {result.recommendations?.length ? (
+                    result.recommendations.map((recommendation) => (
+                      <button
+                        key={recommendation.source}
+                        onClick={() => selectSong(recommendation)}
+                        className="flex w-full items-center gap-3 rounded-2xl bg-zinc-950 p-3 text-left hover:bg-zinc-800"
+                      >
+                        <span
+                          className="h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center"
+                          style={recommendation.cover ? { backgroundImage: `url(${recommendation.cover})` } : undefined}
+                        />
+                        <span className="min-w-0">
+                          <span className="block truncate font-black">{recommendation.title}</span>
+                          <span className="block truncate text-sm text-zinc-500">{recommendation.artist}</span>
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="rounded-2xl bg-zinc-950 p-4 text-sm text-zinc-500">Bu kaynak için öneri yok.</p>
+                  )}
+                </div>
+              </div>
+            </aside>
           </section>
         )}
       </div>
