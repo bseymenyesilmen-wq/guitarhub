@@ -18,7 +18,7 @@ const required = [
   'getStringFretRange',
   'COMMON_SCALE_POSITION_INTERVALS',
   'index === 0 ? rootOnLowE : startFret',
-  'rootOnLowE = normalizeToFretboard(NOTE_NAMES.indexOf(root as NoteName) + 8)',
+  'rootOnLowE = getLowERootFret(root)',
   'C Minor Pentatonic: 1. pozisyon 8. perde',
 ];
 const forbidden = [

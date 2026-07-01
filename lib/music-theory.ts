@@ -530,6 +530,11 @@ function normalizeToFretboard(fret: number) {
   return ((fret - 1) % 12) + 1;
 }
 
+function getLowERootFret(root: string) {
+  const raw = NOTE_NAMES.indexOf(root as NoteName) + 8;
+  return raw > 12 ? raw - 12 : raw;
+}
+
 function uniqueInOrder(values: number[]) {
   return values.filter((value, index, list) => list.indexOf(value) === index);
 }
@@ -586,19 +591,19 @@ function getPositionIntervals(scaleId: string, formula: string[]) {
   return COMMON_SCALE_POSITION_INTERVALS[scaleId] ?? formula;
 }
 
-function normalizePositionStart(fret: number, rootOnLowE: number) {
-  // C minor pentatonic kaynakları pozisyonları 8, 11, 13/1, 3, 6 diye verir.
-  // Root 8 ve sonrası için 13'ten sonraki kutuları alt oktava sararak aynı gitar pedagojisi sırasını koruyoruz.
-  if (rootOnLowE >= 8 && fret > 13) return fret - 12;
+function normalizePositionStart(fret: number) {
+  // Pozisyon başlangıçları pratik gitar öğretiminde 12. perde üstüne kaçınca alt oktavdaki eşdeğer kutuya sarılır.
+  // Örn: G minor pentatonic 1. pozisyon 15 değil 3; A minor pentatonic 17 değil 5; F minor pentatonic 13 değil 1.
+  if (fret > 13) return fret - 12;
   return normalizeToFretboard(fret);
 }
 
 export function getScalePositions(root: string, scaleId: string, viewMode: ScaleViewMode = "vertical"): ScalePosition[] {
   const scale = SCALE_FORMULAS.find((item) => item.id === scaleId) ?? SCALE_FORMULAS[0];
-  const rootOnLowE = normalizeToFretboard(NOTE_NAMES.indexOf(root as NoteName) + 8);
+  const rootOnLowE = getLowERootFret(root);
   const displayFrets = viewMode === "diagonal" ? 7 : 4;
   const intervals = getPositionIntervals(scaleId, scale.formula);
-  const starts = uniqueInOrder(intervals.map((interval) => normalizePositionStart(rootOnLowE + (INTERVAL_STEPS[interval] ?? 0), rootOnLowE)));
+  const starts = uniqueInOrder(intervals.map((interval) => normalizePositionStart(rootOnLowE + (INTERVAL_STEPS[interval] ?? 0))));
 
   return starts.map((startFret, index) => ({
     index,
