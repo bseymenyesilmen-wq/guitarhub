@@ -1,11 +1,12 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { NextResponse } from "next/server";
-import { type SongSearchResponse } from "@/lib/songSearch";
+import { type SongArtistResult, type SongSearchListItem, type SongSearchResponse } from "@/lib/songSearch";
 
 type SearchRequest = {
   title?: string;
   artist?: string;
+  source?: string;
 };
 
 const NOT_FOUND_MESSAGE = "Şarkı bulunamadı.";
@@ -28,6 +29,68 @@ function cleanPreContent(content: string) {
     .trim();
 }
 
+function cleanAnchorText(text: string) {
+  return text.replace(/\s+/g, " ").trim().replace(/^[ASR](?=[A-ZÇĞİÖŞÜ0-9])/u, "");
+}
+
+function normalizeText(value: string) {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ı/g, "i")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function absoluteUrl(href: string) {
+  return href.startsWith("http") ? href : `${BASE_URL}${href}`;
+}
+
+function parseSongLink(href: string, text: string): SongSearchListItem | null {
+  if (!href.includes("/akor/")) return null;
+
+  const cleaned = cleanAnchorText(text);
+  const [artistPart, ...titleParts] = cleaned.split(" - ");
+  const title = titleParts.join(" - ").trim();
+  const artist = artistPart?.trim();
+
+  if (!artist || !title) return null;
+
+  return {
+    title,
+    artist,
+    source: absoluteUrl(href),
+  };
+}
+
+function parseArtistLink(href: string, text: string): SongArtistResult | null {
+  if (!href.includes("/akor-tab/")) return null;
+  const name = cleanAnchorText(text).replace(/^S(?=[A-ZÇĞİÖŞÜ])/u, "").trim();
+  if (!name) return null;
+  return { name, source: absoluteUrl(href) };
+}
+
+function dedupeSongs(songs: SongSearchListItem[]) {
+  const seen = new Set<string>();
+  return songs.filter((song) => {
+    const key = song.source || `${song.artist}-${song.title}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function dedupeArtists(artists: SongArtistResult[]) {
+  const seen = new Set<string>();
+  return artists.filter((artist) => {
+    const key = normalizeText(artist.name);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function extractArtistFromTitle(scrapedTitle: string, fallbackArtist: string) {
   if (fallbackArtist) {
     return fallbackArtist;
@@ -37,25 +100,10 @@ function extractArtistFromTitle(scrapedTitle: string, fallbackArtist: string) {
   return possibleArtist?.trim() || "Bilinmeyen Sanatçı";
 }
 
-async function searchSong(title: string, artist: string): Promise<SongSearchResponse> {
-  const searchQuery = artist ? `${artist} ${title}` : title;
-  const searchUrl = `${BASE_URL}/ara/${encodeURIComponent(searchQuery)}/`;
-
-  const searchResponse = await axios.get<string>(searchUrl, {
-    headers: REQUEST_HEADERS,
-    timeout: 10_000,
-  });
-
-  const $searchPage = cheerio.load(searchResponse.data);
-  const firstSongLink = $searchPage('a[href*="/akor/"]').first().attr("href");
-
-  if (!firstSongLink) {
+async function fetchSongByUrl(songUrl: string, fallbackArtist = ""): Promise<SongSearchResponse> {
+  if (!songUrl.startsWith(BASE_URL) || !songUrl.includes("/akor/")) {
     return { found: false, message: NOT_FOUND_MESSAGE };
   }
-
-  const songUrl = firstSongLink.startsWith("http")
-    ? firstSongLink
-    : `${BASE_URL}${firstSongLink}`;
 
   const songResponse = await axios.get<string>(songUrl, {
     headers: REQUEST_HEADERS,
@@ -63,7 +111,7 @@ async function searchSong(title: string, artist: string): Promise<SongSearchResp
   });
 
   const $songPage = cheerio.load(songResponse.data);
-  const scrapedTitle = $songPage("h1").text().trim() || title;
+  const scrapedTitle = $songPage("h1").text().trim() || "Şarkı";
   const defaultKey = $songPage("div#default-key").attr("data-key") || "";
   const rawPreContent =
     $songPage("pre#key.chords").text() ||
@@ -80,7 +128,7 @@ async function searchSong(title: string, artist: string): Promise<SongSearchResp
     found: true,
     song: {
       title: scrapedTitle,
-      artist: extractArtistFromTitle(scrapedTitle, artist),
+      artist: extractArtistFromTitle(scrapedTitle, fallbackArtist),
       key: defaultKey,
       capo: "0",
       chords: fullPreContent,
@@ -90,12 +138,69 @@ async function searchSong(title: string, artist: string): Promise<SongSearchResp
   };
 }
 
+async function searchSongs(title: string, artist: string): Promise<SongSearchResponse> {
+  const artistOnly = Boolean(artist && !title);
+  const searchQuery = artistOnly ? artist : artist ? `${artist} ${title}` : title;
+  const searchUrl = `${BASE_URL}/ara/${encodeURIComponent(searchQuery)}/`;
+
+  const searchResponse = await axios.get<string>(searchUrl, {
+    headers: REQUEST_HEADERS,
+    timeout: 10_000,
+  });
+
+  const $searchPage = cheerio.load(searchResponse.data);
+  const songs: SongSearchListItem[] = [];
+  const artists: SongArtistResult[] = [];
+
+  $searchPage("a[href]").each((_, element) => {
+    const href = $searchPage(element).attr("href") || "";
+    const text = $searchPage(element).text();
+    const song = parseSongLink(href, text);
+    if (song) songs.push(song);
+    const artistResult = parseArtistLink(href, text);
+    if (artistResult) artists.push(artistResult);
+  });
+
+  const normalizedArtist = normalizeText(artist);
+  const uniqueSongs = dedupeSongs(songs).sort((a, b) => {
+    if (!normalizedArtist) return 0;
+    const aExact = normalizeText(a.artist) === normalizedArtist ? 0 : 1;
+    const bExact = normalizeText(b.artist) === normalizedArtist ? 0 : 1;
+    return aExact - bExact;
+  });
+
+  const filteredSongs = artistOnly && normalizedArtist
+    ? uniqueSongs.filter((song) => normalizeText(song.artist) === normalizedArtist)
+    : uniqueSongs;
+
+  if (!filteredSongs.length) {
+    return { found: false, message: NOT_FOUND_MESSAGE, songs: [], artists: dedupeArtists(artists) };
+  }
+
+  if (!artistOnly && filteredSongs.length === 1) {
+    return fetchSongByUrl(filteredSongs[0].source, filteredSongs[0].artist);
+  }
+
+  const uniqueArtists = dedupeArtists(artists).map((artistResult) => ({
+    ...artistResult,
+    songCount: filteredSongs.filter((song) => normalizeText(song.artist) === normalizeText(artistResult.name)).length || undefined,
+  }));
+
+  return {
+    found: false,
+    message: artistOnly ? "Sanatçının şarkıları listelenir." : "Şarkı seç.",
+    songs: filteredSongs.slice(0, 80),
+    artists: uniqueArtists.slice(0, 12),
+  };
+}
+
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as SearchRequest | null;
   const title = body?.title?.trim() ?? "";
   const artist = body?.artist?.trim() ?? "";
+  const source = body?.source?.trim() ?? "";
 
-  if (!title) {
+  if (!title && !artist && !source) {
     return NextResponse.json<SongSearchResponse>(
       { found: false, message: NOT_FOUND_MESSAGE },
       { status: 400 },
@@ -103,7 +208,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await searchSong(title, artist);
+    const result = source ? await fetchSongByUrl(source, artist) : await searchSongs(title, artist);
     return NextResponse.json<SongSearchResponse>(result);
   } catch (error) {
     console.error("Song search failed", error);

@@ -8,6 +8,18 @@ export type SongSearchResult = {
   source?: string;
 };
 
+export type SongSearchListItem = {
+  title: string;
+  artist: string;
+  source: string;
+};
+
+export type SongArtistResult = {
+  name: string;
+  source?: string;
+  songCount?: number;
+};
+
 export type SongSearchResponse =
   | {
       found: true;
@@ -16,6 +28,8 @@ export type SongSearchResponse =
   | {
       found: false;
       message: string;
+      songs?: SongSearchListItem[];
+      artists?: SongArtistResult[];
     };
 
 export function normalizeSongSearchResult(value: unknown): SongSearchResult | null {
