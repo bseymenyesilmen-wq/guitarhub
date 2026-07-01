@@ -52,6 +52,7 @@ export default function SarkiAra() {
   const [favorite, setFavorite] = useState(false);
   const [result, setResult] = useState<SongSearchResult | null>(null);
   const [editedChords, setEditedChords] = useState("");
+  const [contentMode, setContentMode] = useState<"lyrics" | "tab">("lyrics");
   const [transposeSteps, setTransposeSteps] = useState(0);
   const [selectedChord, setSelectedChord] = useState<ChordDefinition | null>(null);
   const [message, setMessage] = useState("");
@@ -68,9 +69,12 @@ export default function SarkiAra() {
     return transposeText(result.key, transposeSteps);
   }, [result, transposeSteps]);
 
+  const displayedContent = contentMode === "tab" ? result?.tab ?? "" : transposedChords;
+
   function resetSongView() {
     setResult(null);
     setEditedChords("");
+    setContentMode("lyrics");
     setTransposeSteps(0);
   }
 
@@ -90,6 +94,7 @@ export default function SarkiAra() {
       setSongResults([]);
       setResult(payload.song);
       setEditedChords(payload.song.chords || payload.song.lyrics);
+      setContentMode(payload.song.chords ? "lyrics" : "tab");
       return;
     }
 
@@ -360,8 +365,29 @@ export default function SarkiAra() {
               </div>
 
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
-                <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-zinc-400">Akorlar ve Sözler</h3>
-                <ChordTextViewer text={transposedChords} onChordClick={openChord} size="compact" />
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-zinc-400">Akorlar ve Sözler</h3>
+                  {result.tab && (
+                    <div className="flex rounded-xl border border-zinc-800 bg-zinc-950 p-1" aria-label="Görüntüle">
+                      <button
+                        type="button"
+                        onClick={() => setContentMode("lyrics")}
+                        disabled={!result.chords}
+                        className={`rounded-lg px-3 py-2 text-sm font-bold ${contentMode === "lyrics" ? "bg-red-600 text-white" : "text-zinc-400 hover:text-white"} disabled:cursor-not-allowed disabled:opacity-40`}
+                      >
+                        Sözler
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setContentMode("tab")}
+                        className={`rounded-lg px-3 py-2 text-sm font-bold ${contentMode === "tab" ? "bg-red-600 text-white" : "text-zinc-400 hover:text-white"}`}
+                      >
+                        Tab
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <ChordTextViewer text={displayedContent} onChordClick={openChord} size="compact" />
                 {result.lyrics && result.lyrics.trim() && result.lyrics.trim() !== editedChords.trim() && (
                   <details className="mt-4 rounded-2xl bg-zinc-950 p-4 text-zinc-300">
                     <summary className="cursor-pointer font-bold text-zinc-200">Sözleri ayrıca göster</summary>

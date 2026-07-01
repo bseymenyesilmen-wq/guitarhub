@@ -189,6 +189,14 @@ function stripUltimateGuitarMarkup(content: string) {
   );
 }
 
+function splitUltimateGuitarContent(content: string) {
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const tabBlocks = [...normalized.matchAll(/\[tab\]([\s\S]*?)\[\/tab\]/gi)].map((match) => stripUltimateGuitarMarkup(match[1]));
+  const lyricsAndChords = stripUltimateGuitarMarkup(normalized.replace(/\[tab\][\s\S]*?\[\/tab\]/gi, "\n"));
+  const tab = cleanPreContent(tabBlocks.filter(Boolean).join("\n\n"));
+  return { lyricsAndChords, tab };
+}
+
 function buildUltimateGuitarHeaders() {
   const clientId = randomBytes(8).toString("hex");
   const now = new Date();
@@ -246,12 +254,13 @@ async function searchUltimateGuitarFirst(query: string) {
 }
 
 async function buildSystemWideRecommendations(artist: string, title: string, existing: SongSearchListItem[] = []) {
-  const recommendations: SongSearchListItem[] = [...existing];
+  const isForeign = isLikelyForeignSong(artist, title);
+  const recommendations: SongSearchListItem[] = isForeign ? [...existing] : [];
   const artistKey = normalizeText(artist);
   const querySeeds = [
     artist ? `${artist}` : "",
     ...(SIMILAR_ARTISTS[artistKey] ?? []).map((similarArtist) => `${similarArtist}`),
-    ...(isLikelyForeignSong(artist, title) ? FOREIGN_PLAY_NEXT_QUERIES : TURKISH_PLAY_NEXT_QUERIES),
+    ...(isForeign ? FOREIGN_PLAY_NEXT_QUERIES : TURKISH_PLAY_NEXT_QUERIES),
   ].filter(Boolean);
 
   for (const seed of querySeeds) {
@@ -378,8 +387,8 @@ async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""
     tab_id: tabId,
     tab_access_type: "private",
   });
-  const content = stripUltimateGuitarMarkup(tab.content ?? "");
-  if (!content) return { found: false, message: NOT_FOUND_MESSAGE };
+  const splitContent = splitUltimateGuitarContent(tab.content ?? "");
+  if (!splitContent.lyricsAndChords && !splitContent.tab) return { found: false, message: NOT_FOUND_MESSAGE };
   const existingRecommendations = buildUltimateGuitarRecommendations(tab);
 
   return {
@@ -389,8 +398,9 @@ async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""
       artist: tab.artist_name || fallbackArtist || "Bilinmeyen Sanatçı",
       key: tab.tonality_name ?? "",
       capo: tab.capo ? String(tab.capo) : "0",
-      chords: content,
-      lyrics: content,
+      chords: splitContent.lyricsAndChords,
+      lyrics: splitContent.lyricsAndChords,
+      tab: splitContent.tab,
       source: tab.urlWeb || `ug:${tabId}`,
       provider: "Ultimate Guitar",
       recommendations: await buildSystemWideRecommendations(tab.artist_name || fallbackArtist || "", tab.song_name || "", existingRecommendations),
