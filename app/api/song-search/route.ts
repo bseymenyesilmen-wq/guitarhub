@@ -30,10 +30,10 @@ const REQUEST_HEADERS = {
 };
 
 const SIMILAR_ARTISTS: Record<string, string[]> = {
-  duman: ["Mor ve Ötesi", "Manga", "Teoman", "Şebnem Ferah", "Yüzyüzeyken Konuşuruz"],
-  "mor ve otesi": ["Duman", "Manga", "Teoman", "Şebnem Ferah", "Athena"],
-  manga: ["Duman", "Mor ve Ötesi", "Athena", "Şebnem Ferah", "Model"],
-  teoman: ["Duman", "Mor ve Ötesi", "Şebnem Ferah", "Yüksek Sadakat", "Pinhani"],
+  duman: ["Mor ve Ötesi", "Manga", "Teoman", "Şebnem Ferah", "Yüzyüzeyken Konuşuruz", "Dolu Kadehi Ters Tut", "Son Feci Bisiklet", "Kaan Tangöze", "Pilli Bebek"],
+  "mor ve otesi": ["Duman", "Manga", "Teoman", "Şebnem Ferah", "Athena", "Pilli Bebek", "Dolu Kadehi Ters Tut"],
+  manga: ["Duman", "Mor ve Ötesi", "Athena", "Şebnem Ferah", "Model", "Pilli Bebek"],
+  teoman: ["Duman", "Mor ve Ötesi", "Şebnem Ferah", "Yüksek Sadakat", "Pinhani", "Kaan Tangöze", "Halil Sezai"],
   radiohead: ["Nirvana", "Arctic Monkeys", "Coldplay", "Muse", "The Smashing Pumpkins"],
   nirvana: ["Radiohead", "Pearl Jam", "Foo Fighters", "Alice In Chains", "Soundgarden"],
   "chris isaak": ["Radiohead", "Nirvana", "Arctic Monkeys", "Coldplay", "The Cranberries"],
@@ -54,10 +54,23 @@ const TURKISH_PLAY_NEXT_QUERIES = [
   "Duman Hayati Yasa",
   "Duman Tovbe",
   "Mor ve Ötesi Bir Derdim Var",
+  "Mor ve Ötesi Cambaz",
   "Manga Cevapsiz Sorular",
   "Teoman Paramparca",
+  "Teoman Kupa Kizi Sinek Valesi",
   "Şebnem Ferah Sil Baştan",
   "Yüzyüzeyken Konuşuruz Uykusuz Ve Dengesiz",
+  "Dolu Kadehi Ters Tut Belki",
+  "Dolu Kadehi Ters Tut Aldattın Mı",
+  "Son Feci Bisiklet Bu Kız",
+  "Son Feci Bisiklet Bikinisinde Astronomi",
+  "Kaan Tangöze Gölge Etme",
+  "Kaan Tangöze Bekle Dedi Gitti",
+  "Halil Sezai İsyan",
+  "Pilli Bebek Bak",
+  "Pilli Bebek Olsun",
+  "Oguzhan Koc Bulutlara Esir Olduk",
+  "Oguzhan Koc Ayy",
 ];
 
 const ARTIST_DISCOVERY_QUERIES: Record<string, string[]> = {
@@ -299,15 +312,26 @@ async function searchUltimateGuitarFirst(query: string) {
   return songs[0] ?? null;
 }
 
+function stableNumber(value: string) {
+  return [...value].reduce((total, char) => total + char.charCodeAt(0), 0);
+}
+
+function rotateRecommendationSeeds(seeds: string[], key: string) {
+  if (!seeds.length) return seeds;
+  const bucket = Math.floor(Date.now() / (1000 * 60 * 15));
+  const offset = (stableNumber(key) + bucket) % seeds.length;
+  return [...seeds.slice(offset), ...seeds.slice(0, offset)];
+}
+
 async function buildSystemWideRecommendations(artist: string, title: string, existing: SongSearchListItem[] = []) {
   const isForeign = isLikelyForeignSong(artist, title);
   const recommendations: SongSearchListItem[] = isForeign ? [...existing] : [];
   const artistKey = normalizeText(artist);
-  const querySeeds = [
+  const querySeeds = rotateRecommendationSeeds([
     artist ? `${artist}` : "",
     ...(SIMILAR_ARTISTS[artistKey] ?? []).map((similarArtist) => `${similarArtist}`),
     ...(isForeign ? FOREIGN_PLAY_NEXT_QUERIES : TURKISH_PLAY_NEXT_QUERIES),
-  ].filter(Boolean);
+  ].filter(Boolean), `${artist}-${title}`);
 
   for (const seed of querySeeds) {
     if (recommendations.length >= 6) break;

@@ -48,7 +48,7 @@ export function ChordTextViewer({ text, emptyText = "Akor eklenmemiş.", onChord
         className={`m-0 min-w-max whitespace-pre text-zinc-100 ${textSizeClass}`}
         style={{
           whiteSpace: "pre",
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+          fontFamily: "Arial, Helvetica, sans-serif",
           tabSize: 4,
         }}
       >
