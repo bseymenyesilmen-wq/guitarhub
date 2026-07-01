@@ -45,7 +45,8 @@ function findChord(chordName: string) {
 
 export default function SarkiAra() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [title, setTitle] = useState("");
+  const [artist, setArtist] = useState("");
   const [artistResults, setArtistResults] = useState<SongArtistResult[]>([]);
   const [songResults, setSongResults] = useState<SongSearchListItem[]>([]);
   const [favorite, setFavorite] = useState(false);
@@ -103,7 +104,7 @@ export default function SarkiAra() {
     setArtistResults([]);
     setSongResults([]);
 
-    if (!query.trim()) {
+    if (!title.trim() && !artist.trim()) {
       setMessage("Sanatçı veya şarkı ara.");
       return;
     }
@@ -113,7 +114,7 @@ export default function SarkiAra() {
     const response = await fetch("/api/song-search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: query.trim() }),
+      body: JSON.stringify({ title: title.trim(), artist: artist.trim() }),
     }).catch(() => null);
 
     setLoading(false);
@@ -134,7 +135,8 @@ export default function SarkiAra() {
   }
 
   async function selectArtist(artistName: string) {
-    setQuery(artistName);
+    setArtist(artistName);
+    setTitle("");
     setMessage("");
     resetSongView();
     setArtistResults([]);
@@ -144,7 +146,7 @@ export default function SarkiAra() {
     const response = await fetch("/api/song-search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: artistName }),
+      body: JSON.stringify({ artist: artistName }),
     }).catch(() => null);
 
     setLoading(false);
@@ -224,17 +226,27 @@ export default function SarkiAra() {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">Akor ve söz arama</p>
           <h1 className="mt-3 text-4xl font-black">Şarkı Ara</h1>
           <p className="mt-2 max-w-2xl text-zinc-400">
-            Şarkı veya sanatçı yaz; önce Repertuarım, sonra Ultimate Guitar, uAkor ve Akorlar.com denenir. Akor boşlukları korunur.
+            Sanatçı yazınca şarkıları listeler. Şarkı da yazarsan daha net arar. Önce Repertuarım, sonra Ultimate Guitar, uAkor ve Akorlar.com denenir.
           </p>
         </section>
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
             <input
               type="text"
-              placeholder="Sanatçı veya şarkı ara"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Şarkı adı"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") searchSong();
+              }}
+              className="min-h-12 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
+            />
+            <input
+              type="text"
+              placeholder="Sanatçı"
+              value={artist}
+              onChange={(event) => setArtist(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") searchSong();
               }}
@@ -248,7 +260,7 @@ export default function SarkiAra() {
               {loading ? "Aranıyor..." : "Ara"}
             </button>
           </div>
-          <p className="mt-3 text-sm text-zinc-500">Örnek: Duman yaz, çıkan şarkılardan birini seç.</p>
+          <p className="mt-3 text-sm text-zinc-500">Örnek: Sanatçıya Duman yaz; istersen şarkıya Senden Daha Güzel yaz.</p>
 
           {message && <p className="mt-4 rounded-lg bg-zinc-950 p-3 text-sm text-zinc-200">{message}</p>}
         </section>

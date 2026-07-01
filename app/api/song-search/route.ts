@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { createHash, randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { type SongArtistResult, type SongSearchListItem, type SongSearchResponse } from "@/lib/songSearch";
 
@@ -18,6 +19,7 @@ const ULTIMATE_GUITAR_URL = "https://www.ultimate-guitar.com";
 const ULTIMATE_TABS_URL = "https://tabs.ultimate-guitar.com";
 const UAKOR_URL = "https://uakor.com";
 const AKORLAR_URL = "https://akorlar.com";
+const ULTIMATE_GUITAR_API_URL = "https://api.ultimate-guitar.com/api/v1";
 const REQUEST_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -59,7 +61,8 @@ function absoluteUrl(href: string, baseUrl = REPERTUARIM_URL) {
 }
 
 function providerForUrl(url: string): Provider {
-  if (url.includes("ultimate-guitar.com")) return "ultimate-guitar";
+  if (url.startsWith("ug:")) return "ultimate-guitar";
+  if (url.startsWith(ULTIMATE_GUITAR_URL) || url.startsWith(ULTIMATE_TABS_URL)) return "ultimate-guitar";
   if (url.includes("uakor.com")) return "uakor";
   if (url.includes("akorlar.com")) return "akorlar";
   return "repertuarim";
@@ -162,18 +165,60 @@ function extractUakorPreContent(html: string) {
   return cleanPreContent($("pre").first().text() || decoded.replace(/<[^>]+>/g, ""));
 }
 
-function extractUgContent(html: string) {
-  const $ = cheerio.load(html);
-  const preText = $("pre").first().text();
-  if (preText.trim()) return cleanPreContent(preText);
-  const storeMatch = html.match(/js-store"[^>]*data-content="([\s\S]*?)"/);
-  if (!storeMatch) return "";
-  const decoded = storeMatch[1]
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, "&")
-    .replace(/&#x27;/g, "'");
-  const parsed = JSON.parse(decoded) as { store?: { page?: { data?: { tab_view?: { wiki_tab?: { content?: string } } } } } };
-  return cleanPreContent(parsed.store?.page?.data?.tab_view?.wiki_tab?.content ?? "");
+function stripUltimateGuitarMarkup(content: string) {
+  return cleanPreContent(
+    content
+      .replace(/\[\/?tab\]/g, "")
+      .replace(/\[ch\]/g, "")
+      .replace(/\[\/ch\]/g, "")
+      .replace(/\r\n/g, "\n"),
+  );
+}
+
+function buildUltimateGuitarHeaders() {
+  const clientId = randomBytes(8).toString("hex");
+  const now = new Date();
+  const utcDateHour = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}:${now.getUTCHours()}`;
+  const apiKey = createHash("md5").update(`${clientId}${utcDateHour}createLog()`).digest("hex");
+  return {
+    "Accept-Charset": "utf-8",
+    Accept: "application/json",
+    "User-Agent": "UGT_ANDROID/4.11.1 (Pixel; 8.1.0)",
+    Connection: "close",
+    "X-UG-CLIENT-ID": clientId,
+    "X-UG-API-KEY": apiKey,
+  };
+}
+
+type UltimateGuitarTab = {
+  id: number;
+  song_name: string;
+  artist_name: string;
+  type?: string;
+  content?: string;
+  tonality_name?: string;
+  capo?: number | string;
+  urlWeb?: string;
+  rating?: number;
+};
+
+async function getUltimateGuitarJson<T>(path: string, params: Record<string, string | number | undefined>) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") query.set(key, String(value));
+  });
+  const response = await axios.get<T>(`${ULTIMATE_GUITAR_API_URL}${path}?${query.toString()}`, {
+    headers: buildUltimateGuitarHeaders(),
+    timeout: 12_000,
+    validateStatus: (status) => status >= 200 && status < 400,
+  });
+  return response.data;
+}
+
+function ultimateGuitarTabIdFromSource(source: string) {
+  if (source.startsWith("ug:")) return Number(source.slice(3));
+  const match = source.match(/-(\d+)(?:\?.*)?$/);
+  return match ? Number(match[1]) : 0;
 }
 
 async function getHtml(url: string, referer = REPERTUARIM_URL) {
@@ -259,23 +304,26 @@ async function fetchAkorlarSongByUrl(songUrl: string, fallbackArtist = ""): Prom
 }
 
 async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""): Promise<SongSearchResponse> {
-  if (!songUrl.startsWith(ULTIMATE_TABS_URL) && !songUrl.startsWith(ULTIMATE_GUITAR_URL)) return { found: false, message: NOT_FOUND_MESSAGE };
-  const html = await getHtml(songUrl, ULTIMATE_GUITAR_URL);
-  const $ = cheerio.load(html);
-  const title = $("title").text().replace(/CHORDS.*$/i, "").trim();
-  const content = extractUgContent(html);
+  const tabId = ultimateGuitarTabIdFromSource(songUrl);
+  if (!tabId) return { found: false, message: NOT_FOUND_MESSAGE };
+
+  const tab = await getUltimateGuitarJson<UltimateGuitarTab>("/tab/info", {
+    tab_id: tabId,
+    tab_access_type: "private",
+  });
+  const content = stripUltimateGuitarMarkup(tab.content ?? "");
   if (!content) return { found: false, message: NOT_FOUND_MESSAGE };
-  const parsed = parseSongTitle(title, fallbackArtist);
+
   return {
     found: true,
     song: {
-      title: parsed.title,
-      artist: parsed.artist || fallbackArtist,
-      key: "",
-      capo: "0",
+      title: tab.song_name || "Şarkı",
+      artist: tab.artist_name || fallbackArtist || "Bilinmeyen Sanatçı",
+      key: tab.tonality_name ?? "",
+      capo: tab.capo ? String(tab.capo) : "0",
       chords: content,
       lyrics: content,
-      source: songUrl,
+      source: tab.urlWeb || `ug:${tabId}`,
       provider: "Ultimate Guitar",
     },
   };
@@ -311,21 +359,21 @@ async function searchRepertuarim(query: string) {
 }
 
 async function searchUltimateGuitar(query: string) {
-  const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(`site:tabs.ultimate-guitar.com/tab/ ${query} chords`)}`;
-  const html = await getHtml(ddgUrl, "https://duckduckgo.com");
-  const $ = cheerio.load(html);
-  const songs: SongSearchListItem[] = [];
-  $("a[href]").each((_, element) => {
-    const rawHref = $(element).attr("href") || "";
-    const text = cleanAnchorText($(element).text());
-    const decoded = decodeURIComponent(rawHref.match(/uddg=([^&]+)/)?.[1] ?? rawHref);
-    if (!decoded.includes("tabs.ultimate-guitar.com/tab/") || !decoded.includes("chords")) return;
-    const title = text.replace(/\s+by\s+.*$/i, "").replace(/\s*\(Chords\).*$/i, "").trim();
-    const byMatch = text.match(/by\s+([^@]+?)(?:\s+@|$)/i);
-    const artist = byMatch?.[1]?.trim() || "Bilinmeyen Sanatçı";
-    if (title) songs.push({ title, artist, source: decoded, provider: "ultimate-guitar" });
+  const result = await getUltimateGuitarJson<{ tabs?: UltimateGuitarTab[] }>("/tab/search", {
+    title: query,
+    type: 300,
   });
-  return dedupeSongs(songs).slice(0, 10);
+  return dedupeSongs(
+    (result.tabs ?? [])
+      .filter((tab) => String(tab.type ?? "").toLowerCase().includes("chord") || Number(tab.type) === 300)
+      .map((tab) => ({
+        title: tab.song_name,
+        artist: tab.artist_name,
+        source: `ug:${tab.id}`,
+        provider: "ultimate-guitar",
+      }))
+      .filter((song) => song.title && song.artist && song.source),
+  ).slice(0, 20);
 }
 
 async function searchUakor(query: string) {

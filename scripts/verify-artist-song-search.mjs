@@ -12,28 +12,31 @@ const required = [
   "SongSearchListItem",
   "SongArtistResult",
   "provider?: string",
-  "provider?: string",
   "query?: string",
+  "title?: string",
+  "artist?: string",
   "const REPERTUARIM_URL",
   "const ULTIMATE_GUITAR_URL",
+  "const ULTIMATE_GUITAR_API_URL",
   "const UAKOR_URL",
   "const AKORLAR_URL",
+  "buildUltimateGuitarHeaders",
+  "getUltimateGuitarJson",
+  "stripUltimateGuitarMarkup",
   "async function searchUltimateGuitar",
   "async function searchUakor",
   "async function searchAkorlar",
   "async function fetchUakorSongByUrl",
   "async function fetchAkorlarSongByUrl",
   "async function fetchUltimateGuitarSongByUrl",
-  "extractUakorPreContent",
-  "extractUgContent",
-  "cleanPreContent",
+  "stripUltimateGuitarMarkup",
   "setSongResults",
   "Sanatçılar",
   "Şarkılar",
-  "Sanatçı veya şarkı ara",
-  "selectSong",
-  "body: JSON.stringify({ query: query.trim() })",
-  "Akor boşlukları korunur",
+  "placeholder=\"Şarkı adı\"",
+  "placeholder=\"Sanatçı\"",
+  "body: JSON.stringify({ title: title.trim(), artist: artist.trim() })",
+  "Sanatçı yazınca şarkıları listeler",
 ];
 const missing = required.filter((snippet) => !haystack.includes(snippet));
 if (missing.length) {
@@ -45,8 +48,8 @@ const forbidden = [
   "Aramak için bir şarkı adı yazmalısın.",
   "const firstSongLink = $searchPage",
   "placeholder=\"Şarkı adı (isteğe bağlı)\"",
-  "const [title, setTitle]",
-  "const [artist, setArtist]",
+  "body: JSON.stringify({ query: query.trim() })",
+  "const [query, setQuery]",
   "artistOnly",
 ];
 const bad = forbidden.filter((snippet) => haystack.includes(snippet));
@@ -56,9 +59,9 @@ if (bad.length) {
 }
 
 const inputCount = (page.match(/<input/g) ?? []).length;
-if (inputCount !== 1) {
-  console.error(`Expected exactly one search input, found ${inputCount}`);
+if (inputCount !== 2) {
+  console.error(`Expected artist + song inputs, found ${inputCount}`);
   process.exit(1);
 }
 
-console.log("Single-bar multi-source song search hooks are present.");
+console.log("Two-field multi-source song search hooks are present.");
