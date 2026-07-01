@@ -5,6 +5,7 @@ type Props = {
   emptyText?: string;
   onChordClick?: (chord: string) => void;
   size?: "normal" | "compact";
+  sourceProvider?: string;
 };
 
 const CHORD_TOKEN_PATTERN = /^[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:maj|min|dim|aug|sus|add)?\d*(?:\/[A-G](?:#|b)?)?$/;
@@ -37,9 +38,11 @@ function renderChordLine(line: string, onChordClick?: (chord: string) => void) {
   });
 }
 
-export function ChordTextViewer({ text, emptyText = "Akor eklenmemiş.", onChordClick, size = "normal" }: Props) {
+export function ChordTextViewer({ text, emptyText = "Akor eklenmemiş.", onChordClick, size = "normal", sourceProvider = "" }: Props) {
   const normalizedText = text ? text.replace(/\\t/g, "    ").replace(/\\(?= {4})/g, "").replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n").replace(/\r\n/g, "\n").replace(/\r/g, "\n") : "";
   const textSizeClass = size === "compact" ? "text-[13px] leading-[1.55] sm:text-[14px]" : "text-[15px] leading-[1.6] sm:text-[16px]";
+  const isMonospaceSource = sourceProvider === "Ultimate Guitar" || sourceProvider === "ultimate-guitar";
+  const fontFamily = isMonospaceSource ? "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" : "Arial, Helvetica, sans-serif";
   const lines = normalizedText.split("\n");
 
   return (
@@ -48,7 +51,7 @@ export function ChordTextViewer({ text, emptyText = "Akor eklenmemiş.", onChord
         className={`m-0 min-w-max whitespace-pre text-zinc-100 ${textSizeClass}`}
         style={{
           whiteSpace: "pre",
-          fontFamily: "Arial, Helvetica, sans-serif",
+          fontFamily,
           tabSize: 4,
         }}
       >

@@ -7,12 +7,18 @@ const route = readFileSync(join(__dirname, "..", "app", "api", "song-search", "r
 
 const required = [
   "const isForeign = isLikelyForeignSong(artist, title)",
-  "const recommendations: SongSearchListItem[] = isForeign ? [...existing] : []",
+  "function isTurkishRecommendation",
+  "function searchProviderRecommendationCandidates",
+  "if (!isForeign && !isTurkishRecommendation(candidate)) continue",
   "...(isForeign ? FOREIGN_PLAY_NEXT_QUERIES : TURKISH_PLAY_NEXT_QUERIES)",
 ];
+const forbidden = [
+  "const recommendations: SongSearchListItem[] = isForeign ? [...existing] : []",
+];
 const missing = required.filter((snippet) => !route.includes(snippet));
-if (missing.length) {
-  console.error(`Missing Turkish Play Next snippets:\n${missing.join("\n")}`);
+const presentForbidden = forbidden.filter((snippet) => route.includes(snippet));
+if (missing.length || presentForbidden.length) {
+  console.error(`Missing/old Turkish Play Next snippets:\nmissing=${missing.join("\n")}\nforbidden=${presentForbidden.join("\n")}`);
   process.exit(1);
 }
 

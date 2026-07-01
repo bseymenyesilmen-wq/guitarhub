@@ -29,11 +29,57 @@ const REQUEST_HEADERS = {
   Pragma: "no-cache",
 };
 
+const TURKISH_ARTIST_MARKERS = [
+  "Duman",
+  "Mor ve Ötesi",
+  "Manga",
+  "maNga",
+  "Teoman",
+  "Şebnem Ferah",
+  "Yüksek Sadakat",
+  "Pinhani",
+  "Athena",
+  "Model",
+  "Yüzyüzeyken Konuşuruz",
+  "Dolu Kadehi Ters Tut",
+  "Son Feci Bisiklet",
+  "Kaan Tangöze",
+  "Pilli Bebek",
+  "Halil Sezai",
+  "Dedublüman",
+  "Sertab Erener",
+  "Cem Karaca",
+  "Barış Manço",
+  "MFÖ",
+  "Mavi Gri",
+  "Emre Aydın",
+  "Can Ozan",
+  "Adamlar",
+  "Redd",
+  "Gripin",
+  "Seksendört",
+  "Müslüm Gürses",
+  "Zeki Müren",
+  "Oğuzhan Koç",
+  "Oguzhan Koc",
+  "Gökhan Türkmen",
+  "Ece Seçkin",
+  "Aydilge",
+  "Melike Şahin",
+  "Berkay",
+  "Kolpa",
+  "Emre Fel",
+];
+
 const SIMILAR_ARTISTS: Record<string, string[]> = {
   duman: ["Mor ve Ötesi", "Manga", "Teoman", "Şebnem Ferah", "Yüzyüzeyken Konuşuruz", "Dolu Kadehi Ters Tut", "Son Feci Bisiklet", "Kaan Tangöze", "Pilli Bebek"],
   "mor ve otesi": ["Duman", "Manga", "Teoman", "Şebnem Ferah", "Athena", "Pilli Bebek", "Dolu Kadehi Ters Tut"],
   manga: ["Duman", "Mor ve Ötesi", "Athena", "Şebnem Ferah", "Model", "Pilli Bebek"],
   teoman: ["Duman", "Mor ve Ötesi", "Şebnem Ferah", "Yüksek Sadakat", "Pinhani", "Kaan Tangöze", "Halil Sezai"],
+  "pilli bebek": ["Duman", "Kaan Tangöze", "Teoman", "Mor ve Ötesi", "Son Feci Bisiklet", "Yüzyüzeyken Konuşuruz"],
+  "son feci bisiklet": ["Yüzyüzeyken Konuşuruz", "Dolu Kadehi Ters Tut", "Pilli Bebek", "Duman", "Can Ozan"],
+  "dolu kadehi ters tut": ["Son Feci Bisiklet", "Yüzyüzeyken Konuşuruz", "Dedublüman", "Adamlar", "Can Ozan"],
+  "halil sezai": ["Teoman", "Pilli Bebek", "Kaan Tangöze", "Duman", "Dedublüman"],
   radiohead: ["Nirvana", "Arctic Monkeys", "Coldplay", "Muse", "The Smashing Pumpkins"],
   nirvana: ["Radiohead", "Pearl Jam", "Foo Fighters", "Alice In Chains", "Soundgarden"],
   "chris isaak": ["Radiohead", "Nirvana", "Arctic Monkeys", "Coldplay", "The Cranberries"],
@@ -422,16 +468,29 @@ function buildUltimateGuitarRecommendations(tab: UltimateGuitarTab) {
   ).slice(0, 6);
 }
 
+function isKnownTurkishArtist(artist: string) {
+  const normalized = normalizeText(artist);
+  return TURKISH_ARTIST_MARKERS.some((marker) => {
+    const markerText = normalizeText(marker);
+    return normalized === markerText || normalized.includes(markerText) || markerText.includes(normalized);
+  });
+}
+
+function isTurkishSongContext(artist: string, title: string) {
+  const raw = `${artist} ${title}`;
+  if (isKnownTurkishArtist(artist)) return true;
+  if (/[çğıöşüİı]/.test(raw)) return true;
+  return false;
+}
+
 function isLikelyForeignSong(artist: string, title: string) {
+  if (isTurkishSongContext(artist, title)) return false;
   const text = normalizeText(`${artist} ${title}`);
-  const turkishMarkers = ["duman", "mor ve otesi", "manga", "teoman", "sebnem", "yuksek sadakat", "pinhani", "athena", "model", "yuzyuzeyken"];
-  if (turkishMarkers.some((marker) => text.includes(marker))) return false;
   return /^[a-z0-9\s]+$/.test(text) && !/[çğıöşü]/i.test(`${artist} ${title}`);
 }
 
-async function searchUltimateGuitarFirst(query: string) {
-  const songs = await searchUltimateGuitar(query).catch(() => []);
-  return songs[0] ?? null;
+function isTurkishRecommendation(song: Pick<SongSearchListItem, "artist" | "title">) {
+  return isTurkishSongContext(song.artist, song.title);
 }
 
 function stableNumber(value: string) {
@@ -445,9 +504,37 @@ function rotateRecommendationSeeds(seeds: string[], key: string) {
   return [...seeds.slice(offset), ...seeds.slice(0, offset)];
 }
 
+function isUnknownArtistName(artist: string) {
+  return normalizeText(artist) === normalizeText("Bilinmeyen Sanatçı");
+}
+
+function sortRecommendationCandidates(candidates: SongSearchListItem[], seed: string) {
+  const normalizedSeed = normalizeText(seed);
+  return candidates.sort((a, b) => {
+    const aArtist = normalizeText(a.artist);
+    const bArtist = normalizeText(b.artist);
+    const aExactArtist = aArtist === normalizedSeed ? 0 : 1;
+    const bExactArtist = bArtist === normalizedSeed ? 0 : 1;
+    if (aExactArtist !== bExactArtist) return aExactArtist - bExactArtist;
+    const aArtistInSeed = normalizedSeed.includes(aArtist) || aArtist.includes(normalizedSeed) ? 0 : 1;
+    const bArtistInSeed = normalizedSeed.includes(bArtist) || bArtist.includes(normalizedSeed) ? 0 : 1;
+    if (aArtistInSeed !== bArtistInSeed) return aArtistInSeed - bArtistInSeed;
+    return 0;
+  });
+}
+
+async function searchProviderRecommendationCandidates(query: string) {
+  const [uakor, repertuarim, ultimate] = await Promise.all([
+    searchUakor(query).catch(() => []),
+    searchRepertuarim(query).then((result) => result.songs).catch(() => []),
+    searchUltimateGuitar(query).catch(() => []),
+  ]);
+  return sortRecommendationCandidates(dedupeBySongIdentity([...uakor, ...repertuarim, ...ultimate]), query).filter((candidate) => !isUnknownArtistName(candidate.artist));
+}
+
 async function buildSystemWideRecommendations(artist: string, title: string, existing: SongSearchListItem[] = []) {
   const isForeign = isLikelyForeignSong(artist, title);
-  const recommendations: SongSearchListItem[] = isForeign ? [...existing] : [];
+  const recommendations: SongSearchListItem[] = isForeign ? existing.filter((candidate) => !isTurkishRecommendation(candidate)) : [];
   const artistKey = normalizeText(artist);
   const querySeeds = rotateRecommendationSeeds([
     artist ? `${artist}` : "",
@@ -457,8 +544,14 @@ async function buildSystemWideRecommendations(artist: string, title: string, exi
 
   for (const seed of querySeeds) {
     if (recommendations.length >= 6) break;
-    const result = await searchUltimateGuitarFirst(seed);
-    if (result && normalizeText(result.title) !== normalizeText(title)) recommendations.push(result);
+    const candidates = await searchProviderRecommendationCandidates(seed);
+    for (const candidate of candidates) {
+      if (recommendations.length >= 6) break;
+      if (normalizeText(candidate.title) === normalizeText(title)) continue;
+      if (!isForeign && !isTurkishRecommendation(candidate)) continue;
+      if (isForeign && isTurkishRecommendation(candidate)) continue;
+      recommendations.push(candidate);
+    }
   }
 
   return dedupeBySongIdentity(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6);

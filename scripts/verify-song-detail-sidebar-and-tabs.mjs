@@ -18,7 +18,8 @@ const required = [
   "selectSong(recommendation)",
   "lg:grid-cols-[minmax(0,1fr)_320px]",
   "whiteSpace: \"pre\"",
-  "fontFamily: \"Arial, Helvetica, sans-serif\"",
+  "\"Arial, Helvetica, sans-serif\"",
+  "sourceProvider?: string",
   "data-tab-viewer",
   "overflow-x-auto",
 ];
