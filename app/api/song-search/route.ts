@@ -429,7 +429,29 @@ function sortByQuery(songs: SongSearchListItem[], query: string) {
   });
 }
 
-async function searchSongs(query: string): Promise<SongSearchResponse> {
+function matchesWantedArtist(song: SongSearchListItem, artist: string) {
+  if (!artist) return true;
+  const wanted = normalizeText(artist);
+  const actual = normalizeText(song.artist);
+  if (!actual || actual === normalizeText("Bilinmeyen Sanatçı")) return false;
+  return actual === wanted || actual.includes(wanted) || wanted.includes(actual);
+}
+
+function matchesWantedTitle(song: SongSearchListItem, title: string) {
+  if (!title) return true;
+  const wanted = normalizeText(title);
+  const actual = normalizeText(song.title);
+  if (!actual) return false;
+  return actual === wanted || actual.includes(wanted) || wanted.includes(actual);
+}
+
+function filterByExplicitFields(songs: SongSearchListItem[], title: string, artist: string) {
+  const filtered = songs.filter((song) => matchesWantedArtist(song, artist) && matchesWantedTitle(song, title));
+  if (filtered.length) return filtered;
+  return artist ? [] : songs.filter((song) => matchesWantedTitle(song, title));
+}
+
+async function searchSongs(query: string, title = "", artist = ""): Promise<SongSearchResponse> {
   const [repertuarim, ugSongs, uakorSongs, akorlarSongs] = await Promise.all([
     searchRepertuarim(query).catch(() => ({ songs: [], artists: [] as SongArtistResult[] })),
     searchUltimateGuitar(query).catch(() => []),
@@ -437,11 +459,16 @@ async function searchSongs(query: string): Promise<SongSearchResponse> {
     searchAkorlar(query).catch(() => []),
   ]);
 
-  const songs = sortByQuery([...repertuarim.songs, ...ugSongs, ...uakorSongs, ...akorlarSongs], query).slice(0, 80);
-  const artists = repertuarim.artists.map((artistResult) => ({
-    ...artistResult,
-    songCount: songs.filter((song) => normalizeText(song.artist) === normalizeText(artistResult.name)).length || undefined,
-  }));
+  const allSongs = [...repertuarim.songs, ...ugSongs, ...uakorSongs, ...akorlarSongs];
+  const songs = sortByQuery(filterByExplicitFields(allSongs, title, artist), query).slice(0, 80);
+  const artists = title
+    ? []
+    : repertuarim.artists
+        .filter((artistResult) => !artist || normalizeText(artistResult.name) === normalizeText(artist))
+        .map((artistResult) => ({
+          ...artistResult,
+          songCount: songs.filter((song) => normalizeText(song.artist) === normalizeText(artistResult.name)).length || undefined,
+        }));
 
   if (!songs.length) return { found: false, message: NOT_FOUND_MESSAGE, songs: [], artists: [] };
   return { found: false, message: "Şarkı seç.", songs, artists: artists.slice(0, 12) };
@@ -458,7 +485,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = source ? await fetchSongByUrl(source, artist) : await searchSongs(query);
+    const result = source ? await fetchSongByUrl(source, artist) : await searchSongs(query, body?.title?.trim() ?? "", artist);
     return NextResponse.json<SongSearchResponse>(result);
   } catch (error) {
     console.error("Song search failed", error);
