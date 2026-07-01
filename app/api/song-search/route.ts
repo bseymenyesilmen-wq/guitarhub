@@ -1,8 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { execFile } from "child_process";
 import { createHash, randomBytes } from "crypto";
-import { promisify } from "util";
 import { NextResponse } from "next/server";
 import { type SongArtistResult, type SongSearchListItem, type SongSearchResponse } from "@/lib/songSearch";
 
@@ -13,18 +11,14 @@ type SearchRequest = {
   source?: string;
 };
 
-type Provider = "repertuarim" | "ultimate-guitar" | "uakor" | "akorlar";
+type Provider = "repertuarim" | "ultimate-guitar" | "uakor";
 
 const NOT_FOUND_MESSAGE = "Şarkı bulunamadı.";
 const REPERTUARIM_URL = "https://www.repertuarim.com";
 const ULTIMATE_GUITAR_URL = "https://www.ultimate-guitar.com";
 const ULTIMATE_TABS_URL = "https://tabs.ultimate-guitar.com";
 const UAKOR_URL = "https://uakor.com";
-const AKORLAR_URL = "https://akorlar.com";
-const JINA_READER_URL = "https://r.jina.ai/http://";
-const ALLORIGINS_RAW_URL = "https://api.allorigins.win/raw?url=";
 const ULTIMATE_GUITAR_API_URL = "https://api.ultimate-guitar.com/api/v1";
-const execFileAsync = promisify(execFile);
 const REQUEST_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -82,8 +76,13 @@ const ARTIST_DISCOVERY_QUERIES: Record<string, string[]> = {
   duman: ["Duman Hayati Yasa", "Duman Tovbe", "Duman Senden Daha Guzel", "Duman Halimiz Duman", "Duman Aman Aman"],
 };
 
+function normalizeEscapedLineBreaks(content: string) {
+  return content.replace(/\\t/g, "    ").replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n");
+}
+
 function cleanPreContent(content: string) {
-  return content
+  return normalizeEscapedLineBreaks(content)
+    .replace(/\\(?= {4})/g, "")
     .replace(/\t/g, "    ")
     .replace(/\u00a0/g, " ")
     .replace(/\r\n/g, "\n")
@@ -117,7 +116,6 @@ function providerForUrl(url: string): Provider {
   if (url.startsWith("ug:")) return "ultimate-guitar";
   if (url.startsWith(ULTIMATE_GUITAR_URL) || url.startsWith(ULTIMATE_TABS_URL)) return "ultimate-guitar";
   if (url.includes("uakor.com")) return "uakor";
-  if (url.includes("akorlar.com")) return "akorlar";
   return "repertuarim";
 }
 
@@ -141,16 +139,6 @@ function parseRepertuarimArtistLink(href: string, text: string): SongArtistResul
   const name = cleanAnchorText(text).replace(/^S(?=[A-ZÇĞİÖŞÜ])/u, "").trim();
   if (!name) return null;
   return { name, source: absoluteUrl(href, REPERTUARIM_URL) };
-}
-
-function parseAkorlarSongLink(href: string, text: string, fallbackArtist = ""): SongSearchListItem | null {
-  if (!href.includes("akorlar.com") && href.startsWith("http")) return null;
-  if (href.includes("#") || href.includes("giris") || href.includes("google")) return null;
-  const titleAttr = cleanAnchorText(text).replace(/\s+akor$/i, "");
-  if (!titleAttr.includes(" - ")) return null;
-  const parsed = parseSongTitle(titleAttr, fallbackArtist);
-  if (!parsed.artist || !parsed.title) return null;
-  return { ...parsed, provider: "akorlar", source: absoluteUrl(href, AKORLAR_URL) };
 }
 
 function parseUakorSongLink(href: string, text: string, titleAttr = ""): SongSearchListItem | null {
@@ -227,6 +215,20 @@ type UakorPreload = {
   };
 };
 
+function decodeEscapedJsonField(value = "") {
+  try {
+    return JSON.parse(`"${value}"`) as string;
+  } catch {
+    return value.replace(/\\\\r\\\\n/g, "\n").replace(/\\\\n/g, "\n").replace(/\\\\t/g, "    ").replace(/\\\\\"/g, '"');
+  }
+}
+
+function matchEscapedJsonField(raw: string, key: string) {
+  const pattern = new RegExp(`\\\\"${key}\\\\":\\\\"((?:\\\\\\\\.|[^\\\\"\\\\\\\\])*)\\\\"`);
+  const match = raw.match(pattern);
+  return match ? decodeEscapedJsonField(match[1]) : "";
+}
+
 function extractUakorPreload(html: string): UakorPreload | null {
   const match = html.match(/window\.__CHORD_PRELOAD__=({[\s\S]*?});/);
   if (!match) return null;
@@ -236,14 +238,26 @@ function extractUakorPreload(html: string): UakorPreload | null {
     try {
       return JSON.parse(match[1].replace(/\\"/g, '"')) as UakorPreload;
     } catch {
-      return null;
+      const raw = match[1];
+      const artistMatch = raw.match(/\\"artist\\":\{[\s\S]*?\\"name\\":\\"((?:\\\\.|[^\"\\])*)\\"/);
+      const title = matchEscapedJsonField(raw, "title");
+      const artistName = artistMatch ? decodeEscapedJsonField(artistMatch[1]) : "";
+      if (!title || !artistName) return null;
+      return {
+        slug: matchEscapedJsonField(raw, "slug"),
+        data: {
+          title,
+          tone: matchEscapedJsonField(raw, "tone"),
+          artist: { name: artistName },
+        },
+      };
     }
   }
 }
 
 function extractUakorPreContent(html: string) {
   const preload = extractUakorPreload(html);
-  if (preload?.data?.content) return cleanPreContent(preload.data.content);
+  if (preload?.data?.content) return cleanPreContent(normalizeEscapedLineBreaks(preload.data.content));
 
   const escapedPreMatch = html.match(/\\u003cpre[\s\S]*?\\u003c\/pre\\u003e/);
   if (escapedPreMatch) {
@@ -456,88 +470,6 @@ async function fetchUakorSongByUrl(songUrl: string, fallbackArtist = ""): Promis
   };
 }
 
-async function readAkorlarHtml(songUrl: string) {
-  try {
-    const response = await fetch(`${ALLORIGINS_RAW_URL}${encodeURIComponent(songUrl)}`, {
-      headers: { "User-Agent": REQUEST_HEADERS["User-Agent"], Accept: "text/html, */*" },
-      cache: "no-store",
-    });
-    if (!response.ok) return "";
-    const text = await response.text();
-    return text.includes("Akorlar.com") || text.includes("akor") ? text : "";
-  } catch {
-    return "";
-  }
-}
-
-async function readUrlWithCurl(url: string) {
-  try {
-    const { stdout } = await execFileAsync("curl", ["-L", "--max-time", "20", "-A", REQUEST_HEADERS["User-Agent"], url], { maxBuffer: 2_000_000 });
-    return stdout;
-  } catch {
-    return "";
-  }
-}
-
-async function readAkorlarMarkdown(songUrl: string) {
-  const url = new URL(songUrl);
-  const candidates = [songUrl, `http://${url.host}${url.pathname}`, `https://www.${url.host.replace(/^www\./, "")}${url.pathname}`];
-  for (const candidate of candidates) {
-    try {
-      const readerUrl = `${JINA_READER_URL}${candidate}`;
-      const response = await fetch(readerUrl, {
-        headers: { "User-Agent": REQUEST_HEADERS["User-Agent"], Accept: "text/plain, text/markdown, */*" },
-        cache: "no-store",
-      });
-      if (response.ok) {
-        const text = await response.text();
-        if (text.includes("Markdown Content:")) return text;
-        console.warn("Akorlar reader returned no markdown", { candidate, length: text.length });
-      } else {
-        console.warn("Akorlar reader failed", { candidate, status: response.status });
-      }
-      const curlText = await readUrlWithCurl(readerUrl);
-      if (curlText.includes("Markdown Content:")) return curlText;
-    } catch {
-      // Try the next reader URL variant.
-    }
-  }
-  return "";
-}
-
-async function fetchAkorlarSongByUrl(songUrl: string, fallbackArtist = ""): Promise<SongSearchResponse> {
-  if (!songUrl.startsWith(AKORLAR_URL)) return { found: false, message: NOT_FOUND_MESSAGE };
-  let html = "";
-  let markdown = "";
-  try {
-    html = await getHtml(songUrl, AKORLAR_URL);
-  } catch {
-    html = await readAkorlarHtml(songUrl);
-    if (!html) markdown = await readAkorlarMarkdown(songUrl);
-  }
-  const $ = cheerio.load(html);
-  const heading = html ? $("h1").first().text().trim() || $("title").text().trim() : markdown.match(/^Title:\s*(.+)$/m)?.[1]?.trim() || "";
-  const content = html ? cleanPreContent($("pre").first().text()) : cleanPreContent(markdown.split("Markdown Content:").slice(1).join("Markdown Content:").trim());
-  if (!content) return { found: false, message: NOT_FOUND_MESSAGE };
-  const parsed = parseSongTitle(heading.replace(/\s+Akor.*$/i, ""), fallbackArtist);
-  const keyText = $("body").text().match(/Orjinal Ton:\s*([A-G][#b]?)/i)?.[1] ?? "";
-  const artist = parsed.artist || fallbackArtist;
-  return {
-    found: true,
-    song: {
-      title: parsed.title,
-      artist,
-      key: keyText,
-      capo: "0",
-      chords: content,
-      lyrics: content,
-      source: songUrl,
-      provider: "Akorlar.com",
-      recommendations: await buildSystemWideRecommendations(artist, parsed.title),
-    },
-  };
-}
-
 async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""): Promise<SongSearchResponse> {
   const tabId = ultimateGuitarTabIdFromSource(songUrl);
   if (!tabId) return { found: false, message: NOT_FOUND_MESSAGE };
@@ -571,7 +503,6 @@ async function fetchSongByUrl(songUrl: string, fallbackArtist = ""): Promise<Son
   try {
     const provider = providerForUrl(songUrl);
     if (provider === "uakor") return await fetchUakorSongByUrl(songUrl, fallbackArtist);
-    if (provider === "akorlar") return await fetchAkorlarSongByUrl(songUrl, fallbackArtist);
     if (provider === "ultimate-guitar") return await fetchUltimateGuitarSongByUrl(songUrl, fallbackArtist);
     return await fetchRepertuarimSongByUrl(songUrl, fallbackArtist);
   } catch (error) {
@@ -627,11 +558,11 @@ async function searchUakor(query: string) {
     try {
       const html = await getHtml(url, UAKOR_URL);
       const preload = extractUakorPreload(html);
-      if (preload?.data?.title && preload.data.artist?.name && preload.slug) {
+      if (preload?.data?.title && preload.data.artist?.name) {
         songs.push({
           title: preload.data.title,
           artist: preload.data.artist.name,
-          source: `${UAKOR_URL}/akor/${preload.slug}`,
+          source: preload.slug ? `${UAKOR_URL}/akor/${preload.slug}` : url,
           provider: "uakor",
         });
       }
@@ -642,26 +573,6 @@ async function searchUakor(query: string) {
       }
     } catch {
       // uAkor search URL may not exist for every query; continue to next fallback.
-    }
-  }
-  return dedupeSongs(songs).slice(0, 40);
-}
-
-async function searchAkorlar(query: string) {
-  const urls = [`${AKORLAR_URL}/${encodeURIComponent(slugify(query))}`, `${AKORLAR_URL}/arama?kelime=${encodeURIComponent(query)}`];
-  const songs: SongSearchListItem[] = [];
-  for (const url of urls) {
-    try {
-      const html = await getHtml(url, AKORLAR_URL);
-      const $ = cheerio.load(html);
-      $("a[href]").each((_, element) => {
-        const href = $(element).attr("href") || "";
-        const text = $(element).attr("title") || $(element).text();
-        const song = parseAkorlarSongLink(href, text, query);
-        if (song) songs.push(song);
-      });
-    } catch {
-      // Akorlar.com can be Cloudflare-protected from server HTTP; skip safely.
     }
   }
   return dedupeSongs(songs).slice(0, 40);
@@ -707,15 +618,14 @@ function filterByExplicitFields(songs: SongSearchListItem[], title: string, arti
 async function searchSongs(query: string, title = "", artist = ""): Promise<SongSearchResponse> {
   const artistKey = normalizeText(artist || query);
   const discoveryQueries = !title && artist ? (ARTIST_DISCOVERY_QUERIES[artistKey] ?? []) : [];
-  const [repertuarim, ugSongs, uakorSongs, akorlarSongs, discoveredSongs] = await Promise.all([
+  const [repertuarim, ugSongs, uakorSongs, discoveredSongs] = await Promise.all([
     searchRepertuarim(query).catch(() => ({ songs: [], artists: [] as SongArtistResult[] })),
     searchUltimateGuitar(query).catch(() => []),
     searchUakor(query).catch(() => []),
-    searchAkorlar(query).catch(() => []),
     Promise.all(discoveryQueries.map((seed) => searchUltimateGuitar(seed).catch(() => []))).then((results) => results.flat()),
   ]);
 
-  const allSongs = [...repertuarim.songs, ...ugSongs, ...discoveredSongs, ...uakorSongs, ...akorlarSongs];
+  const allSongs = [...repertuarim.songs, ...ugSongs, ...discoveredSongs, ...uakorSongs];
   const songs = groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 80);
   const artists = title
     ? []

@@ -38,7 +38,7 @@ function renderChordLine(line: string, onChordClick?: (chord: string) => void) {
 }
 
 export function ChordTextViewer({ text, emptyText = "Akor eklenmemiş.", onChordClick, size = "normal" }: Props) {
-  const normalizedText = text ? text.replace(/\r\n/g, "\n").replace(/\r/g, "\n") : "";
+  const normalizedText = text ? text.replace(/\\t/g, "    ").replace(/\\(?= {4})/g, "").replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n").replace(/\r\n/g, "\n").replace(/\r/g, "\n") : "";
   const textSizeClass = size === "compact" ? "text-[13px] leading-[1.55] sm:text-[14px]" : "text-[15px] leading-[1.6] sm:text-[16px]";
   const lines = normalizedText.split("\n");
 
