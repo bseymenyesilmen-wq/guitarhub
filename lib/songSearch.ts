@@ -6,12 +6,14 @@ export type SongSearchResult = {
   chords: string;
   lyrics: string;
   source?: string;
+  provider?: string;
 };
 
 export type SongSearchListItem = {
   title: string;
   artist: string;
   source: string;
+  provider?: string;
 };
 
 export type SongArtistResult = {
@@ -55,5 +57,6 @@ export function normalizeSongSearchResult(value: unknown): SongSearchResult | nu
     key: typeof record.key === "string" ? record.key.trim() : "",
     capo: typeof record.capo === "string" ? record.capo.trim() : "",
     source: typeof record.source === "string" ? record.source.trim() : undefined,
+    provider: typeof record.provider === "string" ? record.provider.trim() : undefined,
   };
 }
