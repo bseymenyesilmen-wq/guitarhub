@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 
-const INSTRUMENTS = ["Lead Guitar", "Rhythm Guitar", "Bass", "Drums"];
+const INSTRUMENTS = ["Tümü", "Gitar", "Bas", "Davul", "Vokal", "Klavye"];
+const TRACKS = ["Lead Guitar", "Rhythm Guitar", "Bass", "Drums", "Vocal", "Keys"];
+
 const SAMPLE_TAB = [
   "e|----------------|----------------|",
   "B|-----0-----1----|-----3-----1----|",
@@ -11,6 +13,54 @@ const SAMPLE_TAB = [
   "D|----------------|----------------|",
   "A|-3-----3--------|-2-----2--------|",
   "E|----------------|----------------|",
+];
+
+const TAB_LIBRARY = [
+  {
+    id: "gh-demo-1",
+    title: "GuitarHub Demo Riff",
+    artist: "GuitarHub Studio",
+    instruments: ["Gitar", "Bas", "Davul"],
+    tuning: "E A D G B E",
+    revision: "v1",
+    contributor: "GuitarHub",
+    source: "GuitarHub kaynaklı demo tab",
+    tab: SAMPLE_TAB.join("\n"),
+  },
+  {
+    id: "gh-demo-2",
+    title: "Akustik Arpej Çalışması",
+    artist: "GuitarHub Studio",
+    instruments: ["Gitar", "Vokal"],
+    tuning: "E A D G B E",
+    revision: "v2",
+    contributor: "Yoda",
+    source: "GuitarHub kaynaklı demo tab",
+    tab: [
+      "e|-----0-------0--|-----0-------0--|",
+      "B|---1---1---1----|---3---3---3----|",
+      "G|-0-------0------|-0-------0------|",
+      "D|----------------|----------------|",
+      "A|3---------------|2---------------|",
+      "E|----------------|----------------|",
+    ].join("\n"),
+  },
+  {
+    id: "gh-demo-3",
+    title: "Bas Groove 90 BPM",
+    artist: "GuitarHub Studio",
+    instruments: ["Bas", "Davul", "Klavye"],
+    tuning: "E A D G",
+    revision: "v1",
+    contributor: "Community",
+    source: "GuitarHub kaynaklı demo tab",
+    tab: [
+      "G|----------------|----------------|",
+      "D|-----2-----2----|-----4-----2----|",
+      "A|---2-----2------|---2-----2------|",
+      "E|-0-----0--------|-3-----3--------|",
+    ].join("\n"),
+  },
 ];
 
 function clamp(value: number, min: number, max: number) {
@@ -26,9 +76,49 @@ export default function SarkiOgren() {
   const [muted, setMuted] = useState<string[]>(["Drums"]);
   const [metronome, setMetronome] = useState(false);
   const [countIn, setCountIn] = useState(true);
-  const [tabText, setTabText] = useState(SAMPLE_TAB.join("\n"));
+  const [query, setQuery] = useState("");
+  const [instrumentFilter, setInstrumentFilter] = useState("Tümü");
+  const [activeTabId, setActiveTabId] = useState(TAB_LIBRARY[0].id);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [history, setHistory] = useState<string[]>([]);
+  const [playlist, setPlaylist] = useState<string[]>([]);
+
+  const activeTab = TAB_LIBRARY.find((tab) => tab.id === activeTabId) ?? TAB_LIBRARY[0];
+  const [tabText, setTabText] = useState(activeTab.tab);
+
+  const filteredTabs = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase("tr-TR");
+    return TAB_LIBRARY.filter((tab) => {
+      const matchesQuery = !normalized || `${tab.title} ${tab.artist}`.toLocaleLowerCase("tr-TR").includes(normalized);
+      const matchesInstrument = instrumentFilter === "Tümü" || tab.instruments.includes(instrumentFilter);
+      return matchesQuery && matchesInstrument;
+    });
+  }, [instrumentFilter, query]);
 
   const visibleLines = useMemo(() => tabText.split(/\r?\n/).filter(Boolean), [tabText]);
+  const favoriteTabs = TAB_LIBRARY.filter((tab) => favorites.includes(tab.id));
+  const historyTabs = history.map((id) => TAB_LIBRARY.find((tab) => tab.id === id)).filter(Boolean);
+  const playlistTabs = playlist.map((id) => TAB_LIBRARY.find((tab) => tab.id === id)).filter(Boolean);
+
+  function addToHistory(tabId: string) {
+    setHistory((current) => [tabId, ...current.filter((id) => id !== tabId)].slice(0, 8));
+  }
+
+  function openTab(tabId: string) {
+    const tab = TAB_LIBRARY.find((item) => item.id === tabId);
+    if (!tab) return;
+    setActiveTabId(tab.id);
+    setTabText(tab.tab);
+    addToHistory(tab.id);
+  }
+
+  function toggleFavorite(tabId: string) {
+    setFavorites((current) => (current.includes(tabId) ? current.filter((id) => id !== tabId) : [...current, tabId]));
+  }
+
+  function addToPlaylist(tabId: string) {
+    setPlaylist((current) => (current.includes(tabId) ? current : [...current, tabId]));
+  }
 
   function toggleMute(track: string) {
     setMuted((current) => (current.includes(track) ? current.filter((item) => item !== track) : [...current, track]));
@@ -45,13 +135,13 @@ export default function SarkiOgren() {
             <div>
               <h1 className="text-4xl font-black tracking-tight sm:text-6xl">Şarkı Öğren</h1>
               <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-300">
-                Songsterr fikrindeki öğrenme araçlarını GuitarHub içinde, kendi özgün arayüzümüzle kuruyoruz: tab player, Loop,
-                Hız, Solo, Mute, Mixer, Transpose, Metronom, Count-in ve Tuner. Telifli/paralı servisleri kopyalamadan; kendi tabın,
-                izinli kaynaklar ve GuitarHub verisiyle çalışacak.
+                GuitarHub’ın kendi tab öğrenme alanı: arama, sanatçı sayfası, şarkı sayfası, revizyon geçmişi, Kullanıcı katkıları,
+                favoriler, geçmiş, playlist, enstrüman filtresi ve player araçları. Telifli/paralı servisleri kopyalamadan; Songsterr verisi çekilmez; izinli kaynaklar,
+                kullanıcı katkıları, import ve AI transkripsiyon ile kendi arşivimizi büyütürüz.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4 lg:grid-cols-2">
-              {["Tab Player", "Loop", "Mixer", "Offline hazırlık"].map((item) => (
+              {["Arama", "Enstrüman filtresi", "Playlist", "Offline hazırlık"].map((item) => (
                 <div key={item} className="rounded-2xl border border-red-500/20 bg-red-950/20 p-4 font-bold text-red-100">
                   {item}
                 </div>
@@ -60,12 +150,73 @@ export default function SarkiOgren() {
           </div>
         </section>
 
+        <section className="mb-6 grid gap-4 lg:grid-cols-[1fr_0.8fr]">
+          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-5">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Tab veya sanatçı ara..."
+                className="min-h-12 flex-1 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-white outline-none focus:border-red-500"
+              />
+              <select
+                value={instrumentFilter}
+                onChange={(event) => setInstrumentFilter(event.target.value)}
+                className="min-h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-white outline-none focus:border-red-500"
+              >
+                {INSTRUMENTS.map((instrument) => (
+                  <option key={instrument}>{instrument}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {filteredTabs.map((tab) => (
+                <article key={tab.id} className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <button onClick={() => openTab(tab.id)} className="min-w-0 text-left">
+                      <h2 className="line-clamp-1 text-xl font-black hover:text-red-300">{tab.title}</h2>
+                      <p className="mt-1 text-sm text-zinc-400">{tab.artist}</p>
+                    </button>
+                    <button onClick={() => toggleFavorite(tab.id)} className="rounded-full bg-zinc-900 px-3 py-2 text-sm font-black text-red-300">
+                      {favorites.includes(tab.id) ? "★" : "☆"}
+                    </button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-zinc-300">
+                    {tab.instruments.map((instrument) => (
+                      <span key={instrument} className="rounded-full bg-zinc-900 px-3 py-1">{instrument}</span>
+                    ))}
+                  </div>
+                  <div className="mt-4 grid gap-2 text-xs text-zinc-500 sm:grid-cols-2">
+                    <span>Akort: {tab.tuning}</span>
+                    <span>Revizyon geçmişi: {tab.revision}</span>
+                    <span>Katkı: {tab.contributor}</span>
+                    <span>{tab.source}</span>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <button onClick={() => openTab(tab.id)} className="rounded-full bg-red-600 px-4 py-2 text-sm font-black hover:bg-red-500">Şarkı sayfası</button>
+                    <button onClick={() => addToPlaylist(tab.id)} className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-black hover:bg-zinc-700">Playlist</button>
+                    <button className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-black text-zinc-300">Sanatçı sayfası</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <aside className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+            <Panel title="Favoriler" items={favoriteTabs.map((tab) => `${tab.artist} - ${tab.title}`)} empty="Henüz favori yok." />
+            <Panel title="Geçmiş" items={historyTabs.map((tab) => `${tab?.artist} - ${tab?.title}`)} empty="Açtığın tablar burada." />
+            <Panel title="Playlist" items={playlistTabs.map((tab) => `${tab?.artist} - ${tab?.title}`)} empty="Masaüstü playlist mantığının temeli." />
+          </aside>
+        </section>
+
         <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
           <div className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-4 sm:p-6">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Practice Player</p>
-                <h2 className="mt-1 text-2xl font-black">Demo Tab Çalışması</h2>
+                <h2 className="mt-1 text-2xl font-black">{activeTab.artist} - {activeTab.title}</h2>
+                <p className="mt-1 text-sm text-zinc-400">Akort bilgisini gösterme: {activeTab.tuning}</p>
               </div>
               <button
                 onClick={() => setPlaying((value) => !value)}
@@ -107,7 +258,7 @@ export default function SarkiOgren() {
 
               <button onClick={() => setLoop((value) => !value)} className={`rounded-2xl border p-4 text-left font-black ${loop ? "border-red-500 bg-red-600" : "border-zinc-800 bg-zinc-950"}`}>
                 Loop
-                <span className="mt-1 block text-sm font-semibold opacity-80">Seçili ölçüyü döndür</span>
+                <span className="mt-1 block text-sm font-semibold opacity-80">Riff / solo / zor pasaj çalışma</span>
               </button>
 
               <button onClick={() => setMetronome((value) => !value)} className={`rounded-2xl border p-4 text-left font-black ${metronome ? "border-red-500 bg-red-600" : "border-zinc-800 bg-zinc-950"}`}>
@@ -122,7 +273,7 @@ export default function SarkiOgren() {
               <h2 className="text-2xl font-black">Mixer</h2>
               <p className="mt-2 text-sm text-zinc-400">Solo ve Mute davranışının ilk temelini kurduk.</p>
               <div className="mt-4 space-y-3">
-                {INSTRUMENTS.map((track) => (
+                {TRACKS.map((track) => (
                   <div key={track} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                     <div className="flex items-center justify-between gap-2">
                       <strong>{track}</strong>
@@ -143,7 +294,7 @@ export default function SarkiOgren() {
 
             <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-5">
               <h2 className="text-2xl font-black">Kendi tabın</h2>
-              <p className="mt-2 text-sm text-zinc-400">Şimdilik tab metni yapıştırıp player içinde görebilirsin. Sonraki adım Guitar Pro/MIDI parser.</p>
+              <p className="mt-2 text-sm text-zinc-400">Tab düzenleme, nota silme/ekleme ve Guitar Pro import bir sonraki adım.</p>
               <textarea
                 value={tabText}
                 onChange={(event) => setTabText(event.target.value)}
@@ -153,7 +304,7 @@ export default function SarkiOgren() {
 
             <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-5">
               <h2 className="text-2xl font-black">Tuner</h2>
-              <p className="mt-2 text-sm text-zinc-400">Mikrofonlu chromatic tuner burada açılacak. Şimdilik yol haritasına bağlandı.</p>
+              <p className="mt-2 text-sm text-zinc-400">Mikrofonlu chromatic tuner burada açılacak. Kısayol desteği: N metronom, C count-in.</p>
               <button onClick={() => setCountIn((value) => !value)} className="mt-4 w-full rounded-2xl bg-zinc-950 px-4 py-3 font-black text-red-300 hover:bg-zinc-800">
                 Count-in {countIn ? "Kapat" : "Aç"}
               </button>
@@ -162,5 +313,24 @@ export default function SarkiOgren() {
         </section>
       </div>
     </main>
+  );
+}
+
+function Panel({ title, items, empty }: { title: string; items: string[]; empty: string }) {
+  return (
+    <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-5">
+      <h2 className="text-xl font-black">{title}</h2>
+      <div className="mt-3 space-y-2">
+        {items.length ? (
+          items.map((item) => (
+            <div key={item} className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-zinc-200">
+              {item}
+            </div>
+          ))
+        ) : (
+          <p className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-500">{empty}</p>
+        )}
+      </div>
+    </section>
   );
 }
