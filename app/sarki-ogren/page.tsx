@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 import { supabase } from "@/lib/supabase";
@@ -247,7 +248,7 @@ export default function SarkiOgren() {
                     <span>{tab.source}</span>
                   </div>
                   <div className="mt-4 flex gap-2">
-                    <button onClick={() => openTab(tab.id)} className="rounded-full bg-red-600 px-4 py-2 text-sm font-black hover:bg-red-500">Şarkı sayfası</button>
+                    <Link href={`/sarki-ogren/${tab.id}`} onClick={() => addToHistory(tab.id)} className="rounded-full bg-red-600 px-4 py-2 text-sm font-black hover:bg-red-500">Şarkı sayfası</Link>
                     <button onClick={() => addToPlaylist(tab.id)} className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-black hover:bg-zinc-700">Playlist</button>
                     <button className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-black text-zinc-300">Sanatçı sayfası</button>
                   </div>
