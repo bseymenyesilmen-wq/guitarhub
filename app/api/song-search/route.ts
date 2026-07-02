@@ -573,7 +573,9 @@ async function findInternetCoverForSong(artist: string, title: string) {
 }
 
 function withFallbackCover<T extends SongSearchListItem>(song: T): T {
-  return song.cover ? song : { ...song, cover: fallbackCoverForSong(song.artist, song.title) };
+  const variants = song.variants ? withFallbackCovers(song.variants) : undefined;
+  const cover = song.cover || fallbackCoverForSong(song.artist, song.title);
+  return { ...song, cover, variants };
 }
 
 function withFallbackCovers<T extends SongSearchListItem>(songs: T[]): T[] {
@@ -581,9 +583,9 @@ function withFallbackCovers<T extends SongSearchListItem>(songs: T[]): T[] {
 }
 
 async function withInternetOrFallbackCover<T extends SongSearchListItem>(song: T): Promise<T> {
-  if (song.cover) return song;
-  const internetCover = await findInternetCoverForSong(song.artist, song.title);
-  return { ...song, cover: internetCover || fallbackCoverForSong(song.artist, song.title) };
+  const variants = song.variants ? await withInternetOrFallbackCovers(song.variants) : undefined;
+  const internetCover = song.cover || await findInternetCoverForSong(song.artist, song.title);
+  return { ...song, cover: internetCover || fallbackCoverForSong(song.artist, song.title), variants };
 }
 
 async function withInternetOrFallbackCovers<T extends SongSearchListItem>(songs: T[]): Promise<T[]> {
@@ -601,9 +603,19 @@ function isUnknownArtistName(artist: string) {
   return normalizeText(artist) === normalizeText("Bilinmeyen Sanatçı");
 }
 
-function sortRecommendationCandidates(candidates: SongSearchListItem[], seed: string) {
+function providerPriorityForRecommendations(provider: string | undefined, currentProvider = "") {
+  if (currentProvider && provider === currentProvider) return 2;
+  if (provider === "repertuarim") return 0;
+  if (provider === "ultimate-guitar") return 1;
+  if (provider === "uakor") return currentProvider === "uakor" ? 2 : 0;
+  return 3;
+}
+
+function sortRecommendationCandidates(candidates: SongSearchListItem[], seed: string, currentProvider = "") {
   const normalizedSeed = normalizeText(seed);
   return candidates.sort((a, b) => {
+    const providerDelta = providerPriorityForRecommendations(a.provider, currentProvider) - providerPriorityForRecommendations(b.provider, currentProvider);
+    if (providerDelta !== 0) return providerDelta;
     const aArtist = normalizeText(a.artist);
     const bArtist = normalizeText(b.artist);
     const aExactArtist = aArtist === normalizedSeed ? 0 : 1;
@@ -616,16 +628,17 @@ function sortRecommendationCandidates(candidates: SongSearchListItem[], seed: st
   });
 }
 
-async function searchProviderRecommendationCandidates(query: string) {
+async function searchProviderRecommendationCandidates(query: string, currentProvider = "") {
   const [uakor, repertuarim, ultimate] = await Promise.all([
     searchUakor(query).catch(() => []),
     searchRepertuarim(query).then((result) => result.songs).catch(() => []),
     searchUltimateGuitar(query).catch(() => []),
   ]);
-  return sortRecommendationCandidates(dedupeBySongIdentity([...uakor, ...repertuarim, ...ultimate]), query).filter((candidate) => !isUnknownArtistName(candidate.artist));
+  const providerOrdered = sortRecommendationCandidates([...repertuarim, ...ultimate, ...uakor], query, currentProvider).filter((candidate) => !isUnknownArtistName(candidate.artist));
+  return groupSongVariants(providerOrdered);
 }
 
-async function buildSystemWideRecommendations(artist: string, title: string, existing: SongSearchListItem[] = []) {
+async function buildSystemWideRecommendations(artist: string, title: string, existing: SongSearchListItem[] = [], currentProvider = "") {
   const isForeign = isLikelyForeignSong(artist, title);
   const recommendations: SongSearchListItem[] = isForeign ? existing.filter((candidate) => !isTurkishRecommendation(candidate)) : [];
   const artistKey = normalizeText(artist);
@@ -637,7 +650,7 @@ async function buildSystemWideRecommendations(artist: string, title: string, exi
 
   for (const seed of querySeeds) {
     if (recommendations.length >= 6) break;
-    const candidates = await searchProviderRecommendationCandidates(seed);
+    const candidates = await searchProviderRecommendationCandidates(seed, currentProvider);
     for (const candidate of candidates) {
       if (recommendations.length >= 6) break;
       if (normalizeText(candidate.title) === normalizeText(title)) continue;
@@ -714,7 +727,7 @@ async function fetchRepertuarimSongByUrl(songUrl: string, fallbackArtist = ""): 
       lyrics: fullPreContent,
       source: songUrl,
       provider: "Repertuarım",
-      recommendations: await buildSystemWideRecommendations(artist, scrapedTitle),
+      recommendations: await buildSystemWideRecommendations(artist, scrapedTitle, [], "repertuarim"),
     },
   };
 }
@@ -740,7 +753,7 @@ async function fetchUakorSongByUrl(songUrl: string, fallbackArtist = ""): Promis
       lyrics: content,
       source: songUrl,
       provider: "uAkor",
-      recommendations: await buildSystemWideRecommendations(artist, parsed.title),
+      recommendations: await buildSystemWideRecommendations(artist, parsed.title, [], "uakor"),
     },
   };
 }
@@ -769,7 +782,7 @@ async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""
       lyrics: content,
       source: tab.urlWeb || `ug:${tabId}`,
       provider: "Ultimate Guitar",
-      recommendations: await buildSystemWideRecommendations(tab.artist_name || fallbackArtist || "", tab.song_name || "", existingRecommendations),
+      recommendations: await buildSystemWideRecommendations(tab.artist_name || fallbackArtist || "", tab.song_name || "", existingRecommendations, "ultimate-guitar"),
     },
   };
 }
@@ -929,12 +942,12 @@ function sortByQuery(songs: SongSearchListItem[], query: string) {
   });
 }
 
-function matchesWantedArtist(song: SongSearchListItem, artist: string) {
+function matchesWantedArtist(song: SongSearchListItem, artist: string, exactArtist = false) {
   if (!artist) return true;
   const wanted = normalizeText(artist);
   const actual = normalizeText(song.artist);
   if (!actual || actual === normalizeText("Bilinmeyen Sanatçı")) return false;
-  return actual === wanted || actual.includes(wanted) || wanted.includes(actual);
+  return exactArtist ? actual === wanted : actual === wanted || actual.includes(wanted) || wanted.includes(actual);
 }
 
 function matchesWantedTitle(song: SongSearchListItem, title: string) {
@@ -946,7 +959,8 @@ function matchesWantedTitle(song: SongSearchListItem, title: string) {
 }
 
 function filterByExplicitFields(songs: SongSearchListItem[], title: string, artist: string) {
-  const filtered = songs.filter((song) => matchesWantedArtist(song, artist) && matchesWantedTitle(song, title));
+  const exactArtist = Boolean(artist && !title);
+  const filtered = songs.filter((song) => matchesWantedArtist(song, artist, exactArtist) && matchesWantedTitle(song, title));
   if (filtered.length) return filtered;
   return artist ? [] : songs.filter((song) => matchesWantedTitle(song, title));
 }

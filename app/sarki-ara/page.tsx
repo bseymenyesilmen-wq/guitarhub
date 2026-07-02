@@ -233,7 +233,7 @@ export default function SarkiAra() {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">Akor ve söz arama</p>
           <h1 className="mt-3 text-4xl font-black">Şarkı Ara</h1>
           <p className="mt-2 max-w-2xl text-zinc-400">
-            Sanatçı yazınca şarkıları listeler. Şarkı da yazarsan daha net arar. Önce Repertuarım, sonra Ultimate Guitar, uAkor ve Akorlar.com denenir.
+            Sanatçı yazınca şarkıları listeler. Şarkı da yazarsan daha net arar. Repertuarım, Ultimate Guitar ve uAkor kaynakları birlikte denenir.
           </p>
         </section>
 
@@ -313,12 +313,18 @@ export default function SarkiAra() {
                   <button
                     key={song.source}
                     onClick={() => selectSong(song)}
-                    className="rounded-2xl bg-zinc-950 p-4 text-left hover:bg-zinc-800"
+                    className="flex items-center gap-3 rounded-2xl bg-zinc-950 p-3 text-left hover:bg-zinc-800"
                   >
-                    <span className="block font-black">{song.title}</span>
-                    <span className="mt-1 block text-sm text-zinc-500">
-                      {song.artist}{song.provider ? ` - ${song.provider}` : ""}
-                      {song.variants?.length ? ` - ${song.variants.length} kaynak` : ""}
+                    <span
+                      className="h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center"
+                      style={song.cover ? { backgroundImage: `url(${song.cover})` } : undefined}
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate font-black">{song.title}</span>
+                      <span className="mt-1 block truncate text-sm text-zinc-500">
+                        {song.artist}{song.provider ? ` - ${song.provider}` : ""}
+                        {song.variants?.length ? ` - ${song.variants.length} kaynak` : ""}
+                      </span>
                     </span>
                   </button>
                 ))}
@@ -343,10 +349,16 @@ export default function SarkiAra() {
                 <button
                   key={variant.source}
                   onClick={() => selectSong(variant)}
-                  className="rounded-2xl bg-zinc-950 p-4 text-left hover:bg-zinc-800"
+                  className="flex items-center gap-3 rounded-2xl bg-zinc-950 p-3 text-left hover:bg-zinc-800"
                 >
-                  <span className="block font-black">{variant.provider ?? "Kaynak"}</span>
-                  <span className="mt-1 block text-sm text-zinc-500">{variant.artist} - {variant.title}</span>
+                  <span
+                    className="h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center"
+                    style={variant.cover ? { backgroundImage: `url(${variant.cover})` } : undefined}
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate font-black">{variant.provider ?? "Kaynak"}</span>
+                    <span className="mt-1 block truncate text-sm text-zinc-500">{variant.artist} - {variant.title}</span>
+                  </span>
                 </button>
               ))}
             </div>

@@ -15,7 +15,7 @@ const routeRequired = [
   "async function searchProviderRecommendationCandidates",
   "function isUnknownArtistName",
   "function sortRecommendationCandidates",
-  "const candidates = await searchProviderRecommendationCandidates(seed)",
+  "const candidates = await searchProviderRecommendationCandidates(seed, currentProvider)",
   "if (!isForeign && !isTurkishRecommendation(candidate)) continue",
   "Pilli Bebek",
   "Halil Sezai",
