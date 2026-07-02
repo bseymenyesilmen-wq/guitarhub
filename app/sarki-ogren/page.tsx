@@ -22,6 +22,7 @@ type LearningTabView = {
   id: string;
   title: string;
   artist: string;
+  artistSlug: string;
   instruments: string[];
   tuning: string;
   revision: string;
@@ -35,6 +36,7 @@ const TAB_LIBRARY: LearningTabView[] = [
     id: "gh-demo-1",
     title: "GuitarHub Demo Riff",
     artist: "GuitarHub Studio",
+    artistSlug: "guitarhub-studio",
     instruments: ["Gitar", "Bas", "Davul"],
     tuning: "E A D G B E",
     revision: "v1",
@@ -46,6 +48,7 @@ const TAB_LIBRARY: LearningTabView[] = [
     id: "gh-demo-2",
     title: "Akustik Arpej Çalışması",
     artist: "GuitarHub Studio",
+    artistSlug: "guitarhub-studio",
     instruments: ["Gitar", "Vokal"],
     tuning: "E A D G B E",
     revision: "v2",
@@ -64,6 +67,7 @@ const TAB_LIBRARY: LearningTabView[] = [
     id: "gh-demo-3",
     title: "Bas Groove 90 BPM",
     artist: "GuitarHub Studio",
+    artistSlug: "guitarhub-studio",
     instruments: ["Bas", "Davul", "Klavye"],
     tuning: "E A D G",
     revision: "v1",
@@ -87,6 +91,7 @@ function mapLearningTab(tab: LearningTab): LearningTabView {
     id: String(tab.id),
     title: tab.title,
     artist: tab.artist,
+    artistSlug: tab.artist_slug,
     instruments: tab.instruments?.length ? tab.instruments : ["Gitar"],
     tuning: tab.tuning || "E A D G B E",
     revision: `v${tab.revision_number || 1}`,
@@ -250,7 +255,7 @@ export default function SarkiOgren() {
                   <div className="mt-4 flex gap-2">
                     <Link href={`/sarki-ogren/${tab.id}`} onClick={() => addToHistory(tab.id)} className="rounded-full bg-red-600 px-4 py-2 text-sm font-black hover:bg-red-500">Şarkı sayfası</Link>
                     <button onClick={() => addToPlaylist(tab.id)} className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-black hover:bg-zinc-700">Playlist</button>
-                    <button className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-black text-zinc-300">Sanatçı sayfası</button>
+                    <Link href={`/sanatci/${tab.artistSlug}`} className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-black text-zinc-300 hover:bg-zinc-700">Sanatçı sayfası</Link>
                   </div>
                 </article>
               ))}

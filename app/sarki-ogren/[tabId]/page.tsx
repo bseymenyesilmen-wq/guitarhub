@@ -145,7 +145,7 @@ export default function SongLearnDetailPage() {
               <header className="rounded-[2rem] border border-zinc-800 bg-zinc-950/80 p-5 sm:p-7">
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-red-400">Şarkı sayfası</p>
                 <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-6xl">{tab?.title}</h1>
-                <p className="mt-3 text-lg text-zinc-300">{tab?.artist}</p>
+                <Link href={`/sanatci/${tab?.artist_slug}`} className="mt-3 inline-flex text-lg font-bold text-red-300 hover:text-red-200">{tab?.artist}</Link>
                 <div className="mt-5 flex flex-wrap gap-2 text-sm font-bold text-zinc-200">
                   <span className="rounded-full bg-zinc-900 px-3 py-2">Akort: {tab?.tuning || "-"}</span>
                   <span className="rounded-full bg-zinc-900 px-3 py-2">BPM: {tab?.bpm || "-"}</span>
