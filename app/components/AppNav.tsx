@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Ana Sayfa", icon: "⌂" },
   { href: "/repertuar", label: "Repertuar", icon: "♪" },
   { href: "/sarki-ara", label: "Şarkı Ara", icon: "⌕" },
+  { href: "/sarki-ogren", label: "Şarkı Öğren", icon: "▶" },
   { href: "/akor-kutuphanesi", label: "Akorlar", icon: "♬" },
   { href: "/gam-kutuphanesi", label: "Gamlar", icon: "◎" },
 ];
@@ -63,7 +64,7 @@ export function AppNav() {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-zinc-950/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.35rem)] pt-2 backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
+        <div className="mx-auto grid max-w-lg grid-cols-6 gap-1">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
             return (

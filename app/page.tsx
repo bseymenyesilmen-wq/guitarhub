@@ -23,6 +23,12 @@ const QUICK_ACTIONS = [
     icon: "♪",
   },
   {
+    href: "/sarki-ogren",
+    title: "Şarkı Öğren",
+    description: "Tab player, loop, hız, solo/mute ve pratik araçları.",
+    icon: "▶",
+  },
+  {
     href: "/akor-kutuphanesi",
     title: "Akorlar",
     description: "Bilmediğin akorun basışını gör.",

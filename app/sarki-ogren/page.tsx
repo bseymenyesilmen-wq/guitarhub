@@ -1,0 +1,166 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { AppNav } from "@/app/components/AppNav";
+
+const INSTRUMENTS = ["Lead Guitar", "Rhythm Guitar", "Bass", "Drums"];
+const SAMPLE_TAB = [
+  "e|----------------|----------------|",
+  "B|-----0-----1----|-----3-----1----|",
+  "G|---0-----0------|---0-----0------|",
+  "D|----------------|----------------|",
+  "A|-3-----3--------|-2-----2--------|",
+  "E|----------------|----------------|",
+];
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+export default function SarkiOgren() {
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(100);
+  const [transpose, setTranspose] = useState(0);
+  const [loop, setLoop] = useState(true);
+  const [solo, setSolo] = useState("Lead Guitar");
+  const [muted, setMuted] = useState<string[]>(["Drums"]);
+  const [metronome, setMetronome] = useState(false);
+  const [countIn, setCountIn] = useState(true);
+  const [tabText, setTabText] = useState(SAMPLE_TAB.join("\n"));
+
+  const visibleLines = useMemo(() => tabText.split(/\r?\n/).filter(Boolean), [tabText]);
+
+  function toggleMute(track: string) {
+    setMuted((current) => (current.includes(track) ? current.filter((item) => item !== track) : [...current, track]));
+  }
+
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(220,38,38,0.16),transparent_34%),#09090b] p-4 pb-28 text-white sm:p-6 md:pb-6">
+      <div className="mx-auto max-w-7xl">
+        <AppNav />
+
+        <section className="mb-6 overflow-hidden rounded-[2rem] border border-zinc-800 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 sm:p-7">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-red-400">Reklamsız pratik modu</p>
+          <div className="mt-3 grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <div>
+              <h1 className="text-4xl font-black tracking-tight sm:text-6xl">Şarkı Öğren</h1>
+              <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-300">
+                Songsterr fikrindeki öğrenme araçlarını GuitarHub içinde, kendi özgün arayüzümüzle kuruyoruz: tab player, Loop,
+                Hız, Solo, Mute, Mixer, Transpose, Metronom, Count-in ve Tuner. Telifli/paralı servisleri kopyalamadan; kendi tabın,
+                izinli kaynaklar ve GuitarHub verisiyle çalışacak.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4 lg:grid-cols-2">
+              {["Tab Player", "Loop", "Mixer", "Offline hazırlık"].map((item) => (
+                <div key={item} className="rounded-2xl border border-red-500/20 bg-red-950/20 p-4 font-bold text-red-100">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-4 sm:p-6">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Practice Player</p>
+                <h2 className="mt-1 text-2xl font-black">Demo Tab Çalışması</h2>
+              </div>
+              <button
+                onClick={() => setPlaying((value) => !value)}
+                className={`min-h-12 rounded-2xl px-6 font-black ${playing ? "bg-white text-zinc-950" : "bg-red-600 text-white hover:bg-red-500"}`}
+              >
+                {playing ? "Duraklat" : "Oynat"}
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-3xl border border-zinc-800 bg-black p-4 font-mono text-sm leading-8 text-zinc-100 sm:text-base">
+              <div className="mb-3 flex min-w-[680px] items-center gap-2 border-b border-zinc-800 pb-3 text-xs text-zinc-500">
+                {Array.from({ length: 8 }, (_, index) => (
+                  <span key={index} className="inline-flex w-20 justify-center rounded-full bg-zinc-900 py-1 font-bold">
+                    Ölçü {index + 1}
+                  </span>
+                ))}
+              </div>
+              <pre className="min-w-[680px] whitespace-pre">{visibleLines.join("\n")}</pre>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Hız</span>
+                <div className="mt-3 flex items-center gap-2">
+                  <button onClick={() => setSpeed((value) => clamp(value - 5, 25, 150))} className="rounded-lg bg-zinc-800 px-3 py-2 font-bold">-</button>
+                  <strong className="min-w-16 text-center">{speed}%</strong>
+                  <button onClick={() => setSpeed((value) => clamp(value + 5, 25, 150))} className="rounded-lg bg-zinc-800 px-3 py-2 font-bold">+</button>
+                </div>
+              </label>
+
+              <label className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Transpose</span>
+                <div className="mt-3 flex items-center gap-2">
+                  <button onClick={() => setTranspose((value) => clamp(value - 1, -12, 12))} className="rounded-lg bg-zinc-800 px-3 py-2 font-bold">-1</button>
+                  <strong className="min-w-14 text-center">{transpose > 0 ? `+${transpose}` : transpose}</strong>
+                  <button onClick={() => setTranspose((value) => clamp(value + 1, -12, 12))} className="rounded-lg bg-zinc-800 px-3 py-2 font-bold">+1</button>
+                </div>
+              </label>
+
+              <button onClick={() => setLoop((value) => !value)} className={`rounded-2xl border p-4 text-left font-black ${loop ? "border-red-500 bg-red-600" : "border-zinc-800 bg-zinc-950"}`}>
+                Loop
+                <span className="mt-1 block text-sm font-semibold opacity-80">Seçili ölçüyü döndür</span>
+              </button>
+
+              <button onClick={() => setMetronome((value) => !value)} className={`rounded-2xl border p-4 text-left font-black ${metronome ? "border-red-500 bg-red-600" : "border-zinc-800 bg-zinc-950"}`}>
+                Metronom
+                <span className="mt-1 block text-sm font-semibold opacity-80">Count-in: {countIn ? "Açık" : "Kapalı"}</span>
+              </button>
+            </div>
+          </div>
+
+          <aside className="grid gap-6">
+            <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-5">
+              <h2 className="text-2xl font-black">Mixer</h2>
+              <p className="mt-2 text-sm text-zinc-400">Solo ve Mute davranışının ilk temelini kurduk.</p>
+              <div className="mt-4 space-y-3">
+                {INSTRUMENTS.map((track) => (
+                  <div key={track} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong>{track}</strong>
+                      <span className="text-xs text-zinc-500">Vol 80%</span>
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => setSolo(track)} className={`rounded-full px-3 py-2 text-xs font-black ${solo === track ? "bg-red-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>
+                        Solo
+                      </button>
+                      <button onClick={() => toggleMute(track)} className={`rounded-full px-3 py-2 text-xs font-black ${muted.includes(track) ? "bg-white text-zinc-950" : "bg-zinc-800 text-zinc-300"}`}>
+                        Mute
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-5">
+              <h2 className="text-2xl font-black">Kendi tabın</h2>
+              <p className="mt-2 text-sm text-zinc-400">Şimdilik tab metni yapıştırıp player içinde görebilirsin. Sonraki adım Guitar Pro/MIDI parser.</p>
+              <textarea
+                value={tabText}
+                onChange={(event) => setTabText(event.target.value)}
+                className="mt-4 min-h-40 w-full rounded-2xl border border-zinc-700 bg-zinc-950 p-3 font-mono text-sm text-zinc-100 outline-none focus:border-red-500"
+              />
+            </section>
+
+            <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-5">
+              <h2 className="text-2xl font-black">Tuner</h2>
+              <p className="mt-2 text-sm text-zinc-400">Mikrofonlu chromatic tuner burada açılacak. Şimdilik yol haritasına bağlandı.</p>
+              <button onClick={() => setCountIn((value) => !value)} className="mt-4 w-full rounded-2xl bg-zinc-950 px-4 py-3 font-black text-red-300 hover:bg-zinc-800">
+                Count-in {countIn ? "Kapat" : "Aç"}
+              </button>
+            </section>
+          </aside>
+        </section>
+      </div>
+    </main>
+  );
+}
