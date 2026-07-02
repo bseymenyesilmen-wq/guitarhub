@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppNav } from "@/app/components/AppNav";
 import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
 import { ChordTextViewer } from "@/app/components/ChordTextViewer";
-import { buildSongPayload, transposeText } from "@/lib/music";
+import { buildSongPayload, transposeCapo, transposeText } from "@/lib/music";
 import { CHORD_LIBRARY, type ChordDefinition } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
 import type { SongForm } from "@/lib/types";
@@ -124,6 +124,11 @@ export default function SarkiAra() {
   const transposedKey = useMemo(() => {
     if (!result?.key) return "";
     return transposeText(result.key, transposeSteps);
+  }, [result, transposeSteps]);
+
+  const transposedCapo = useMemo(() => {
+    if (!result) return "0";
+    return transposeCapo(result.capo, transposeSteps);
   }, [result, transposeSteps]);
 
 
@@ -363,7 +368,7 @@ export default function SarkiAra() {
       return;
     }
 
-    const form = resultToForm({ ...result, key: transposedKey }, favorite, transposedChords);
+    const form = resultToForm({ ...result, key: transposedKey, capo: transposedCapo }, favorite, transposedChords);
 
     if (!form.title.trim() || !form.artist.trim()) {
       setMessage("Şarkı adı ve sanatçı zorunludur.");
@@ -586,7 +591,7 @@ export default function SarkiAra() {
                   <p className="mt-1 text-zinc-400">
                     {result.artist}
                     {transposedKey ? ` - Ton: ${transposedKey}` : ""}
-                    {result.capo ? ` - Capo: ${result.capo}` : ""}
+                    {transposedCapo ? ` - Capo: ${transposedCapo}` : ""}
                     {result.provider ? ` - Kaynak: ${result.provider}` : ""}
                   </p>
                 </div>

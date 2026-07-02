@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
 import { ChordTextViewer } from "@/app/components/ChordTextViewer";
-import { extractChords, transposeText } from "@/lib/music";
+import { extractChords, transposeCapo, transposeText } from "@/lib/music";
 import { CHORD_LIBRARY, type ChordDefinition } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
 import type { Song } from "@/lib/types";
@@ -70,6 +70,7 @@ export default function SarkiDetay() {
 
   const sourceText = song?.chords?.trim() || song?.lyrics?.trim() || "";
   const transposedChords = useMemo(() => transposeText(sourceText, shift), [shift, sourceText]);
+  const transposedCapo = useMemo(() => transposeCapo(song?.capo, shift), [shift, song?.capo]);
   const chordList = useMemo(() => extractChords(transposedChords), [transposedChords]);
 
   function openChord(chordName: string) {
@@ -116,7 +117,7 @@ export default function SarkiDetay() {
                 </Link>
                 <h1 className="mt-3 text-4xl font-black">{song.title}</h1>
                 <p className="mt-2 text-zinc-400">
-                  {song.artist} {song.key ? `- Ton: ${transposeText(song.key, shift)}` : ""} {song.capo ? `- Capo: ${song.capo}` : ""}
+                  {song.artist} {song.key ? `- Ton: ${transposeText(song.key, shift)}` : ""} {transposedCapo ? `- Capo: ${transposedCapo}` : ""}
                 </p>
               </div>
 

@@ -44,6 +44,15 @@ export function transposeText(text: string, steps: number) {
   return text.replace(CHORD_TOKEN_PATTERN, (match) => transposeChord(match, steps));
 }
 
+export function transposeCapo(capo: string | number | null | undefined, steps: number) {
+  const rawCapo = String(capo ?? "0").match(/\d+/)?.[0] ?? "0";
+  const originalCapo = Number(rawCapo);
+  if (!Number.isFinite(originalCapo)) return "0";
+
+  const nextCapo = Math.max(0, Math.min(11, originalCapo - steps));
+  return String(nextCapo);
+}
+
 export function extractChords(text: string) {
   const matches = text.match(CHORD_TOKEN_PATTERN) ?? [];
   return Array.from(new Set(matches.map((match) => match.trim()))).filter(Boolean);
