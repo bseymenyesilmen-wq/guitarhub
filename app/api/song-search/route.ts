@@ -20,6 +20,7 @@ const ULTIMATE_TABS_URL = "https://tabs.ultimate-guitar.com";
 const UAKOR_URL = "https://uakor.com";
 const UAKOR_API_URL = "https://api.uakor.com/api";
 const ITUNES_SEARCH_URL = "https://itunes.apple.com/search";
+const DEEZER_SEARCH_URL = "https://api.deezer.com/search";
 const ULTIMATE_GUITAR_API_URL = "https://api.ultimate-guitar.com/api/v1";
 const REQUEST_HEADERS = {
   "User-Agent":
@@ -449,6 +450,14 @@ type ITunesSearchResponse = {
   }>;
 };
 
+type DeezerSearchResponse = {
+  data?: Array<{
+    artist?: { name?: string };
+    title?: string;
+    album?: { cover_medium?: string; cover_big?: string; cover_xl?: string };
+  }>;
+};
+
 type UltimateGuitarTab = {
   id: number;
   song_name: string;
@@ -535,41 +544,115 @@ function fallbackCoverForSong(artist: string, title: string) {
 }
 
 const itunesCoverCache = new Map<string, string>();
+const deezerCoverCache = new Map<string, string>();
 
 function highResolutionItunesArtwork(url = "") {
-  return url.replace(/\/100x100bb\.(jpg|png|webp)$/i, "/400x400bb.$1");
+  return url.replace(/\/100x100bb\.(jpg|png|webp)$/i, "/600x600bb.$1");
+}
+
+function highResolutionDeezerArtwork(url = "") {
+  return url.replace(/\/250x250-/i, "/500x500-");
+}
+
+function isWeakProviderCover(cover = "") {
+  return !cover || cover.startsWith("data:image/svg+xml") || cover.includes("/artist_photos/") || cover.includes("/static/s3/ugdb-photo") || cover.includes("default");
+}
+
+function buildInternetCoverQueries(artist: string, title: string) {
+  return [
+    { term: `${artist} ${title}`.trim() },
+    { term: `${title} ${artist}`.trim() },
+    { term: `${title}`.trim(), attribute: "songTerm" },
+    { term: `${artist}`.trim(), attribute: "artistTerm" },
+  ].filter((query, index, queries) => query.term && queries.findIndex((candidate) => candidate.term === query.term && candidate.attribute === query.attribute) === index);
+}
+
+async function findItunesCoverForSong(artist: string, title: string) {
+  const cacheKey = `${normalizeText(artist)}-${normalizeText(title)}`;
+  if (itunesCoverCache.has(cacheKey)) return itunesCoverCache.get(cacheKey) ?? "";
+  const wantedArtist = normalizeText(artist);
+  const wantedTitle = normalizeText(title);
+  for (const queryVariant of buildInternetCoverQueries(artist, title)) {
+    const query = new URLSearchParams({
+      term: queryVariant.term,
+      entity: "song",
+      media: "music",
+      attribute: queryVariant.attribute ?? "",
+      limit: "10",
+      country: "TR",
+    });
+    if (!queryVariant.attribute) query.delete("attribute");
+    try {
+      const response = await axios.get<ITunesSearchResponse>(`${ITUNES_SEARCH_URL}?${query.toString()}`, {
+        timeout: 6_000,
+        validateStatus: (status) => status >= 200 && status < 400,
+      });
+      const results = response.data.results ?? [];
+      const result = results.find((item) => {
+        const itemArtist = normalizeText(item.artistName ?? "");
+        const itemTitle = normalizeText(item.trackName ?? "");
+        const artistMatches = !wantedArtist || itemArtist.includes(wantedArtist) || wantedArtist.includes(itemArtist);
+        const titleMatches = !wantedTitle || itemTitle.includes(wantedTitle) || wantedTitle.includes(itemTitle);
+        return item.artworkUrl100 && artistMatches && titleMatches;
+      }) ?? results.find((item) => {
+        const itemTitle = normalizeText(item.trackName ?? "");
+        return item.artworkUrl100 && wantedTitle && (itemTitle.includes(wantedTitle) || wantedTitle.includes(itemTitle));
+      });
+      const cover = highResolutionItunesArtwork(result?.artworkUrl100 ?? "");
+      if (cover) {
+        itunesCoverCache.set(cacheKey, cover);
+        return cover;
+      }
+    } catch {
+      // Try the next query variant before falling back.
+    }
+  }
+  itunesCoverCache.set(cacheKey, "");
+  return "";
+}
+
+async function findDeezerCoverForSong(artist: string, title: string) {
+  const cacheKey = `${normalizeText(artist)}-${normalizeText(title)}`;
+  if (deezerCoverCache.has(cacheKey)) return deezerCoverCache.get(cacheKey) ?? "";
+  const wantedArtist = normalizeText(artist);
+  const wantedTitle = normalizeText(title);
+  const queries = [
+    `artist:"${artist}" track:"${title}"`,
+    `${artist} ${title}`,
+    `${title} ${artist}`,
+  ].filter(Boolean);
+  for (const term of queries) {
+    const query = new URLSearchParams({ q: term, limit: "5" });
+    try {
+      const response = await axios.get<DeezerSearchResponse>(`${DEEZER_SEARCH_URL}?${query.toString()}`, {
+        timeout: 6_000,
+        validateStatus: (status) => status >= 200 && status < 400,
+      });
+      const results = response.data.data ?? [];
+      const result = results.find((item) => {
+        const itemArtist = normalizeText(item.artist?.name ?? "");
+        const itemTitle = normalizeText(item.title ?? "");
+        const artistMatches = !wantedArtist || itemArtist.includes(wantedArtist) || wantedArtist.includes(itemArtist);
+        const titleMatches = !wantedTitle || itemTitle.includes(wantedTitle) || wantedTitle.includes(itemTitle);
+        return (item.album?.cover_big || item.album?.cover_medium) && artistMatches && titleMatches;
+      }) ?? results.find((item) => item.album?.cover_big || item.album?.cover_medium);
+      const cover = highResolutionDeezerArtwork(result?.album?.cover_big || result?.album?.cover_medium || "");
+      if (cover) {
+        deezerCoverCache.set(cacheKey, cover);
+        return cover;
+      }
+    } catch {
+      // Try next Deezer query variant.
+    }
+  }
+  deezerCoverCache.set(cacheKey, "");
+  return "";
 }
 
 async function findInternetCoverForSong(artist: string, title: string) {
-  const cacheKey = `${normalizeText(artist)}-${normalizeText(title)}`;
-  if (itunesCoverCache.has(cacheKey)) return itunesCoverCache.get(cacheKey) ?? "";
-  const query = new URLSearchParams({
-    term: `${artist} ${title}`.trim(),
-    entity: "song",
-    limit: "5",
-    country: "TR",
-  });
-  try {
-    const response = await axios.get<ITunesSearchResponse>(`${ITUNES_SEARCH_URL}?${query.toString()}`, {
-      timeout: 6_000,
-      validateStatus: (status) => status >= 200 && status < 400,
-    });
-    const wantedArtist = normalizeText(artist);
-    const wantedTitle = normalizeText(title);
-    const result = (response.data.results ?? []).find((item) => {
-      const itemArtist = normalizeText(item.artistName ?? "");
-      const itemTitle = normalizeText(item.trackName ?? "");
-      const artistMatches = !wantedArtist || itemArtist.includes(wantedArtist) || wantedArtist.includes(itemArtist);
-      const titleMatches = !wantedTitle || itemTitle.includes(wantedTitle) || wantedTitle.includes(itemTitle);
-      return item.artworkUrl100 && artistMatches && titleMatches;
-    }) ?? response.data.results?.find((item) => item.artworkUrl100);
-    const cover = highResolutionItunesArtwork(result?.artworkUrl100 ?? "");
-    itunesCoverCache.set(cacheKey, cover);
-    return cover;
-  } catch {
-    itunesCoverCache.set(cacheKey, "");
-    return "";
-  }
+  const itunesCover = await findItunesCoverForSong(artist, title);
+  const deezerCover = await findDeezerCoverForSong(artist, title);
+  return itunesCover || deezerCover;
 }
 
 function withFallbackCover<T extends SongSearchListItem>(song: T): T {
@@ -584,12 +667,24 @@ function withFallbackCovers<T extends SongSearchListItem>(songs: T[]): T[] {
 
 async function withInternetOrFallbackCover<T extends SongSearchListItem>(song: T): Promise<T> {
   const variants = song.variants ? await withInternetOrFallbackCovers(song.variants) : undefined;
-  const internetCover = song.cover || await findInternetCoverForSong(song.artist, song.title);
-  return { ...song, cover: internetCover || fallbackCoverForSong(song.artist, song.title), variants };
+  const internetCover = await findInternetCoverForSong(song.artist, song.title);
+  const providerCover = isWeakProviderCover(song.cover) ? "" : song.cover;
+  return { ...song, cover: internetCover || providerCover || fallbackCoverForSong(song.artist, song.title), variants };
 }
 
 async function withInternetOrFallbackCovers<T extends SongSearchListItem>(songs: T[]): Promise<T[]> {
-  return Promise.all(songs.map((song) => withInternetOrFallbackCover(song)));
+  const results = [...songs];
+  let nextIndex = 0;
+  const concurrency = 4;
+  const workers = Array.from({ length: Math.min(concurrency, songs.length) }, async () => {
+    while (nextIndex < songs.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await withInternetOrFallbackCover(songs[index]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
 function rotateRecommendationSeeds(seeds: string[], key: string) {

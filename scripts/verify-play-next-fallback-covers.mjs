@@ -8,22 +8,37 @@ const page = readFileSync(join(__dirname, "..", "app", "sarki-ara", "page.tsx"),
 
 const required = [
   "const ITUNES_SEARCH_URL",
+  "const DEEZER_SEARCH_URL",
   "type ITunesSearchResponse",
+  "type DeezerSearchResponse",
   "function highResolutionItunesArtwork",
+  "function highResolutionDeezerArtwork",
+  "function isWeakProviderCover",
+  "function buildInternetCoverQueries",
+  "async function findItunesCoverForSong",
+  "async function findDeezerCoverForSong",
   "async function findInternetCoverForSong",
   "itunesCoverCache",
+  "deezerCoverCache",
   "country: \"TR\"",
   "entity: \"song\"",
+  "media: \"music\"",
+  "if (!queryVariant.attribute) query.delete(\"attribute\")",
+  "`artist:\"${artist}\" track:\"${title}\"`",
+  "highResolutionDeezerArtwork(result?.album?.cover_big || result?.album?.cover_medium || \"\")",
+  "const itunesCover = await findItunesCoverForSong(artist, title)",
+  "const deezerCover = await findDeezerCoverForSong(artist, title)",
+  "return itunesCover || deezerCover",
   "async function withInternetOrFallbackCover",
-  "async function withInternetOrFallbackCovers",
-  "findInternetCoverForSong(song.artist, song.title)",
-  "await withInternetOrFallbackCovers",
-  "data:image/svg+xml;utf8,",
+  "const internetCover = await findInternetCoverForSong(song.artist, song.title)",
+  "const providerCover = isWeakProviderCover(song.cover) ? \"\" : song.cover",
+  "cover: internetCover || providerCover || fallbackCoverForSong(song.artist, song.title)",
+  "const concurrency = 4",
   "recommendation.cover",
 ];
 const missing = required.filter((snippet) => !`${route}\n${page}`.includes(snippet));
 if (missing.length) {
-  console.error(`Missing internet/fallback cover snippets:\n${missing.join("\n")}`);
+  console.error(`Missing stronger internet/album cover snippets:\n${missing.join("\n")}`);
   process.exit(1);
 }
-console.log("Internet cover lookup with generated fallback is present.");
+console.log("Apple/iTunes + Deezer album cover lookup with throttled provider fallback is present.");
