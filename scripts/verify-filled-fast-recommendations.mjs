@@ -9,7 +9,7 @@ const required = [
   "const QUICK_RECOMMENDATION_TIMEOUT_MS = 650",
   "const quickCandidatesPromise = artist ? searchProviderRecommendationCandidates(artist, currentProvider).catch(() => []) : Promise.resolve([])",
   "const quickCandidates = await withTimeout(quickCandidatesPromise, [], QUICK_RECOMMENDATION_TIMEOUT_MS)",
-  "const quickFallback = fastFallbackRecommendations([...existing, ...quickCandidates], artist, title)",
+  "const quickFallback = await fastFallbackRecommendations([...existing, ...quickCandidates], artist, title)",
   "if (quickFallback.length >= 3) return quickFallback",
   "withTimeout(fullRecommendationsPromise, quickFallback, DETAIL_RECOMMENDATION_TIMEOUT_MS)",
 ];

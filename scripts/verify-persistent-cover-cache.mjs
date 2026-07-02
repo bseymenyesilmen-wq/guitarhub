@@ -18,7 +18,7 @@ const required = [
   'async function setCachedSongCover(artist: string, title: string, cover: string)',
   'const cachedCover = await getCachedSongCover(song.artist, song.title)',
   'await setCachedSongCover(artist, title, cover)',
-  'const cover = cachedCover || internetCover || providerCover || fallbackCoverForSong(song.artist, song.title)',
+  'const cover = cachedCover || internetCover || providerCover || artistCover || fallbackCoverForSong(song.artist, song.title)',
 ];
 
 const missing = required.filter((snippet) => !route.includes(snippet));

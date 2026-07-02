@@ -33,7 +33,7 @@ const required = [
   "async function withInternetOrFallbackCover",
   "const internetCover = cachedCover ? \"\" : await findInternetCoverForSong(song.artist, song.title, options)",
   "const providerCover = isWeakProviderCover(song.cover) ? \"\" : song.cover",
-  "const cover = cachedCover || internetCover || providerCover || fallbackCoverForSong(song.artist, song.title)",
+  "const cover = cachedCover || internetCover || providerCover || artistCover || fallbackCoverForSong(song.artist, song.title)",
   "const concurrency = 24",
   "recommendation.cover",
 ];

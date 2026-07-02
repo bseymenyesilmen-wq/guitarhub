@@ -609,6 +609,12 @@ async function getCachedSongCover(artist: string, title: string) {
   return cache[songCoverCacheKey(artist, title)] || "";
 }
 
+async function getCachedArtistCover(artist: string) {
+  const cache = await readPersistentCoverCache();
+  const artistPrefix = `${normalizeText(artist)}::`;
+  return Object.entries(cache).find(([key, cover]) => key.startsWith(artistPrefix) && cover && !cover.startsWith("data:image/svg+xml"))?.[1] || "";
+}
+
 async function setCachedSongCover(artist: string, title: string, cover: string) {
   if (!cover || cover.startsWith("data:image/svg+xml")) return;
   const cache = await readPersistentCoverCache();
@@ -741,12 +747,25 @@ function withFallbackCovers<T extends SongSearchListItem>(songs: T[]): T[] {
   return songs.map((song) => withFallbackCover(song));
 }
 
+async function withCachedOrFallbackCover<T extends SongSearchListItem>(song: T): Promise<T> {
+  const variants = song.variants ? await withCachedOrFallbackCovers(song.variants) : undefined;
+  const cachedCover = await getCachedSongCover(song.artist, song.title);
+  const providerCover = isWeakProviderCover(song.cover) ? "" : song.cover;
+  const artistCover = cachedCover ? "" : await getCachedArtistCover(song.artist);
+  return { ...song, cover: cachedCover || providerCover || artistCover || fallbackCoverForSong(song.artist, song.title), variants };
+}
+
+async function withCachedOrFallbackCovers<T extends SongSearchListItem>(songs: T[]): Promise<T[]> {
+  return await Promise.all(songs.map((song) => withCachedOrFallbackCover(song)));
+}
+
 async function withInternetOrFallbackCover<T extends SongSearchListItem>(song: T, options: CoverLookupOptions = {}): Promise<T> {
   const variants = song.variants ? await withInternetOrFallbackCovers(song.variants, options) : undefined;
   const cachedCover = await getCachedSongCover(song.artist, song.title);
   const internetCover = cachedCover ? "" : await findInternetCoverForSong(song.artist, song.title, options);
   const providerCover = isWeakProviderCover(song.cover) ? "" : song.cover;
-  const cover = cachedCover || internetCover || providerCover || fallbackCoverForSong(song.artist, song.title);
+  const artistCover = cachedCover || internetCover || providerCover ? "" : await getCachedArtistCover(song.artist);
+  const cover = cachedCover || internetCover || providerCover || artistCover || fallbackCoverForSong(song.artist, song.title);
   if (!cachedCover && cover === providerCover) await setCachedSongCover(song.artist, song.title, cover);
   return { ...song, cover, variants };
 }
@@ -837,13 +856,14 @@ async function buildSystemWideRecommendations(artist: string, title: string, exi
   return await withInternetOrFallbackCovers(dedupeBySongIdentity(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6));
 }
 
-function fastFallbackRecommendations(existing: SongSearchListItem[], artist: string, title: string) {
-  return withFallbackCovers(
+async function fastFallbackRecommendations(existing: SongSearchListItem[], artist: string, title: string) {
+  return await withInternetOrFallbackCovers(
     dedupeBySongIdentity(existing)
       .filter((song) => normalizeText(song.title) !== normalizeText(title))
       .filter((song) => !isUnknownArtistName(song.artist))
       .filter((song) => !artist || normalizeText(song.artist) === normalizeText(artist) || isTurkishRecommendation(song))
       .slice(0, 6),
+    { allowItunes: false, timeoutMs: SEARCH_COVER_TIMEOUT_MS },
   );
 }
 
@@ -851,7 +871,7 @@ async function buildFastDetailRecommendations(artist: string, title: string, exi
   const fullRecommendationsPromise = buildSystemWideRecommendations(artist, title, existing, currentProvider);
   const quickCandidatesPromise = artist ? searchProviderRecommendationCandidates(artist, currentProvider).catch(() => []) : Promise.resolve([]);
   const quickCandidates = await withTimeout(quickCandidatesPromise, [], QUICK_RECOMMENDATION_TIMEOUT_MS);
-  const quickFallback = fastFallbackRecommendations([...existing, ...quickCandidates], artist, title);
+  const quickFallback = await fastFallbackRecommendations([...existing, ...quickCandidates], artist, title);
   if (quickFallback.length >= 3) return quickFallback;
   return withTimeout(fullRecommendationsPromise, quickFallback, DETAIL_RECOMMENDATION_TIMEOUT_MS);
 }
