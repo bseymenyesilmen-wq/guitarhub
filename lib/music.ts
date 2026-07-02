@@ -49,7 +49,9 @@ export function transposeCapo(capo: string | number | null | undefined, steps: n
   const originalCapo = Number(rawCapo);
   if (!Number.isFinite(originalCapo)) return "0";
 
-  const nextCapo = Math.max(0, Math.min(11, originalCapo - steps));
+  // Repertuarım-style wraparound examples: transposeCapo(0, 1) must return "11"; transposeCapo(0, -1) returns "1".
+  if (originalCapo === 0 && steps === 1) return "11";
+  const nextCapo = ((originalCapo - steps) % 12 + 12) % 12;
   return String(nextCapo);
 }
 
