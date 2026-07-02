@@ -497,6 +497,41 @@ function stableNumber(value: string) {
   return [...value].reduce((total, char) => total + char.charCodeAt(0), 0);
 }
 
+function svgEscape(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function fallbackCoverForSong(artist: string, title: string) {
+  const palette = [
+    ["#ef4444", "#18181b"],
+    ["#f97316", "#1e1b4b"],
+    ["#a855f7", "#111827"],
+    ["#06b6d4", "#18181b"],
+    ["#22c55e", "#111827"],
+    ["#e11d48", "#312e81"],
+  ];
+  const [from, to] = palette[stableNumber(`${artist}-${title}`) % palette.length];
+  const initials = (artist || title || "GH")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toLocaleUpperCase("tr-TR") ?? "")
+    .join("") || "GH";
+  const safeArtist = svgEscape(artist || "GuitarHub");
+  const safeTitle = svgEscape(title || "Şarkı");
+  const safeInitials = svgEscape(initials);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs><rect width="256" height="256" rx="36" fill="url(#g)"/><circle cx="205" cy="50" r="44" fill="rgba(255,255,255,.12)"/><circle cx="45" cy="210" r="58" fill="rgba(0,0,0,.18)"/><text x="128" y="126" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="62" font-weight="900" fill="white">${safeInitials}</text><text x="128" y="174" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="800" fill="white">${safeTitle.slice(0, 18)}</text><text x="128" y="202" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="rgba(255,255,255,.76)">${safeArtist.slice(0, 24)}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function withFallbackCover<T extends SongSearchListItem>(song: T): T {
+  return song.cover ? song : { ...song, cover: fallbackCoverForSong(song.artist, song.title) };
+}
+
+function withFallbackCovers<T extends SongSearchListItem>(songs: T[]): T[] {
+  return songs.map((song) => withFallbackCover(song));
+}
+
 function rotateRecommendationSeeds(seeds: string[], key: string) {
   if (!seeds.length) return seeds;
   const bucket = Math.floor(Date.now() / (1000 * 60 * 15));
@@ -554,7 +589,7 @@ async function buildSystemWideRecommendations(artist: string, title: string, exi
     }
   }
 
-  return dedupeBySongIdentity(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6);
+  return withFallbackCovers(dedupeBySongIdentity(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6));
 }
 
 async function getUakorJson<T>(url: string) {
@@ -869,7 +904,7 @@ async function searchSongs(query: string, title = "", artist = ""): Promise<Song
   ]);
 
   const allSongs = [...repertuarim.songs, ...ugSongs, ...discoveredSongs, ...uakorSongs];
-  const songs = groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 180);
+  const songs = withFallbackCovers(groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 180));
   const artists = title
     ? []
     : repertuarim.artists
