@@ -292,11 +292,12 @@ export default function SarkiAra() {
   function addToLocalSetlist(form: SongForm, targetSetlistId?: number) {
     const localSetlists = readLocalSetlists();
     const now = new Date().toISOString();
-    let setlistId = targetSetlistId ?? selectedSetlistId;
     const trimmedSetlistName = newSetlistName.trim();
+    const shouldCreateNewSetlist = !targetSetlistId && Boolean(trimmedSetlistName);
+    let setlistId = shouldCreateNewSetlist ? null : targetSetlistId ?? selectedSetlistId;
     let nextSetlists = [...localSetlists];
 
-    if (!setlistId && trimmedSetlistName) {
+    if (shouldCreateNewSetlist && trimmedSetlistName) {
       setlistId = Date.now();
       nextSetlists = [
         { id: setlistId, name: trimmedSetlistName, created_at: now, updated_at: now, setlist_songs: [] },
@@ -376,10 +377,11 @@ export default function SarkiAra() {
 
     setSaving(true);
 
-    let setlistId = targetSetlistId ?? selectedSetlistId;
     const trimmedSetlistName = newSetlistName.trim();
+    const shouldCreateNewSetlist = !targetSetlistId && Boolean(trimmedSetlistName);
+    let setlistId = shouldCreateNewSetlist ? null : targetSetlistId ?? selectedSetlistId;
 
-    if (!setlistId && trimmedSetlistName) {
+    if (shouldCreateNewSetlist && trimmedSetlistName) {
       const { data: createdSetlist, error: setlistError } = await supabase
         .from("setlists")
         .insert({ name: trimmedSetlistName, user_id: session.user.id })
