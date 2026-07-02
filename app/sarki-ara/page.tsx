@@ -8,7 +8,7 @@ import { ChordTextViewer } from "@/app/components/ChordTextViewer";
 import { buildSongPayload, transposeText } from "@/lib/music";
 import { CHORD_LIBRARY, type ChordDefinition } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
-import type { SongForm } from "@/lib/types";
+import type { Setlist, SongForm } from "@/lib/types";
 import type { SongArtistResult, SongSearchListItem, SongSearchResponse, SongSearchResult } from "@/lib/songSearch";
 
 const NOT_FOUND_MESSAGE = "Şarkı bulunamadı.";
@@ -58,6 +58,11 @@ export default function SarkiAra() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [setlistModalOpen, setSetlistModalOpen] = useState(false);
+  const [setlists, setSetlists] = useState<Setlist[]>([]);
+  const [setlistsLoading, setSetlistsLoading] = useState(false);
+  const [newSetlistName, setNewSetlistName] = useState("");
+  const [selectedSetlistId, setSelectedSetlistId] = useState<number | null>(null);
 
   const transposedChords = useMemo(
     () => transposeText(editedChords, transposeSteps),
@@ -188,7 +193,47 @@ export default function SarkiAra() {
     applyPayload(payload);
   }
 
-  async function addToRepertoire() {
+  async function loadSetlists(userId: string) {
+    setSetlistsLoading(true);
+    const { data, error } = await supabase
+      .from("setlists")
+      .select("*, setlist_songs(id, position, song_id)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    setSetlistsLoading(false);
+
+    if (error) {
+      setMessage(`${error.message} Setlist tabloları Supabase'de oluşturulmamış olabilir.`);
+      setSetlists([]);
+      return;
+    }
+
+    setSetlists((data ?? []) as Setlist[]);
+    setSelectedSetlistId((data?.[0]?.id as number | undefined) ?? null);
+  }
+
+  async function openSetlistModal() {
+    setMessage("");
+
+    if (!result) {
+      setMessage(NOT_FOUND_MESSAGE);
+      return;
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      router.push("/giris");
+      return;
+    }
+
+    setSetlistModalOpen(true);
+    await loadSetlists(session.user.id);
+  }
+
+  async function addToSetlist(targetSetlistId?: number) {
     setMessage("");
 
     if (!result) {
@@ -213,15 +258,63 @@ export default function SarkiAra() {
     }
 
     setSaving(true);
-    const { error } = await supabase.from("songs").insert(buildSongPayload(form, session.user.id));
-    setSaving(false);
 
-    if (error) {
-      setMessage(error.message);
+    let setlistId = targetSetlistId ?? selectedSetlistId;
+    const trimmedSetlistName = newSetlistName.trim();
+
+    if (!setlistId && trimmedSetlistName) {
+      const { data: createdSetlist, error: setlistError } = await supabase
+        .from("setlists")
+        .insert({ name: trimmedSetlistName, user_id: session.user.id })
+        .select("*")
+        .single();
+
+      if (setlistError) {
+        setSaving(false);
+        setMessage(`${setlistError.message} Setlist tabloları Supabase'de oluşturulmamış olabilir.`);
+        return;
+      }
+
+      setlistId = (createdSetlist as Setlist).id;
+      setSetlists((current) => [createdSetlist as Setlist, ...current]);
+    }
+
+    if (!setlistId) {
+      setSaving(false);
+      setMessage("Önce bir setlist seç veya yeni setlist adı yaz.");
       return;
     }
 
-    router.push("/repertuar");
+    const { data: createdSong, error: songError } = await supabase
+      .from("songs")
+      .insert(buildSongPayload(form, session.user.id))
+      .select("id")
+      .single();
+
+    if (songError || !createdSong) {
+      setSaving(false);
+      setMessage(songError?.message ?? "Şarkı kaydedilemedi.");
+      return;
+    }
+
+    const currentSetlist = setlists.find((item) => item.id === setlistId);
+    const nextPosition = ((currentSetlist?.setlist_songs?.length ?? 0) + 1);
+    const { error: itemError } = await supabase.from("setlist_songs").insert({
+      setlist_id: setlistId,
+      song_id: (createdSong as { id: number }).id,
+      position: nextPosition,
+    });
+
+    setSaving(false);
+
+    if (itemError) {
+      setMessage(itemError.message);
+      return;
+    }
+
+    setSetlistModalOpen(false);
+    setNewSetlistName("");
+    setMessage("Şarkı setliste eklendi.");
   }
 
   return (
@@ -396,7 +489,7 @@ export default function SarkiAra() {
                     {favorite ? "Favoride" : "Favorilere Ekle"}
                   </button>
                   <button
-                    onClick={addToRepertoire}
+                    onClick={openSetlistModal}
                     disabled={saving}
                     className="min-h-11 rounded-lg bg-red-600 px-5 py-3 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
@@ -450,6 +543,78 @@ export default function SarkiAra() {
           </section>
         )}
       </div>
+
+      {setlistModalOpen && result && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3 sm:items-center sm:justify-center">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Repertuvara ekle</p>
+                <h3 className="mt-1 text-2xl font-black">Setliste ekle</h3>
+                <p className="mt-1 text-sm text-zinc-400">
+                  {result.artist} - {result.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setSetlistModalOpen(false)}
+                className="rounded-xl bg-zinc-800 px-3 py-2 text-sm font-bold hover:bg-zinc-700"
+              >
+                Kapat
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+              <label className="text-sm font-bold text-zinc-300" htmlFor="new-setlist-name">
+                Yeni setlist oluştur
+              </label>
+              <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
+                <input
+                  id="new-setlist-name"
+                  value={newSetlistName}
+                  onChange={(event) => setNewSetlistName(event.target.value)}
+                  placeholder="Konser setlist, Acılı setlist..."
+                  className="min-h-12 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
+                />
+                <button
+                  onClick={() => addToSetlist(undefined)}
+                  disabled={saving || !newSetlistName.trim()}
+                  className="min-h-12 rounded-xl bg-red-600 px-4 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Oluştur ve ekle
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <h4 className="font-black">Mevcut setlistler</h4>
+              <div className="mt-3 space-y-2">
+                {setlistsLoading ? (
+                  <p className="rounded-2xl bg-zinc-900 p-4 text-sm text-zinc-400">Setlistler yükleniyor...</p>
+                ) : setlists.length ? (
+                  setlists.map((setlist) => (
+                    <button
+                      key={setlist.id}
+                      onClick={() => addToSetlist(setlist.id)}
+                      disabled={saving}
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl bg-zinc-900 p-4 text-left hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span>
+                        <span className="block font-black">{setlist.name}</span>
+                        <span className="mt-1 block text-sm text-zinc-500">{setlist.setlist_songs?.length ?? 0} şarkı</span>
+                      </span>
+                      <span className="rounded-full bg-red-600 px-3 py-1 text-sm font-bold">Setliste ekle</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="rounded-2xl bg-zinc-900 p-4 text-sm text-zinc-400">
+                    Henüz setlist yok. Yukarıdan ilk setlistini oluştur.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ChordBottomSheet chord={selectedChord} onClose={() => setSelectedChord(null)} />
     </main>

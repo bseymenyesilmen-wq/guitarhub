@@ -14,6 +14,25 @@ export type Song = {
   created_at?: string | null;
 };
 
+export type Setlist = {
+  id: number;
+  user_id: string;
+  name: string;
+  description?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  setlist_songs?: SetlistSong[];
+};
+
+export type SetlistSong = {
+  id: number;
+  setlist_id: number;
+  song_id: number;
+  position: number;
+  created_at?: string | null;
+  songs?: Song | null;
+};
+
 export type SongForm = Record<string, string | boolean> & {
   title: string;
   artist: string;
