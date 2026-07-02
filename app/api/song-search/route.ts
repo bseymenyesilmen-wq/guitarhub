@@ -19,6 +19,7 @@ const ULTIMATE_GUITAR_URL = "https://www.ultimate-guitar.com";
 const ULTIMATE_TABS_URL = "https://tabs.ultimate-guitar.com";
 const UAKOR_URL = "https://uakor.com";
 const UAKOR_API_URL = "https://api.uakor.com/api";
+const ITUNES_SEARCH_URL = "https://itunes.apple.com/search";
 const ULTIMATE_GUITAR_API_URL = "https://api.ultimate-guitar.com/api/v1";
 const REQUEST_HEADERS = {
   "User-Agent":
@@ -439,6 +440,15 @@ function buildUakorSongItem(chord: UakorApiChord, fallbackArtist = ""): SongSear
   };
 }
 
+type ITunesSearchResponse = {
+  resultCount?: number;
+  results?: Array<{
+    artistName?: string;
+    trackName?: string;
+    artworkUrl100?: string;
+  }>;
+};
+
 type UltimateGuitarTab = {
   id: number;
   song_name: string;
@@ -524,12 +534,60 @@ function fallbackCoverForSong(artist: string, title: string) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+const itunesCoverCache = new Map<string, string>();
+
+function highResolutionItunesArtwork(url = "") {
+  return url.replace(/\/100x100bb\.(jpg|png|webp)$/i, "/400x400bb.$1");
+}
+
+async function findInternetCoverForSong(artist: string, title: string) {
+  const cacheKey = `${normalizeText(artist)}-${normalizeText(title)}`;
+  if (itunesCoverCache.has(cacheKey)) return itunesCoverCache.get(cacheKey) ?? "";
+  const query = new URLSearchParams({
+    term: `${artist} ${title}`.trim(),
+    entity: "song",
+    limit: "5",
+    country: "TR",
+  });
+  try {
+    const response = await axios.get<ITunesSearchResponse>(`${ITUNES_SEARCH_URL}?${query.toString()}`, {
+      timeout: 6_000,
+      validateStatus: (status) => status >= 200 && status < 400,
+    });
+    const wantedArtist = normalizeText(artist);
+    const wantedTitle = normalizeText(title);
+    const result = (response.data.results ?? []).find((item) => {
+      const itemArtist = normalizeText(item.artistName ?? "");
+      const itemTitle = normalizeText(item.trackName ?? "");
+      const artistMatches = !wantedArtist || itemArtist.includes(wantedArtist) || wantedArtist.includes(itemArtist);
+      const titleMatches = !wantedTitle || itemTitle.includes(wantedTitle) || wantedTitle.includes(itemTitle);
+      return item.artworkUrl100 && artistMatches && titleMatches;
+    }) ?? response.data.results?.find((item) => item.artworkUrl100);
+    const cover = highResolutionItunesArtwork(result?.artworkUrl100 ?? "");
+    itunesCoverCache.set(cacheKey, cover);
+    return cover;
+  } catch {
+    itunesCoverCache.set(cacheKey, "");
+    return "";
+  }
+}
+
 function withFallbackCover<T extends SongSearchListItem>(song: T): T {
   return song.cover ? song : { ...song, cover: fallbackCoverForSong(song.artist, song.title) };
 }
 
 function withFallbackCovers<T extends SongSearchListItem>(songs: T[]): T[] {
   return songs.map((song) => withFallbackCover(song));
+}
+
+async function withInternetOrFallbackCover<T extends SongSearchListItem>(song: T): Promise<T> {
+  if (song.cover) return song;
+  const internetCover = await findInternetCoverForSong(song.artist, song.title);
+  return { ...song, cover: internetCover || fallbackCoverForSong(song.artist, song.title) };
+}
+
+async function withInternetOrFallbackCovers<T extends SongSearchListItem>(songs: T[]): Promise<T[]> {
+  return Promise.all(songs.map((song) => withInternetOrFallbackCover(song)));
 }
 
 function rotateRecommendationSeeds(seeds: string[], key: string) {
@@ -589,7 +647,7 @@ async function buildSystemWideRecommendations(artist: string, title: string, exi
     }
   }
 
-  return withFallbackCovers(dedupeBySongIdentity(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6));
+  return await withInternetOrFallbackCovers(dedupeBySongIdentity(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6));
 }
 
 async function getUakorJson<T>(url: string) {
@@ -904,7 +962,11 @@ async function searchSongs(query: string, title = "", artist = ""): Promise<Song
   ]);
 
   const allSongs = [...repertuarim.songs, ...ugSongs, ...discoveredSongs, ...uakorSongs];
-  const songs = withFallbackCovers(groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 180));
+  const groupedSongs = groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 180);
+  const songs = [
+    ...(await withInternetOrFallbackCovers(groupedSongs.slice(0, 40))),
+    ...withFallbackCovers(groupedSongs.slice(40)),
+  ];
   const artists = title
     ? []
     : repertuarim.artists
