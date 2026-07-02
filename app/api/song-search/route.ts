@@ -23,8 +23,10 @@ const ITUNES_SEARCH_URL = "https://itunes.apple.com/search";
 const DEEZER_SEARCH_URL = "https://api.deezer.com/search";
 const SEARCH_COVER_TIMEOUT_MS = 1_000;
 const DETAIL_COVER_TIMEOUT_MS = 6_000;
+const DETAIL_RECOMMENDATION_TIMEOUT_MS = 900;
 const SEARCH_PROVIDER_TIMEOUT_MS = 2_500;
 const UAKOR_ARTIST_CATALOG_TIMEOUT_MS = 1_500;
+const UAKOR_API_SEARCH_TIMEOUT_MS = 700;
 const ULTIMATE_GUITAR_API_URL = "https://api.ultimate-guitar.com/api/v1";
 const REQUEST_HEADERS = {
   "User-Agent":
@@ -782,6 +784,20 @@ async function buildSystemWideRecommendations(artist: string, title: string, exi
   return await withInternetOrFallbackCovers(dedupeBySongIdentity(recommendations).filter((song) => normalizeText(song.title) !== normalizeText(title)).slice(0, 6));
 }
 
+function fastFallbackRecommendations(existing: SongSearchListItem[], artist: string, title: string) {
+  return withFallbackCovers(
+    dedupeBySongIdentity(existing)
+      .filter((song) => normalizeText(song.title) !== normalizeText(title))
+      .filter((song) => !isUnknownArtistName(song.artist))
+      .filter((song) => !artist || normalizeText(song.artist) === normalizeText(artist) || isTurkishRecommendation(song))
+      .slice(0, 6),
+  );
+}
+
+async function buildFastDetailRecommendations(artist: string, title: string, existing: SongSearchListItem[] = [], currentProvider = "") {
+  return withTimeout(buildSystemWideRecommendations(artist, title, existing, currentProvider), fastFallbackRecommendations(existing, artist, title), DETAIL_RECOMMENDATION_TIMEOUT_MS);
+}
+
 async function getUakorJson<T>(url: string) {
   const response = await axios.get<T>(url, {
     headers: {
@@ -846,7 +862,7 @@ async function fetchRepertuarimSongByUrl(songUrl: string, fallbackArtist = ""): 
       lyrics: fullPreContent,
       source: songUrl,
       provider: "Repertuarım",
-      recommendations: await buildSystemWideRecommendations(artist, scrapedTitle, [], "repertuarim"),
+      recommendations: await buildFastDetailRecommendations(artist, scrapedTitle, [], "repertuarim"),
     },
   };
 }
@@ -872,7 +888,7 @@ async function fetchUakorSongByUrl(songUrl: string, fallbackArtist = ""): Promis
       lyrics: content,
       source: songUrl,
       provider: "uAkor",
-      recommendations: await buildSystemWideRecommendations(artist, parsed.title, [], "uakor"),
+      recommendations: await buildFastDetailRecommendations(artist, parsed.title, [], "uakor"),
     },
   };
 }
@@ -901,7 +917,7 @@ async function fetchUltimateGuitarSongByUrl(songUrl: string, fallbackArtist = ""
       lyrics: content,
       source: tab.urlWeb || `ug:${tabId}`,
       provider: "Ultimate Guitar",
-      recommendations: await buildSystemWideRecommendations(tab.artist_name || fallbackArtist || "", tab.song_name || "", existingRecommendations, "ultimate-guitar"),
+      recommendations: await buildFastDetailRecommendations(tab.artist_name || fallbackArtist || "", tab.song_name || "", existingRecommendations, "ultimate-guitar"),
     },
   };
 }
@@ -1004,7 +1020,7 @@ async function searchUakor(query: string) {
   ];
   const songs: SongSearchListItem[] = [];
   const [apiSongs, artistCatalogSongs] = await Promise.all([
-    searchUakorApi(query).catch(() => []),
+    withTimeout(searchUakorApi(query).catch(() => []), [], UAKOR_API_SEARCH_TIMEOUT_MS),
     withTimeout(searchUakorArtistCatalogApi(query).catch(() => []), [], UAKOR_ARTIST_CATALOG_TIMEOUT_MS),
   ]);
   songs.push(...apiSongs, ...artistCatalogSongs);

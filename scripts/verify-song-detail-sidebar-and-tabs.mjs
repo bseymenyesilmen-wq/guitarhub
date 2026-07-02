@@ -12,7 +12,7 @@ const haystack = `${page}\n${route}\n${viewer}\n${types}`;
 const required = [
   "recommendations?: SongSearchListItem[]",
   "recommended?: UltimateGuitarTab[]",
-  "recommendations: await buildSystemWideRecommendations",
+  "recommendations: await buildFastDetailRecommendations",
   "Play next",
   "Sıradaki şarkılar",
   "selectSong(recommendation)",

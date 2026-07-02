@@ -22,6 +22,8 @@ const required = [
   "function withTimeout<T>",
   "SEARCH_PROVIDER_TIMEOUT_MS",
   "withTimeout(searchUakorArtistCatalogApi(query).catch(() => []), [], UAKOR_ARTIST_CATALOG_TIMEOUT_MS)",
+  "const UAKOR_API_SEARCH_TIMEOUT_MS = 700",
+  "withTimeout(searchUakorApi(query).catch(() => []), [], UAKOR_API_SEARCH_TIMEOUT_MS)",
   "const songs = await withInternetOrFallbackCovers(groupedSongs, { allowItunes: false, timeoutMs: SEARCH_COVER_TIMEOUT_MS })",
 ];
 

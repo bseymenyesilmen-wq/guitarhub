@@ -15,9 +15,9 @@ const required = [
   "function providerPriorityForRecommendations",
   "currentProvider && provider === currentProvider",
   "groupSongVariants(providerOrdered)",
-  "await buildSystemWideRecommendations(artist, parsed.title, [], \"uakor\")",
-  "await buildSystemWideRecommendations(tab.artist_name || fallbackArtist || \"\", tab.song_name || \"\", existingRecommendations, \"ultimate-guitar\")",
-  "await buildSystemWideRecommendations(artist, scrapedTitle, [], \"repertuarim\")",
+  "await buildFastDetailRecommendations(artist, parsed.title, [], \"uakor\")",
+  "await buildFastDetailRecommendations(tab.artist_name || fallbackArtist || \"\", tab.song_name || \"\", existingRecommendations, \"ultimate-guitar\")",
+  "await buildFastDetailRecommendations(artist, scrapedTitle, [], \"repertuarim\")",
   "song.cover ? { backgroundImage: `url(${song.cover})` }",
   "variant.cover ? { backgroundImage: `url(${variant.cover})` }",
 ];
