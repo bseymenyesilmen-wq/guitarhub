@@ -650,9 +650,9 @@ async function findDeezerCoverForSong(artist: string, title: string) {
 }
 
 async function findInternetCoverForSong(artist: string, title: string) {
-  const itunesCover = await findItunesCoverForSong(artist, title);
   const deezerCover = await findDeezerCoverForSong(artist, title);
-  return itunesCover || deezerCover;
+  const itunesCover = await findItunesCoverForSong(artist, title);
+  return deezerCover || itunesCover;
 }
 
 function withFallbackCover<T extends SongSearchListItem>(song: T): T {
@@ -1072,10 +1072,7 @@ async function searchSongs(query: string, title = "", artist = ""): Promise<Song
 
   const allSongs = [...repertuarim.songs, ...ugSongs, ...discoveredSongs, ...uakorSongs];
   const groupedSongs = groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 180);
-  const songs = [
-    ...(await withInternetOrFallbackCovers(groupedSongs.slice(0, 40))),
-    ...withFallbackCovers(groupedSongs.slice(40)),
-  ];
+  const songs = await withInternetOrFallbackCovers(groupedSongs);
   const artists = title
     ? []
     : repertuarim.artists
