@@ -21,6 +21,10 @@ const UAKOR_URL = "https://uakor.com";
 const UAKOR_API_URL = "https://api.uakor.com/api";
 const ITUNES_SEARCH_URL = "https://itunes.apple.com/search";
 const DEEZER_SEARCH_URL = "https://api.deezer.com/search";
+const SEARCH_COVER_TIMEOUT_MS = 1_000;
+const DETAIL_COVER_TIMEOUT_MS = 6_000;
+const SEARCH_PROVIDER_TIMEOUT_MS = 2_500;
+const UAKOR_ARTIST_CATALOG_TIMEOUT_MS = 1_500;
 const ULTIMATE_GUITAR_API_URL = "https://api.ultimate-guitar.com/api/v1";
 const REQUEST_HEADERS = {
   "User-Agent":
@@ -155,6 +159,19 @@ function normalizeText(value: string) {
 
 function slugify(value: string) {
   return normalizeText(value).replace(/\s+/g, "-");
+}
+
+function withTimeout<T>(promise: Promise<T>, fallback: T, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), timeoutMs)),
+  ]);
+}
+
+const BLOCKED_SONG_RESULTS = new Set(["Duman Üstü", "Duman", "Duman Duman"].map(normalizeText));
+
+function isBlockedSongResult(song: SongSearchListItem) {
+  return normalizeText(song.artist) === "duman" && BLOCKED_SONG_RESULTS.has(normalizeText(song.title));
 }
 
 function absoluteUrl(href: string, baseUrl = REPERTUARIM_URL) {
@@ -450,6 +467,11 @@ type ITunesSearchResponse = {
   }>;
 };
 
+type CoverLookupOptions = {
+  allowItunes?: boolean;
+  timeoutMs?: number;
+};
+
 type DeezerSearchResponse = {
   data?: Array<{
     artist?: { name?: string };
@@ -567,7 +589,7 @@ function buildInternetCoverQueries(artist: string, title: string) {
   ].filter((query, index, queries) => query.term && queries.findIndex((candidate) => candidate.term === query.term && candidate.attribute === query.attribute) === index);
 }
 
-async function findItunesCoverForSong(artist: string, title: string) {
+async function findItunesCoverForSong(artist: string, title: string, options: CoverLookupOptions = {}) {
   const cacheKey = `${normalizeText(artist)}-${normalizeText(title)}`;
   if (itunesCoverCache.has(cacheKey)) return itunesCoverCache.get(cacheKey) ?? "";
   const wantedArtist = normalizeText(artist);
@@ -584,7 +606,7 @@ async function findItunesCoverForSong(artist: string, title: string) {
     if (!queryVariant.attribute) query.delete("attribute");
     try {
       const response = await axios.get<ITunesSearchResponse>(`${ITUNES_SEARCH_URL}?${query.toString()}`, {
-        timeout: 6_000,
+        timeout: options.timeoutMs ?? DETAIL_COVER_TIMEOUT_MS,
         validateStatus: (status) => status >= 200 && status < 400,
       });
       const results = response.data.results ?? [];
@@ -611,7 +633,7 @@ async function findItunesCoverForSong(artist: string, title: string) {
   return "";
 }
 
-async function findDeezerCoverForSong(artist: string, title: string) {
+async function findDeezerCoverForSong(artist: string, title: string, options: CoverLookupOptions = {}) {
   const cacheKey = `${normalizeText(artist)}-${normalizeText(title)}`;
   if (deezerCoverCache.has(cacheKey)) return deezerCoverCache.get(cacheKey) ?? "";
   const wantedArtist = normalizeText(artist);
@@ -621,11 +643,12 @@ async function findDeezerCoverForSong(artist: string, title: string) {
     `${artist} ${title}`,
     `${title} ${artist}`,
   ].filter(Boolean);
-  for (const term of queries) {
+  const searchQueries = options.allowItunes === false ? queries.slice(0, 1) : queries;
+  for (const term of searchQueries) {
     const query = new URLSearchParams({ q: term, limit: "5" });
     try {
       const response = await axios.get<DeezerSearchResponse>(`${DEEZER_SEARCH_URL}?${query.toString()}`, {
-        timeout: 6_000,
+        timeout: options.timeoutMs ?? DETAIL_COVER_TIMEOUT_MS,
         validateStatus: (status) => status >= 200 && status < 400,
       });
       const results = response.data.data ?? [];
@@ -649,9 +672,10 @@ async function findDeezerCoverForSong(artist: string, title: string) {
   return "";
 }
 
-async function findInternetCoverForSong(artist: string, title: string) {
-  const deezerCover = await findDeezerCoverForSong(artist, title);
-  const itunesCover = await findItunesCoverForSong(artist, title);
+async function findInternetCoverForSong(artist: string, title: string, options: CoverLookupOptions = {}) {
+  const deezerCover = await findDeezerCoverForSong(artist, title, options);
+  if (options.allowItunes === false) return deezerCover;
+  const itunesCover = await findItunesCoverForSong(artist, title, options);
   return deezerCover || itunesCover;
 }
 
@@ -665,22 +689,22 @@ function withFallbackCovers<T extends SongSearchListItem>(songs: T[]): T[] {
   return songs.map((song) => withFallbackCover(song));
 }
 
-async function withInternetOrFallbackCover<T extends SongSearchListItem>(song: T): Promise<T> {
-  const variants = song.variants ? await withInternetOrFallbackCovers(song.variants) : undefined;
-  const internetCover = await findInternetCoverForSong(song.artist, song.title);
+async function withInternetOrFallbackCover<T extends SongSearchListItem>(song: T, options: CoverLookupOptions = {}): Promise<T> {
+  const variants = song.variants ? await withInternetOrFallbackCovers(song.variants, options) : undefined;
+  const internetCover = await findInternetCoverForSong(song.artist, song.title, options);
   const providerCover = isWeakProviderCover(song.cover) ? "" : song.cover;
   return { ...song, cover: internetCover || providerCover || fallbackCoverForSong(song.artist, song.title), variants };
 }
 
-async function withInternetOrFallbackCovers<T extends SongSearchListItem>(songs: T[]): Promise<T[]> {
+async function withInternetOrFallbackCovers<T extends SongSearchListItem>(songs: T[], options: CoverLookupOptions = {}): Promise<T[]> {
   const results = [...songs];
   let nextIndex = 0;
-  const concurrency = 4;
+  const concurrency = 24;
   const workers = Array.from({ length: Math.min(concurrency, songs.length) }, async () => {
     while (nextIndex < songs.length) {
       const index = nextIndex;
       nextIndex += 1;
-      results[index] = await withInternetOrFallbackCover(songs[index]);
+      results[index] = await withInternetOrFallbackCover(songs[index], options);
     }
   });
   await Promise.all(workers);
@@ -981,9 +1005,11 @@ async function searchUakor(query: string) {
   const songs: SongSearchListItem[] = [];
   const [apiSongs, artistCatalogSongs] = await Promise.all([
     searchUakorApi(query).catch(() => []),
-    searchUakorArtistCatalogApi(query).catch(() => []),
+    withTimeout(searchUakorArtistCatalogApi(query).catch(() => []), [], UAKOR_ARTIST_CATALOG_TIMEOUT_MS),
   ]);
   songs.push(...apiSongs, ...artistCatalogSongs);
+  const apiBackedSongs = dedupeSongs(songs);
+  if (apiBackedSongs.length >= 20) return apiBackedSongs.slice(0, 180);
   for (const url of searchUrls) {
     try {
       const html = await getHtml(url, UAKOR_URL);
@@ -1055,24 +1081,24 @@ function matchesWantedTitle(song: SongSearchListItem, title: string) {
 
 function filterByExplicitFields(songs: SongSearchListItem[], title: string, artist: string) {
   const exactArtist = Boolean(artist && !title);
-  const filtered = songs.filter((song) => matchesWantedArtist(song, artist, exactArtist) && matchesWantedTitle(song, title));
+  const filtered = songs.filter((song) => !isBlockedSongResult(song) && matchesWantedArtist(song, artist, exactArtist) && matchesWantedTitle(song, title));
   if (filtered.length) return filtered;
-  return artist ? [] : songs.filter((song) => matchesWantedTitle(song, title));
+  return artist ? [] : songs.filter((song) => !isBlockedSongResult(song) && matchesWantedTitle(song, title));
 }
 
 async function searchSongs(query: string, title = "", artist = ""): Promise<SongSearchResponse> {
   const artistKey = normalizeText(artist || query);
   const discoveryQueries = !title && artist ? (ARTIST_DISCOVERY_QUERIES[artistKey] ?? []) : [];
   const [repertuarim, ugSongs, uakorSongs, discoveredSongs] = await Promise.all([
-    searchRepertuarim(query).catch(() => ({ songs: [], artists: [] as SongArtistResult[] })),
-    searchUltimateGuitar(query).catch(() => []),
-    searchUakor(query).catch(() => []),
-    Promise.all(discoveryQueries.map((seed) => searchUltimateGuitar(seed).catch(() => []))).then((results) => results.flat()),
+    withTimeout(searchRepertuarim(query).catch(() => ({ songs: [], artists: [] as SongArtistResult[] })), { songs: [], artists: [] as SongArtistResult[] }, SEARCH_PROVIDER_TIMEOUT_MS),
+    withTimeout(searchUltimateGuitar(query).catch(() => []), [], SEARCH_PROVIDER_TIMEOUT_MS),
+    withTimeout(searchUakor(query).catch(() => []), [], SEARCH_PROVIDER_TIMEOUT_MS),
+    withTimeout(Promise.all(discoveryQueries.map((seed) => searchUltimateGuitar(seed).catch(() => []))).then((results) => results.flat()), [], SEARCH_PROVIDER_TIMEOUT_MS),
   ]);
 
   const allSongs = [...repertuarim.songs, ...ugSongs, ...discoveredSongs, ...uakorSongs];
   const groupedSongs = groupSongVariants(sortByQuery(filterByExplicitFields(allSongs, title, artist), query)).slice(0, 180);
-  const songs = await withInternetOrFallbackCovers(groupedSongs);
+  const songs = await withInternetOrFallbackCovers(groupedSongs, { allowItunes: false, timeoutMs: SEARCH_COVER_TIMEOUT_MS });
   const artists = title
     ? []
     : repertuarim.artists
