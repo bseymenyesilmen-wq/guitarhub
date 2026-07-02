@@ -8,10 +8,61 @@ import { ChordTextViewer } from "@/app/components/ChordTextViewer";
 import { buildSongPayload, transposeText } from "@/lib/music";
 import { CHORD_LIBRARY, type ChordDefinition } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
-import type { Setlist, SongForm } from "@/lib/types";
+import type { SongForm } from "@/lib/types";
 import type { SongArtistResult, SongSearchListItem, SongSearchResponse, SongSearchResult } from "@/lib/songSearch";
 
 const NOT_FOUND_MESSAGE = "Şarkı bulunamadı.";
+const LOCAL_SETLISTS_KEY = "guitarhub.localSetlists.v1";
+
+type SetlistOption = {
+  id: number;
+  name: string;
+  setlist_songs?: unknown[];
+};
+
+type LocalSetlistSong = {
+  id: number;
+  setlist_id: number;
+  song_id: number;
+  position: number;
+  created_at: string;
+  songs: {
+    id: number;
+    title: string;
+    artist: string;
+    key?: string | null;
+    bpm?: number | null;
+    lyrics?: string | null;
+    chords?: string | null;
+    difficulty?: string | null;
+    capo?: string | null;
+    notes?: string | null;
+    favorite?: boolean | null;
+    created_at?: string | null;
+  };
+};
+
+type LocalSetlist = {
+  id: number;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  setlist_songs: LocalSetlistSong[];
+};
+
+function readLocalSetlists(): LocalSetlist[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(LOCAL_SETLISTS_KEY) ?? "[]") as LocalSetlist[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalSetlists(setlists: LocalSetlist[]) {
+  window.localStorage.setItem(LOCAL_SETLISTS_KEY, JSON.stringify(setlists));
+}
 
 function resultToForm(result: SongSearchResult, favorite: boolean, chords: string): SongForm {
   return {
@@ -59,7 +110,8 @@ export default function SarkiAra() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [setlistModalOpen, setSetlistModalOpen] = useState(false);
-  const [setlists, setSetlists] = useState<Setlist[]>([]);
+  const [setlists, setSetlists] = useState<SetlistOption[]>([]);
+  const [setlistStorageMode, setSetlistStorageMode] = useState<"supabase" | "local">("supabase");
   const [setlistsLoading, setSetlistsLoading] = useState(false);
   const [newSetlistName, setNewSetlistName] = useState("");
   const [selectedSetlistId, setSelectedSetlistId] = useState<number | null>(null);
@@ -203,12 +255,16 @@ export default function SarkiAra() {
     setSetlistsLoading(false);
 
     if (error) {
-      setMessage(`${error.message} Setlist tabloları Supabase'de oluşturulmamış olabilir.`);
-      setSetlists([]);
+      const localSetlists = readLocalSetlists();
+      setSetlistStorageMode("local");
+      setMessage("Setlist tabloları henüz Supabase'de yok. Şimdilik bu cihazda kaydediyorum.");
+      setSetlists(localSetlists);
+      setSelectedSetlistId(localSetlists[0]?.id ?? null);
       return;
     }
 
-    setSetlists((data ?? []) as Setlist[]);
+    setSetlistStorageMode("supabase");
+    setSetlists((data ?? []) as SetlistOption[]);
     setSelectedSetlistId((data?.[0]?.id as number | undefined) ?? null);
   }
 
@@ -231,6 +287,62 @@ export default function SarkiAra() {
 
     setSetlistModalOpen(true);
     await loadSetlists(session.user.id);
+  }
+
+  function addToLocalSetlist(form: SongForm, targetSetlistId?: number) {
+    const localSetlists = readLocalSetlists();
+    const now = new Date().toISOString();
+    let setlistId = targetSetlistId ?? selectedSetlistId;
+    const trimmedSetlistName = newSetlistName.trim();
+    let nextSetlists = [...localSetlists];
+
+    if (!setlistId && trimmedSetlistName) {
+      setlistId = Date.now();
+      nextSetlists = [
+        { id: setlistId, name: trimmedSetlistName, created_at: now, updated_at: now, setlist_songs: [] },
+        ...nextSetlists,
+      ];
+    }
+
+    if (!setlistId) {
+      setMessage("Önce bir setlist seç veya yeni setlist adı yaz.");
+      return;
+    }
+
+    const songPayload = buildSongPayload(form, "local");
+    nextSetlists = nextSetlists.map((setlist) => {
+      if (setlist.id !== setlistId) return setlist;
+      const localSongId = Date.now() * -1;
+      const item: LocalSetlistSong = {
+        id: localSongId,
+        setlist_id: setlistId,
+        song_id: localSongId,
+        position: setlist.setlist_songs.length + 1,
+        created_at: now,
+        songs: {
+          id: localSongId,
+          title: String(songPayload.title),
+          artist: String(songPayload.artist),
+          key: typeof songPayload.key === "string" ? songPayload.key : null,
+          bpm: typeof songPayload.bpm === "number" ? songPayload.bpm : null,
+          lyrics: typeof songPayload.lyrics === "string" ? songPayload.lyrics : null,
+          chords: typeof songPayload.chords === "string" ? songPayload.chords : null,
+          difficulty: typeof songPayload.difficulty === "string" ? songPayload.difficulty : null,
+          capo: typeof songPayload.capo === "string" ? songPayload.capo : null,
+          notes: typeof songPayload.notes === "string" ? songPayload.notes : null,
+          favorite: typeof songPayload.favorite === "boolean" ? songPayload.favorite : false,
+          created_at: now,
+        },
+      };
+      return { ...setlist, updated_at: now, setlist_songs: [...setlist.setlist_songs, item] };
+    });
+
+    writeLocalSetlists(nextSetlists);
+    setSetlists(nextSetlists);
+    setSelectedSetlistId(setlistId);
+    setSetlistModalOpen(false);
+    setNewSetlistName("");
+    setMessage("Şarkı bu cihazdaki setliste eklendi.");
   }
 
   async function addToSetlist(targetSetlistId?: number) {
@@ -257,6 +369,11 @@ export default function SarkiAra() {
       return;
     }
 
+    if (setlistStorageMode === "local") {
+      addToLocalSetlist(form, targetSetlistId);
+      return;
+    }
+
     setSaving(true);
 
     let setlistId = targetSetlistId ?? selectedSetlistId;
@@ -275,8 +392,8 @@ export default function SarkiAra() {
         return;
       }
 
-      setlistId = (createdSetlist as Setlist).id;
-      setSetlists((current) => [createdSetlist as Setlist, ...current]);
+      setlistId = (createdSetlist as SetlistOption).id;
+      setSetlists((current) => [createdSetlist as SetlistOption, ...current]);
     }
 
     if (!setlistId) {

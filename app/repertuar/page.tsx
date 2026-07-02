@@ -9,6 +9,21 @@ import type { Setlist, SetlistSong, Song } from "@/lib/types";
 
 type LoadedSetlistSong = SetlistSong & { songs?: Song | null };
 type LoadedSetlist = Setlist & { setlist_songs?: LoadedSetlistSong[] };
+const LOCAL_SETLISTS_KEY = "guitarhub.localSetlists.v1";
+
+function readLocalSetlists(): LoadedSetlist[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(LOCAL_SETLISTS_KEY) ?? "[]") as LoadedSetlist[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalSetlists(setlists: LoadedSetlist[]) {
+  window.localStorage.setItem(LOCAL_SETLISTS_KEY, JSON.stringify(setlists));
+}
 
 function sortedSetlistSongs(setlist?: LoadedSetlist | null) {
   return [...(setlist?.setlist_songs ?? [])].sort((a, b) => a.position - b.position);
@@ -17,6 +32,7 @@ function sortedSetlistSongs(setlist?: LoadedSetlist | null) {
 export default function Repertuar() {
   const router = useRouter();
   const [setlists, setSetlists] = useState<LoadedSetlist[]>([]);
+  const [storageMode, setStorageMode] = useState<"supabase" | "local">("supabase");
   const [selectedSetlistId, setSelectedSetlistId] = useState<number | null>(null);
   const [userId, setUserId] = useState("");
   const [query, setQuery] = useState("");
@@ -48,13 +64,17 @@ export default function Repertuar() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      setMessage(`${error.message} Setlist tabloları Supabase'de oluşturulmamış olabilir.`);
-      setSetlists([]);
+      const localSetlists = readLocalSetlists();
+      setStorageMode("local");
+      setMessage("Setlist tabloları henüz Supabase'de yok. Yerel cihaz modu ile devam ediyorsun.");
+      setSetlists(localSetlists);
+      setSelectedSetlistId((current) => current ?? localSetlists[0]?.id ?? null);
       setLoading(false);
       return;
     }
 
     const loaded = (data ?? []) as LoadedSetlist[];
+    setStorageMode("supabase");
     setSetlists(loaded);
     setSelectedSetlistId((current) => current ?? loaded[0]?.id ?? null);
     setLoading(false);
@@ -93,8 +113,20 @@ export default function Repertuar() {
       return;
     }
 
-    if (!userId) {
+    if (!userId && storageMode !== "local") {
       router.push("/giris");
+      return;
+    }
+
+    if (storageMode === "local") {
+      const now = new Date().toISOString();
+      const created: LoadedSetlist = { id: Date.now(), user_id: "local", name, created_at: now, updated_at: now, setlist_songs: [] };
+      const nextSetlists = [created, ...readLocalSetlists()];
+      writeLocalSetlists(nextSetlists);
+      setSetlists(nextSetlists);
+      setSelectedSetlistId(created.id);
+      setNewSetlistName("");
+      setMessage("Setlist bu cihazda oluşturuldu.");
       return;
     }
 
@@ -121,6 +153,19 @@ export default function Repertuar() {
   async function deleteSetlistSong(item: LoadedSetlistSong) {
     setDeletingId(item.id);
     setMessage("");
+
+    if (storageMode === "local") {
+      const nextSetlists = readLocalSetlists().map((setlist) =>
+        setlist.id === item.setlist_id
+          ? { ...setlist, setlist_songs: (setlist.setlist_songs ?? []).filter((songItem) => songItem.id !== item.id) }
+          : setlist,
+      );
+      writeLocalSetlists(nextSetlists);
+      setSetlists(nextSetlists);
+      setDeletingId(null);
+      setMessage("Şarkı setlistten çıkarıldı.");
+      return;
+    }
 
     const { error } = await supabase.from("setlist_songs").delete().eq("id", item.id);
     setDeletingId(null);
@@ -149,6 +194,24 @@ export default function Repertuar() {
 
     setMovingId(item.id);
     setMessage("");
+
+    if (storageMode === "local") {
+      const nextSetlists = readLocalSetlists().map((setlist) => {
+        if (setlist.id !== selectedSetlist.id) return setlist;
+        return {
+          ...setlist,
+          setlist_songs: (setlist.setlist_songs ?? []).map((songItem) => {
+            if (songItem.id === item.id) return { ...songItem, position: target.position };
+            if (songItem.id === target.id) return { ...songItem, position: item.position };
+            return songItem;
+          }),
+        };
+      });
+      writeLocalSetlists(nextSetlists);
+      setSetlists(nextSetlists);
+      setMovingId(null);
+      return;
+    }
 
     const { error: firstError } = await supabase.from("setlist_songs").update({ position: target.position }).eq("id", item.id);
     const { error: secondError } = await supabase.from("setlist_songs").update({ position: item.position }).eq("id", target.id);
@@ -189,6 +252,7 @@ export default function Repertuar() {
             <Link href="/sarki-ara" className="inline-flex min-h-11 items-center rounded-full bg-red-600 px-5 font-bold hover:bg-red-500">
               Şarkı ara ve ekle
             </Link>
+            {storageMode === "local" && <span className="inline-flex min-h-11 items-center rounded-full bg-zinc-800 px-4 text-sm font-bold text-zinc-300">Yerel cihaz modu</span>}
           </div>
         </section>
 
@@ -271,14 +335,30 @@ export default function Repertuar() {
                       return (
                         <div key={item.id} className="grid gap-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 md:grid-cols-[auto_1fr_auto] md:items-center">
                           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 font-black text-red-300">{index + 1}</span>
-                          <Link href={`/sarki/${song.id}`} className="min-w-0 rounded-xl p-1 hover:bg-zinc-800/60">
-                            <h3 className="truncate text-lg font-bold">{song.title}</h3>
-                            <p className="truncate text-sm text-zinc-400">
-                              {song.artist}
-                              {song.key ? ` - Ton: ${song.key}` : ""}
-                              {song.capo ? ` - Capo: ${song.capo}` : ""}
-                            </p>
-                          </Link>
+                          {storageMode === "local" ? (
+                            <details className="min-w-0 rounded-xl p-1">
+                              <summary className="cursor-pointer list-none rounded-xl hover:bg-zinc-800/60">
+                                <h3 className="truncate text-lg font-bold">{song.title}</h3>
+                                <p className="truncate text-sm text-zinc-400">
+                                  {song.artist}
+                                  {song.key ? ` - Ton: ${song.key}` : ""}
+                                  {song.capo ? ` - Capo: ${song.capo}` : ""}
+                                </p>
+                              </summary>
+                              <pre className="mt-3 max-h-80 overflow-auto rounded-2xl bg-zinc-900 p-4 text-sm leading-7 text-zinc-200">
+                                {song.chords?.trim() || song.lyrics?.trim() || "Akor/söz kaydı yok."}
+                              </pre>
+                            </details>
+                          ) : (
+                            <Link href={`/sarki/${song.id}`} className="min-w-0 rounded-xl p-1 hover:bg-zinc-800/60">
+                              <h3 className="truncate text-lg font-bold">{song.title}</h3>
+                              <p className="truncate text-sm text-zinc-400">
+                                {song.artist}
+                                {song.key ? ` - Ton: ${song.key}` : ""}
+                                {song.capo ? ` - Capo: ${song.capo}` : ""}
+                              </p>
+                            </Link>
+                          )}
 
                           <div className="flex flex-wrap gap-2">
                             <button
