@@ -70,6 +70,7 @@ export type LearningTab = {
   key?: string | null;
   instruments: string[];
   tab_text: string;
+  gp_file_url?: string | null;
   contributor_id?: string | null;
   contributor_name?: string | null;
   revision_number: number;

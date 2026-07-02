@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
+import { AlphaTabPlayer } from "@/app/components/AlphaTabPlayer";
 import { supabase } from "@/lib/supabase";
 import type { LearningTab, LearningTabTrack } from "@/lib/types";
 
@@ -39,6 +40,7 @@ const DEMO_TAB: LoadedLearningTab = {
     "A|-3-----3--------|-2-----2--------|",
     "E|----------------|----------------|",
   ].join("\n"),
+  gp_file_url: null,
   contributor_name: "GuitarHub",
   revision_number: 1,
   learning_tab_tracks: [
@@ -68,6 +70,7 @@ export default function SongLearnDetailPage() {
   const [mutedTrackIds, setMutedTrackIds] = useState<number[]>([]);
   const [soloTrackId, setSoloTrackId] = useState<number | null>(null);
   const [selectedTrackId, setSelectedTrackId] = useState<number | null>(null);
+  const [gpFileUrl, setGpFileUrl] = useState("");
   const [favorite, setFavorite] = useState(false);
 
   const recordHistory = useCallback(async (openedTabId: number) => {
@@ -93,11 +96,13 @@ export default function SongLearnDetailPage() {
 
       if (error || !data) {
         setTab(DEMO_TAB);
+        setGpFileUrl(DEMO_TAB.gp_file_url ?? "");
         setSelectedTrackId(DEMO_TAB.learning_tab_tracks?.[0]?.id ?? null);
         setMessage("Tab bulunamadı veya Supabase erişimi yok; demo player açıldı.");
       } else {
         const loaded = data as LoadedLearningTab;
         setTab(loaded);
+        setGpFileUrl(loaded.gp_file_url ?? "");
         setSelectedTrackId(loaded.learning_tab_tracks?.[0]?.id ?? null);
         await recordHistory(loaded.id);
       }
@@ -241,6 +246,25 @@ export default function SongLearnDetailPage() {
                 </div>
                 {message && <p className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 p-3 text-sm text-red-100">{message}</p>}
               </header>
+
+              <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-4 sm:p-6">
+                <label className="block text-sm font-black uppercase tracking-[0.16em] text-zinc-400" htmlFor="gp-file-url">GP dosyası URL</label>
+                <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
+                  <input
+                    id="gp-file-url"
+                    value={gpFileUrl}
+                    onChange={(event) => setGpFileUrl(event.target.value)}
+                    placeholder="https://.../dosya.gp5 veya Supabase Storage public URL"
+                    className="min-h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-white outline-none focus:border-red-500"
+                  />
+                  <button type="button" onClick={() => setMessage("GP URL player'a yüklendi. Dosya public/CORS izinli olmalı.")} className="rounded-2xl bg-zinc-800 px-5 py-3 font-black hover:bg-zinc-700">
+                    Player&apos;a Yükle
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-zinc-500">Tab kaynağını sonra netleştireceğiz; bu alan şimdilik izinli/public GP dosyalarını AlphaTab motoruna verir.</p>
+              </section>
+
+              <AlphaTabPlayer fileUrl={gpFileUrl} title={tab?.title || "Guitar Pro Player"} />
 
               <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-4 sm:p-6">
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
