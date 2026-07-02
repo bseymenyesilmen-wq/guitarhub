@@ -62,6 +62,11 @@ export default function SongLearnDetailPage() {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(100);
   const [loopEnabled, setLoopEnabled] = useState(true);
+  const [metronomeEnabled, setMetronomeEnabled] = useState(false);
+  const [countInEnabled, setCountInEnabled] = useState(true);
+  const [currentMeasure, setCurrentMeasure] = useState(0);
+  const [mutedTrackIds, setMutedTrackIds] = useState<number[]>([]);
+  const [soloTrackId, setSoloTrackId] = useState<number | null>(null);
   const [selectedTrackId, setSelectedTrackId] = useState<number | null>(null);
   const [favorite, setFavorite] = useState(false);
 
@@ -125,8 +130,82 @@ export default function SongLearnDetailPage() {
 
   const tracks = tab?.learning_tab_tracks?.length ? tab.learning_tab_tracks : DEMO_TAB.learning_tab_tracks ?? [];
   const selectedTrack = tracks.find((track) => track.id === selectedTrackId) ?? tracks[0];
+  const selectedTrackNumericId = selectedTrack?.id;
   const playerText = selectedTrack?.tab_text || tab?.tab_text || DEMO_TAB.tab_text;
   const lines = useMemo(() => playerText.split(/\r?\n/).filter(Boolean), [playerText]);
+  const measureCount = 10;
+
+  const toggleSelectedTrackMute = useCallback(() => {
+    if (selectedTrackNumericId == null) return;
+    setMutedTrackIds((current) =>
+      current.includes(selectedTrackNumericId) ? current.filter((trackId) => trackId !== selectedTrackNumericId) : [...current, selectedTrackNumericId],
+    );
+  }, [selectedTrackNumericId]);
+
+  const toggleSelectedTrackSolo = useCallback(() => {
+    if (selectedTrackNumericId == null) return;
+    setSoloTrackId((current) => (current === selectedTrackNumericId ? null : selectedTrackNumericId));
+  }, [selectedTrackNumericId]);
+
+  const handlePlayerShortcut = useCallback((event: KeyboardEvent) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.tagName === "SELECT") return;
+
+    if (event.code === "Space") {
+      event.preventDefault();
+      setPlaying((value) => !value);
+      return;
+    }
+    if (event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      setSpeed((value) => (value >= 150 ? 100 : clamp(value + 5, 25, 150)));
+      return;
+    }
+    if (event.key.toLowerCase() === "l") {
+      event.preventDefault();
+      setLoopEnabled((value) => !value);
+      return;
+    }
+    if (event.key.toLowerCase() === "m" && event.altKey) {
+      event.preventDefault();
+      toggleSelectedTrackSolo();
+      return;
+    }
+    if (event.key.toLowerCase() === "m") {
+      event.preventDefault();
+      toggleSelectedTrackMute();
+      return;
+    }
+    if (event.key.toLowerCase() === "n") {
+      event.preventDefault();
+      setMetronomeEnabled((value) => !value);
+      return;
+    }
+    if (event.key.toLowerCase() === "c") {
+      event.preventDefault();
+      setCountInEnabled((value) => !value);
+      return;
+    }
+    if (event.key === "Backspace") {
+      event.preventDefault();
+      setCurrentMeasure(0);
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setCurrentMeasure((value) => Math.min(measureCount - 1, value + 1));
+      return;
+    }
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      setCurrentMeasure((value) => Math.max(0, value - 1));
+    }
+  }, [toggleSelectedTrackMute, toggleSelectedTrackSolo]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handlePlayerShortcut);
+    return () => window.removeEventListener("keydown", handlePlayerShortcut);
+  }, [handlePlayerShortcut]);
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(220,38,38,0.16),transparent_34%),#09090b] p-4 pb-28 text-white sm:p-6 md:pb-6">
@@ -176,13 +255,18 @@ export default function SongLearnDetailPage() {
 
                 <div className="overflow-x-auto rounded-3xl border border-zinc-800 bg-black p-4 font-mono text-sm leading-8 text-zinc-100 sm:text-base">
                   <div className="mb-3 flex min-w-[760px] items-center gap-2 border-b border-zinc-800 pb-3 text-xs text-zinc-500">
-                    {Array.from({ length: 10 }, (_, index) => (
-                      <span key={index} className="inline-flex w-20 justify-center rounded-full bg-zinc-900 py-1 font-bold">
+                    {Array.from({ length: measureCount }, (_, index) => (
+                      <span key={index} className={`inline-flex w-20 justify-center rounded-full py-1 font-bold ${currentMeasure === index ? "bg-green-500 text-black" : "bg-zinc-900"}`}>
                         Ölçü {index + 1}
                       </span>
                     ))}
                   </div>
                   <pre className="min-w-[760px] whitespace-pre">{lines.join("\n")}</pre>
+                  <div className="mt-4 flex min-w-[760px] flex-wrap gap-2 border-t border-zinc-800 pt-3 text-xs font-bold text-zinc-300">
+                    <span className="rounded-full bg-green-500 px-3 py-1 text-black">Yeşil imleç: Ölçü {currentMeasure + 1}</span>
+                    <span className="rounded-full bg-zinc-900 px-3 py-1">Metronom: {metronomeEnabled ? "Açık" : "Kapalı"}</span>
+                    <span className="rounded-full bg-zinc-900 px-3 py-1">Count-in: {countInEnabled ? "Açık" : "Kapalı"}</span>
+                  </div>
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -198,9 +282,9 @@ export default function SongLearnDetailPage() {
                     Loop
                     <span className="mt-1 block text-sm font-semibold opacity-80">Seçili ölçüleri döndür</span>
                   </button>
-                  <button className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-left font-black">
+                  <button onClick={() => setCountInEnabled((value) => !value)} className={`rounded-2xl border p-4 text-left font-black ${countInEnabled ? "border-red-500 bg-red-600" : "border-zinc-800 bg-zinc-950"}`}>
                     Count In
-                    <span className="mt-1 block text-sm font-semibold text-zinc-400">Çalmadan önce sayım</span>
+                    <span className="mt-1 block text-sm font-semibold opacity-80">Çalmadan önce sayım</span>
                   </button>
                 </div>
               </section>
@@ -214,6 +298,10 @@ export default function SongLearnDetailPage() {
                     <button key={track.id} onClick={() => setSelectedTrackId(track.id)} className={`w-full rounded-2xl border p-4 text-left ${selectedTrack?.id === track.id ? "border-red-500 bg-red-950/30" : "border-zinc-800 bg-zinc-950"}`}>
                       <strong>{track.name}</strong>
                       <span className="mt-1 block text-sm text-zinc-400">{track.instrument} · Vol {track.volume}% · {track.tuning || "Standart"}</span>
+                      <span className="mt-2 flex flex-wrap gap-2 text-xs font-black">
+                        {mutedTrackIds.includes(track.id) && <span className="rounded-full bg-white px-2 py-1 text-black">Muted</span>}
+                        {soloTrackId === track.id && <span className="rounded-full bg-red-600 px-2 py-1 text-white">Solo</span>}
+                      </span>
                     </button>
                   ))}
                 </div>
