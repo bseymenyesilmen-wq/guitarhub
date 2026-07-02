@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
+import { supabase } from "@/lib/supabase";
+import type { LearningTab } from "@/lib/types";
 
 const INSTRUMENTS = ["Tümü", "Gitar", "Bas", "Davul", "Vokal", "Klavye"];
 const TRACKS = ["Lead Guitar", "Rhythm Guitar", "Bass", "Drums", "Vocal", "Keys"];
@@ -15,7 +17,19 @@ const SAMPLE_TAB = [
   "E|----------------|----------------|",
 ];
 
-const TAB_LIBRARY = [
+type LearningTabView = {
+  id: string;
+  title: string;
+  artist: string;
+  instruments: string[];
+  tuning: string;
+  revision: string;
+  contributor: string;
+  source: string;
+  tab: string;
+};
+
+const TAB_LIBRARY: LearningTabView[] = [
   {
     id: "gh-demo-1",
     title: "GuitarHub Demo Riff",
@@ -67,6 +81,20 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+function mapLearningTab(tab: LearningTab): LearningTabView {
+  return {
+    id: String(tab.id),
+    title: tab.title,
+    artist: tab.artist,
+    instruments: tab.instruments?.length ? tab.instruments : ["Gitar"],
+    tuning: tab.tuning || "E A D G B E",
+    revision: `v${tab.revision_number || 1}`,
+    contributor: tab.contributor_name || "GuitarHub",
+    source: tab.source_type === "demo" ? "GuitarHub kaynaklı demo tab" : `${tab.source_type} tab`,
+    tab: tab.learning_tab_tracks?.[0]?.tab_text || tab.tab_text || SAMPLE_TAB.join("\n"),
+  };
+}
+
 export default function SarkiOgren() {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(100);
@@ -78,34 +106,59 @@ export default function SarkiOgren() {
   const [countIn, setCountIn] = useState(true);
   const [query, setQuery] = useState("");
   const [instrumentFilter, setInstrumentFilter] = useState("Tümü");
+  const [tabs, setTabs] = useState<LearningTabView[]>(TAB_LIBRARY);
+  const [storageMode, setStorageMode] = useState<"supabase" | "demo">("demo");
   const [activeTabId, setActiveTabId] = useState(TAB_LIBRARY[0].id);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [history, setHistory] = useState<string[]>([]);
   const [playlist, setPlaylist] = useState<string[]>([]);
 
-  const activeTab = TAB_LIBRARY.find((tab) => tab.id === activeTabId) ?? TAB_LIBRARY[0];
+  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0] ?? TAB_LIBRARY[0];
   const [tabText, setTabText] = useState(activeTab.tab);
+
+  useEffect(() => {
+    async function loadLearningData() {
+      const { data, error } = await supabase.from("learning_tabs")
+        .select("*, learning_tab_tracks(*)")
+        .eq("status", "published")
+        .order("created_at", { ascending: false });
+
+      if (error || !data?.length) {
+        setStorageMode("demo");
+        setTabs(TAB_LIBRARY);
+        return;
+      }
+
+      const mappedTabs = (data as LearningTab[]).map(mapLearningTab);
+      setStorageMode("supabase");
+      setTabs(mappedTabs);
+      setActiveTabId((current) => (mappedTabs.some((tab) => tab.id === current) ? current : mappedTabs[0].id));
+      setTabText((current) => current || mappedTabs[0].tab);
+    }
+
+    loadLearningData();
+  }, []);
 
   const filteredTabs = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("tr-TR");
-    return TAB_LIBRARY.filter((tab) => {
+    return tabs.filter((tab) => {
       const matchesQuery = !normalized || `${tab.title} ${tab.artist}`.toLocaleLowerCase("tr-TR").includes(normalized);
       const matchesInstrument = instrumentFilter === "Tümü" || tab.instruments.includes(instrumentFilter);
       return matchesQuery && matchesInstrument;
     });
-  }, [instrumentFilter, query]);
+  }, [instrumentFilter, query, tabs]);
 
   const visibleLines = useMemo(() => tabText.split(/\r?\n/).filter(Boolean), [tabText]);
-  const favoriteTabs = TAB_LIBRARY.filter((tab) => favorites.includes(tab.id));
-  const historyTabs = history.map((id) => TAB_LIBRARY.find((tab) => tab.id === id)).filter(Boolean);
-  const playlistTabs = playlist.map((id) => TAB_LIBRARY.find((tab) => tab.id === id)).filter(Boolean);
+  const favoriteTabs = tabs.filter((tab) => favorites.includes(tab.id));
+  const historyTabs = history.map((id) => tabs.find((tab) => tab.id === id)).filter(Boolean);
+  const playlistTabs = playlist.map((id) => tabs.find((tab) => tab.id === id)).filter(Boolean);
 
   function addToHistory(tabId: string) {
     setHistory((current) => [tabId, ...current.filter((id) => id !== tabId)].slice(0, 8));
   }
 
   function openTab(tabId: string) {
-    const tab = TAB_LIBRARY.find((item) => item.id === tabId);
+    const tab = tabs.find((item) => item.id === tabId);
     if (!tab) return;
     setActiveTabId(tab.id);
     setTabText(tab.tab);
@@ -141,7 +194,7 @@ export default function SarkiOgren() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4 lg:grid-cols-2">
-              {["Arama", "Enstrüman filtresi", "Playlist", "Offline hazırlık"].map((item) => (
+              {[storageMode === "supabase" ? "Kalıcı Supabase modu" : "Demo mod", "Enstrüman filtresi", "Playlist", "Offline hazırlık"].map((item) => (
                 <div key={item} className="rounded-2xl border border-red-500/20 bg-red-950/20 p-4 font-bold text-red-100">
                   {item}
                 </div>
