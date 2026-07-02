@@ -31,9 +31,9 @@ const required = [
   "return deezerCover || itunesCover",
   "const songs = await withInternetOrFallbackCovers(groupedSongs, { allowItunes: false, timeoutMs: SEARCH_COVER_TIMEOUT_MS })",
   "async function withInternetOrFallbackCover",
-  "const internetCover = await findInternetCoverForSong(song.artist, song.title, options)",
+  "const internetCover = cachedCover ? \"\" : await findInternetCoverForSong(song.artist, song.title, options)",
   "const providerCover = isWeakProviderCover(song.cover) ? \"\" : song.cover",
-  "cover: internetCover || providerCover || fallbackCoverForSong(song.artist, song.title)",
+  "const cover = cachedCover || internetCover || providerCover || fallbackCoverForSong(song.artist, song.title)",
   "const concurrency = 24",
   "recommendation.cover",
 ];

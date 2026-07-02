@@ -1,6 +1,8 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { createHash, randomBytes } from "crypto";
+import { mkdir, readFile, writeFile } from "fs/promises";
+import path from "path";
 import { NextResponse } from "next/server";
 import { type SongArtistResult, type SongSearchListItem, type SongSearchResponse } from "@/lib/songSearch";
 
@@ -475,6 +477,12 @@ type CoverLookupOptions = {
   timeoutMs?: number;
 };
 
+type PersistedCoverCache = Record<string, string>;
+
+const COVER_CACHE_FILE = path.join(process.cwd(), ".cache", "song-covers.json");
+let persistentCoverCache: PersistedCoverCache | null = null;
+let persistentCoverCacheWrite = Promise.resolve();
+
 type DeezerSearchResponse = {
   data?: Array<{
     artist?: { name?: string };
@@ -571,6 +579,45 @@ function fallbackCoverForSong(artist: string, title: string) {
 const itunesCoverCache = new Map<string, string>();
 const deezerCoverCache = new Map<string, string>();
 
+function songCoverCacheKey(artist: string, title: string) {
+  return `${normalizeText(artist)}::${normalizeText(title)}`;
+}
+
+async function readPersistentCoverCache() {
+  if (persistentCoverCache) return persistentCoverCache;
+  try {
+    const raw = await readFile(COVER_CACHE_FILE, "utf8");
+    const parsed = JSON.parse(raw) as PersistedCoverCache;
+    persistentCoverCache = parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    persistentCoverCache = {};
+  }
+  return persistentCoverCache;
+}
+
+async function writePersistentCoverCache() {
+  const cache = await readPersistentCoverCache();
+  persistentCoverCacheWrite = persistentCoverCacheWrite.then(async () => {
+    await mkdir(path.dirname(COVER_CACHE_FILE), { recursive: true });
+    await writeFile(COVER_CACHE_FILE, `${JSON.stringify(cache, null, 2)}\n`, "utf8");
+  }).catch(() => undefined);
+  return persistentCoverCacheWrite;
+}
+
+async function getCachedSongCover(artist: string, title: string) {
+  const cache = await readPersistentCoverCache();
+  return cache[songCoverCacheKey(artist, title)] || "";
+}
+
+async function setCachedSongCover(artist: string, title: string, cover: string) {
+  if (!cover || cover.startsWith("data:image/svg+xml")) return;
+  const cache = await readPersistentCoverCache();
+  const key = songCoverCacheKey(artist, title);
+  if (cache[key] === cover) return;
+  cache[key] = cover;
+  await writePersistentCoverCache();
+}
+
 function highResolutionItunesArtwork(url = "") {
   return url.replace(/\/100x100bb\.(jpg|png|webp)$/i, "/600x600bb.$1");
 }
@@ -626,6 +673,7 @@ async function findItunesCoverForSong(artist: string, title: string, options: Co
       const cover = highResolutionItunesArtwork(result?.artworkUrl100 ?? "");
       if (cover) {
         itunesCoverCache.set(cacheKey, cover);
+        await setCachedSongCover(artist, title, cover);
         return cover;
       }
     } catch {
@@ -665,6 +713,7 @@ async function findDeezerCoverForSong(artist: string, title: string, options: Co
       const cover = highResolutionDeezerArtwork(result?.album?.cover_big || result?.album?.cover_medium || "");
       if (cover) {
         deezerCoverCache.set(cacheKey, cover);
+        await setCachedSongCover(artist, title, cover);
         return cover;
       }
     } catch {
@@ -694,9 +743,12 @@ function withFallbackCovers<T extends SongSearchListItem>(songs: T[]): T[] {
 
 async function withInternetOrFallbackCover<T extends SongSearchListItem>(song: T, options: CoverLookupOptions = {}): Promise<T> {
   const variants = song.variants ? await withInternetOrFallbackCovers(song.variants, options) : undefined;
-  const internetCover = await findInternetCoverForSong(song.artist, song.title, options);
+  const cachedCover = await getCachedSongCover(song.artist, song.title);
+  const internetCover = cachedCover ? "" : await findInternetCoverForSong(song.artist, song.title, options);
   const providerCover = isWeakProviderCover(song.cover) ? "" : song.cover;
-  return { ...song, cover: internetCover || providerCover || fallbackCoverForSong(song.artist, song.title), variants };
+  const cover = cachedCover || internetCover || providerCover || fallbackCoverForSong(song.artist, song.title);
+  if (!cachedCover && cover === providerCover) await setCachedSongCover(song.artist, song.title, cover);
+  return { ...song, cover, variants };
 }
 
 async function withInternetOrFallbackCovers<T extends SongSearchListItem>(songs: T[], options: CoverLookupOptions = {}): Promise<T[]> {
