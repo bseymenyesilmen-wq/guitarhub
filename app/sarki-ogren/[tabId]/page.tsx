@@ -72,6 +72,11 @@ export default function SongLearnDetailPage() {
   const [selectedTrackId, setSelectedTrackId] = useState<number | null>(null);
   const [gpFileUrl, setGpFileUrl] = useState("");
   const [uploadingGpFile, setUploadingGpFile] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorText, setEditorText] = useState("");
+  const [editorStatus, setEditorStatus] = useState<LearningTab["status"]>("published");
+  const [revisionNote, setRevisionNote] = useState("");
+  const [savingEditor, setSavingEditor] = useState(false);
   const [favorite, setFavorite] = useState(false);
 
   const recordHistory = useCallback(async (openedTabId: number) => {
@@ -98,12 +103,16 @@ export default function SongLearnDetailPage() {
       if (error || !data) {
         setTab(DEMO_TAB);
         setGpFileUrl(DEMO_TAB.gp_file_url ?? "");
+        setEditorText(DEMO_TAB.tab_text);
+        setEditorStatus(DEMO_TAB.status);
         setSelectedTrackId(DEMO_TAB.learning_tab_tracks?.[0]?.id ?? null);
         setMessage("Tab bulunamadı veya Supabase erişimi yok; demo player açıldı.");
       } else {
         const loaded = data as LoadedLearningTab;
         setTab(loaded);
         setGpFileUrl(loaded.gp_file_url ?? "");
+        setEditorText(loaded.tab_text || "");
+        setEditorStatus(loaded.status);
         setSelectedTrackId(loaded.learning_tab_tracks?.[0]?.id ?? null);
         await recordHistory(loaded.id);
       }
@@ -178,6 +187,51 @@ export default function SongLearnDetailPage() {
     setMessage("GP dosyası yüklendi ve AlphaTab player'a bağlandı.");
   }
 
+  async function handleSaveTabEdit() {
+    if (!tab?.id) return;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user.id;
+    if (!userId) {
+      setMessage("Tab düzenlemek için giriş yapmalısın.");
+      return;
+    }
+
+    setSavingEditor(true);
+    setMessage("");
+    const nextRevision = (tab.revision_number || 1) + 1;
+    const { error: updateError } = await supabase.from("learning_tabs").update({
+      tab_text: editorText,
+      status: editorStatus,
+      revision_number: nextRevision,
+      updated_at: new Date().toISOString(),
+    }).eq("id", tab.id);
+
+    if (updateError) {
+      setSavingEditor(false);
+      setMessage(`Tab kaydedilemedi: ${updateError.message}`);
+      return;
+    }
+
+    await supabase.from("learning_tab_revisions").insert({
+      tab_id: tab.id,
+      user_id: userId,
+      revision_number: nextRevision,
+      change_note: revisionNote || "Tab editörü ile güncellendi",
+      tab_snapshot: {
+        title: tab.title,
+        artist: tab.artist,
+        status: editorStatus,
+        tab_text: editorText,
+        gp_file_url: gpFileUrl,
+      },
+    });
+
+    setTab((current) => current ? { ...current, tab_text: editorText, status: editorStatus, revision_number: nextRevision } : current);
+    setRevisionNote("");
+    setSavingEditor(false);
+    setMessage("Tab kaydedildi ve yeni revizyon oluşturuldu.");
+  }
+
   const tracks = tab?.learning_tab_tracks?.length ? tab.learning_tab_tracks : DEMO_TAB.learning_tab_tracks ?? [];
   const selectedTrack = tracks.find((track) => track.id === selectedTrackId) ?? tracks[0];
   const selectedTrackNumericId = selectedTrack?.id;
@@ -234,6 +288,11 @@ export default function SongLearnDetailPage() {
     if (event.key.toLowerCase() === "c") {
       event.preventDefault();
       setCountInEnabled((value) => !value);
+      return;
+    }
+    if (event.key.toLowerCase() === "e") {
+      event.preventDefault();
+      setEditorOpen((value) => !value);
       return;
     }
     if (event.key === "Backspace") {
@@ -322,6 +381,42 @@ export default function SongLearnDetailPage() {
               </section>
 
               <AlphaTabPlayer fileUrl={gpFileUrl} title={tab?.title || "Guitar Pro Player"} />
+
+              <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-4 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-red-400">Tab Editörü</p>
+                    <h2 className="mt-1 text-2xl font-black">Nota / tab metnini düzenle</h2>
+                    <p className="mt-1 text-sm text-zinc-400">E kısayolu ile aç/kapat. Kaydetme yeni revizyon oluşturur.</p>
+                  </div>
+                  <button type="button" onClick={() => setEditorOpen((value) => !value)} className="rounded-2xl bg-zinc-800 px-5 py-3 font-black hover:bg-zinc-700">
+                    {editorOpen ? "Editörü Kapat" : "Editörü Aç"}
+                  </button>
+                </div>
+
+                {editorOpen && (
+                  <div className="mt-5 grid gap-4">
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <label className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 text-sm font-bold">
+                        Public edit
+                        <select value={editorStatus} onChange={(event) => setEditorStatus(event.target.value as LearningTab["status"])} className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-3 py-2 text-white">
+                          <option value="published">Public edit</option>
+                          <option value="private">Private edit</option>
+                          <option value="draft">Taslak</option>
+                        </select>
+                      </label>
+                      <label className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 text-sm font-bold sm:col-span-2">
+                        Revizyon notu
+                        <input value={revisionNote} onChange={(event) => setRevisionNote(event.target.value)} placeholder="Örn: solo kısmındaki 4. ölçü düzeltildi" className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-3 py-2 text-white" />
+                      </label>
+                    </div>
+                    <textarea value={editorText} onChange={(event) => setEditorText(event.target.value)} className="min-h-[280px] rounded-2xl border border-zinc-700 bg-black p-4 font-mono text-sm text-zinc-100 outline-none focus:border-red-500" />
+                    <button type="button" disabled={savingEditor} onClick={() => void handleSaveTabEdit()} className="rounded-2xl bg-red-600 px-5 py-3 font-black text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60">
+                      {savingEditor ? "Kaydediliyor..." : "Kaydet ve revizyon oluştur"}
+                    </button>
+                  </div>
+                )}
+              </section>
 
               <section className="rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-4 sm:p-6">
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
