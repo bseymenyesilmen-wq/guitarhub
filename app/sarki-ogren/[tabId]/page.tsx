@@ -71,6 +71,7 @@ export default function SongLearnDetailPage() {
   const [soloTrackId, setSoloTrackId] = useState<number | null>(null);
   const [selectedTrackId, setSelectedTrackId] = useState<number | null>(null);
   const [gpFileUrl, setGpFileUrl] = useState("");
+  const [uploadingGpFile, setUploadingGpFile] = useState(false);
   const [favorite, setFavorite] = useState(false);
 
   const recordHistory = useCallback(async (openedTabId: number) => {
@@ -131,6 +132,50 @@ export default function SongLearnDetailPage() {
     await supabase.from("learning_favorites").upsert({ user_id: userId, tab_id: tab.id }, { onConflict: "user_id,tab_id" });
     setFavorite(true);
     setMessage("Favoriye eklendi.");
+  }
+
+  async function handleGpFileUpload(file: File | null) {
+    if (!file || !tab?.id) return;
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    if (!extension || !["gp", "gp3", "gp4", "gp5", "gpx"].includes(extension)) {
+      setMessage("Sadece .gp, .gp3, .gp4, .gp5 veya .gpx dosyası yükle.");
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user.id;
+    if (!userId) {
+      setMessage("GP dosyası yüklemek için giriş yapmalısın.");
+      return;
+    }
+
+    setUploadingGpFile(true);
+    setMessage("");
+    const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const storagePath = `${userId}/${tab.id}/${Date.now()}-${safeFileName}`;
+    const { error: uploadError } = await supabase.storage.from("learning-tabs").upload(storagePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+      contentType: file.type || "application/octet-stream",
+    });
+
+    if (uploadError) {
+      setUploadingGpFile(false);
+      setMessage(`GP dosyası yüklenemedi: ${uploadError.message}`);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from("learning-tabs").getPublicUrl(storagePath);
+    const publicUrl = publicUrlData.publicUrl;
+    setGpFileUrl(publicUrl);
+
+    const { error: updateError } = await supabase.from("learning_tabs").update({ gp_file_url: publicUrl }).eq("id", tab.id);
+    setUploadingGpFile(false);
+    if (updateError) {
+      setMessage("GP dosyası yüklendi ve player'a verildi; ama bu tab kaydını güncelleme iznin yoksa URL kalıcı yazılamaz.");
+      return;
+    }
+    setMessage("GP dosyası yüklendi ve AlphaTab player'a bağlandı.");
   }
 
   const tracks = tab?.learning_tab_tracks?.length ? tab.learning_tab_tracks : DEMO_TAB.learning_tab_tracks ?? [];
@@ -260,6 +305,18 @@ export default function SongLearnDetailPage() {
                   <button type="button" onClick={() => setMessage("GP URL player'a yüklendi. Dosya public/CORS izinli olmalı.")} className="rounded-2xl bg-zinc-800 px-5 py-3 font-black hover:bg-zinc-700">
                     Player&apos;a Yükle
                   </button>
+                </div>
+                <div className="mt-4 rounded-2xl border border-dashed border-zinc-700 bg-zinc-950 p-4">
+                  <label className="block text-sm font-black text-zinc-200" htmlFor="gp-file-upload">GP dosyası yükle</label>
+                  <input
+                    id="gp-file-upload"
+                    type="file"
+                    accept=".gp,.gp3,.gp4,.gp5,.gpx"
+                    disabled={uploadingGpFile}
+                    onChange={(event) => void handleGpFileUpload(event.target.files?.[0] ?? null)}
+                    className="mt-3 block w-full text-sm text-zinc-300 file:mr-4 file:rounded-xl file:border-0 file:bg-red-600 file:px-4 file:py-2 file:font-black file:text-white hover:file:bg-red-500 disabled:opacity-60"
+                  />
+                  {uploadingGpFile && <p className="mt-2 text-sm font-bold text-red-300">Yükleniyor...</p>}
                 </div>
                 <p className="mt-2 text-xs text-zinc-500">Tab kaynağını sonra netleştireceğiz; bu alan şimdilik izinli/public GP dosyalarını AlphaTab motoruna verir.</p>
               </section>
