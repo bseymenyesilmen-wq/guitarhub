@@ -24,6 +24,7 @@ const DEEZER_SEARCH_URL = "https://api.deezer.com/search";
 const SEARCH_COVER_TIMEOUT_MS = 1_000;
 const DETAIL_COVER_TIMEOUT_MS = 6_000;
 const DETAIL_RECOMMENDATION_TIMEOUT_MS = 900;
+const QUICK_RECOMMENDATION_TIMEOUT_MS = 650;
 const SEARCH_PROVIDER_TIMEOUT_MS = 2_500;
 const UAKOR_ARTIST_CATALOG_TIMEOUT_MS = 1_500;
 const UAKOR_API_SEARCH_TIMEOUT_MS = 700;
@@ -795,7 +796,12 @@ function fastFallbackRecommendations(existing: SongSearchListItem[], artist: str
 }
 
 async function buildFastDetailRecommendations(artist: string, title: string, existing: SongSearchListItem[] = [], currentProvider = "") {
-  return withTimeout(buildSystemWideRecommendations(artist, title, existing, currentProvider), fastFallbackRecommendations(existing, artist, title), DETAIL_RECOMMENDATION_TIMEOUT_MS);
+  const fullRecommendationsPromise = buildSystemWideRecommendations(artist, title, existing, currentProvider);
+  const quickCandidatesPromise = artist ? searchProviderRecommendationCandidates(artist, currentProvider).catch(() => []) : Promise.resolve([]);
+  const quickCandidates = await withTimeout(quickCandidatesPromise, [], QUICK_RECOMMENDATION_TIMEOUT_MS);
+  const quickFallback = fastFallbackRecommendations([...existing, ...quickCandidates], artist, title);
+  if (quickFallback.length >= 3) return quickFallback;
+  return withTimeout(fullRecommendationsPromise, quickFallback, DETAIL_RECOMMENDATION_TIMEOUT_MS);
 }
 
 async function getUakorJson<T>(url: string) {
