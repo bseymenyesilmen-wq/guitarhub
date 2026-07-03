@@ -36,8 +36,6 @@ const QUICK_ACTIONS = [
   },
 ];
 
-const YODA_PROMPTS = ["F#m nasıl basılır?", "Şarkı nasıl eklenir?", "Gamları nerede bulurum?"];
-
 function firstName(value: string) {
   return value.split("@")[0].split(" ")[0] || "Gitarist";
 }
@@ -179,7 +177,7 @@ export default function Home() {
           <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-300">Panel yükleniyor...</div>
         ) : (
           <>
-            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="hidden gap-4 lg:grid lg:grid-cols-4">
               <StatCard label="Repertuar" value={songs.length.toString()} helper="Kaydettiğin toplam şarkı" actionLabel="Repertuvara git" href="/repertuar" />
               <StatCard label="Favoriler" value={favoriteCount.toString()} helper="Sık döndüğün parçalar" actionLabel="Favorileri göster" href="#favoriler" />
               <StatCard label="Son Eklenen" value={songs[0]?.title ?? "Henüz yok"} helper="En yeni repertuar kaydı" actionLabel={songs[0] ? "Şarkıyı aç" : "Şarkı ara"} href={songs[0] ? `/sarki/${songs[0].id}` : "/sarki-ara"} />
@@ -204,7 +202,7 @@ export default function Home() {
               ))}
             </section>
 
-            <section className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <section className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[1.2fr_0.8fr]">
               <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
@@ -248,20 +246,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-red-500/20 bg-gradient-to-br from-zinc-900 to-red-950/30 p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-300">Yoda Yardımcı</p>
-                  <h2 className="mt-2 text-2xl font-black">Takıldığın yerde sor</h2>
-                  <p className="mt-3 text-sm leading-6 text-zinc-300">
-                    Sağ alttaki Yoda butonundan uygulama kullanımı, akorlar, gamlar ve gitar sorularını sorabilirsin.
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {YODA_PROMPTS.map((prompt) => (
-                      <span key={prompt} className="rounded-full bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-300">
-                        {prompt}
-                      </span>
-                    ))}
-                  </div>
-                </div>
               </div>
             </section>
           </>
