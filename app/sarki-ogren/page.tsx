@@ -101,6 +101,31 @@ function mapLearningTab(tab: LearningTab): LearningTabView {
   };
 }
 
+function slugifyLearningTab(value: string) {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "tab";
+}
+
+type NewTabForm = {
+  title: string;
+  artist: string;
+  instruments: string;
+  tuning: string;
+  bpm: string;
+  status: LearningTab["status"];
+  tabText: string;
+};
+
 export default function SarkiOgren() {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(100);
@@ -118,6 +143,18 @@ export default function SarkiOgren() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [history, setHistory] = useState<string[]>([]);
   const [playlist, setPlaylist] = useState<string[]>([]);
+  const [createPanelOpen, setCreatePanelOpen] = useState(false);
+  const [creatingTab, setCreatingTab] = useState(false);
+  const [createMessage, setCreateMessage] = useState("");
+  const [newTabForm, setNewTabForm] = useState<NewTabForm>({
+    title: "",
+    artist: "",
+    instruments: "Gitar",
+    tuning: "E A D G B E",
+    bpm: "90",
+    status: "published",
+    tabText: SAMPLE_TAB.join("\n"),
+  });
 
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0] ?? TAB_LIBRARY[0];
   const [tabText, setTabText] = useState(activeTab.tab);
@@ -179,6 +216,66 @@ export default function SarkiOgren() {
     setPlaylist((current) => (current.includes(tabId) ? current : [...current, tabId]));
   }
 
+  function updateNewTabForm<K extends keyof NewTabForm>(key: K, value: NewTabForm[K]) {
+    setNewTabForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function handleCreateLearningTab() {
+    const title = newTabForm.title.trim();
+    const artist = newTabForm.artist.trim();
+    if (!title || !artist) {
+      setCreateMessage("Şarkı adı ve sanatçı zorunlu.");
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user = sessionData.session?.user;
+    if (!user) {
+      setCreateMessage("Yeni tab oluşturmak için giriş yapmalısın.");
+      return;
+    }
+
+    setCreatingTab(true);
+    setCreateMessage("");
+    const instruments = newTabForm.instruments.split(",").map((item) => item.trim()).filter(Boolean);
+    const slugBase = slugifyLearningTab(`${artist}-${title}`);
+    const slug = `${slugBase}-${Date.now().toString(36)}`;
+    const bpm = Number(newTabForm.bpm);
+    const payload = {
+      slug,
+      title,
+      artist,
+      artist_slug: slugifyLearningTab(artist),
+      status: newTabForm.status,
+      source_type: "user",
+      tuning: newTabForm.tuning || "E A D G B E",
+      bpm: Number.isFinite(bpm) ? bpm : null,
+      instruments: instruments.length ? instruments : ["Gitar"],
+      tab_text: newTabForm.tabText,
+      contributor_id: user.id,
+      contributor_name: user.email || "GuitarHub kullanıcısı",
+      revision_number: 1,
+    };
+
+    const { data: createdTab, error } = await supabase.from("learning_tabs").insert(payload).select("id").single();
+    if (error || !createdTab) {
+      setCreatingTab(false);
+      setCreateMessage(`Tab oluşturulamadı: ${error?.message || "bilinmeyen hata"}`);
+      return;
+    }
+
+    await supabase.from("learning_tab_revisions").insert({
+      tab_id: createdTab.id,
+      user_id: user.id,
+      revision_number: 1,
+      change_note: "İlk tab oluşturuldu",
+      tab_snapshot: payload,
+    });
+
+    setCreatingTab(false);
+    window.location.href = `/sarki-ogren/${createdTab.id}`;
+  }
+
   function toggleMute(track: string) {
     setMuted((current) => (current.includes(track) ? current.filter((item) => item !== track) : [...current, track]));
   }
@@ -207,6 +304,62 @@ export default function SarkiOgren() {
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="mb-6 rounded-[2rem] border border-zinc-800 bg-zinc-900/80 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-red-400">Kullanıcı katkısı</p>
+              <h2 className="mt-1 text-2xl font-black">Yeni Tab Oluştur</h2>
+              <p className="mt-1 text-sm text-zinc-400">Kendi tabını ekle, sonra GP dosyası yükleyip AlphaTab player’a bağla.</p>
+            </div>
+            <button type="button" onClick={() => setCreatePanelOpen((value) => !value)} className="rounded-2xl bg-red-600 px-5 py-3 font-black hover:bg-red-500">
+              {createPanelOpen ? "Paneli Kapat" : "Yeni Tab Oluştur"}
+            </button>
+          </div>
+
+          {createPanelOpen && (
+            <div className="mt-5 grid gap-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="grid gap-2 text-sm font-bold text-zinc-200">
+                  Şarkı adı
+                  <input value={newTabForm.title} onChange={(event) => updateNewTabForm("title", event.target.value)} className="min-h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-white outline-none focus:border-red-500" />
+                </label>
+                <label className="grid gap-2 text-sm font-bold text-zinc-200">
+                  Sanatçı
+                  <input value={newTabForm.artist} onChange={(event) => updateNewTabForm("artist", event.target.value)} className="min-h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-white outline-none focus:border-red-500" />
+                </label>
+                <label className="grid gap-2 text-sm font-bold text-zinc-200">
+                  Enstrümanlar
+                  <input value={newTabForm.instruments} onChange={(event) => updateNewTabForm("instruments", event.target.value)} placeholder="Gitar, Bas, Davul" className="min-h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-white outline-none focus:border-red-500" />
+                </label>
+                <label className="grid gap-2 text-sm font-bold text-zinc-200">
+                  Akort
+                  <input value={newTabForm.tuning} onChange={(event) => updateNewTabForm("tuning", event.target.value)} className="min-h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-white outline-none focus:border-red-500" />
+                </label>
+                <label className="grid gap-2 text-sm font-bold text-zinc-200">
+                  BPM
+                  <input value={newTabForm.bpm} onChange={(event) => updateNewTabForm("bpm", event.target.value)} inputMode="numeric" className="min-h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-white outline-none focus:border-red-500" />
+                </label>
+                <label className="grid gap-2 text-sm font-bold text-zinc-200">
+                  Görünürlük
+                  <select value={newTabForm.status} onChange={(event) => updateNewTabForm("status", event.target.value as LearningTab["status"])} className="min-h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-white outline-none focus:border-red-500">
+                    <option value="published">Public</option>
+                    <option value="private">Private</option>
+                    <option value="draft">Taslak</option>
+                  </select>
+                </label>
+              </div>
+              <label className="grid gap-2 text-sm font-bold text-zinc-200">
+                Tab metni
+                <textarea value={newTabForm.tabText} onChange={(event) => updateNewTabForm("tabText", event.target.value)} className="min-h-[220px] rounded-2xl border border-zinc-700 bg-black p-4 font-mono text-sm text-zinc-100 outline-none focus:border-red-500" />
+              </label>
+              <button type="button" disabled={creatingTab} onClick={() => void handleCreateLearningTab()} className="rounded-2xl bg-red-600 px-5 py-3 font-black text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60">
+                {creatingTab ? "Oluşturuluyor..." : "Tabı Oluştur"}
+              </button>
+              {createMessage && <p className="rounded-2xl border border-red-500/30 bg-red-950/20 p-3 text-sm text-red-100">{createMessage}</p>}
+            </div>
+          )}
         </section>
 
         <section className="mb-6 grid gap-4 lg:grid-cols-[1fr_0.8fr]">
