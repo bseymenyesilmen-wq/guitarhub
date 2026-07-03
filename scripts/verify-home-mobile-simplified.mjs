@@ -6,7 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const page = readFileSync(join(__dirname, "..", "app", "page.tsx"), "utf8");
 
 const required = [
-  'section className="hidden gap-4 lg:grid lg:grid-cols-4"',
+  'section className="hidden gap-4 lg:grid lg:grid-cols-3"',
   'section className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[1.2fr_0.8fr]"',
   "Devam Et",
   "Son Eklenen Şarkılar",

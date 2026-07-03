@@ -8,44 +8,12 @@ import { getTimeGreeting } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
 import type { Song } from "@/lib/types";
 
-const QUICK_ACTIONS = [
-  {
-    href: "/sarki-ara",
-    title: "Şarkı Ara",
-    description: "Akor ve söz bul, beğendiğini repertuarına ekle.",
-    icon: "⌕",
-    primary: true,
-  },
-  {
-    href: "/repertuar",
-    title: "Repertuar",
-    description: "Kaydettiğin şarkılara hızlıca geri dön.",
-    icon: "♪",
-  },
-  {
-    href: "/akor-kutuphanesi",
-    title: "Akorlar",
-    description: "Bilmediğin akorun basışını gör.",
-    icon: "♬",
-  },
-  {
-    href: "/gam-kutuphanesi",
-    title: "Gamlar",
-    description: "Solo ve klavye çalışması için gamlara bak.",
-    icon: "◎",
-  },
-];
-
 function firstName(value: string) {
   return value.split("@")[0].split(" ")[0] || "Gitarist";
 }
 
 function pickContinueSong(songs: Song[]) {
   return songs.find((song) => Boolean(song.favorite)) ?? songs[0] ?? null;
-}
-
-function openYodaChat() {
-  window.dispatchEvent(new CustomEvent("guitarhub:open-yoda"));
 }
 
 function StatCard({ label, value, helper, actionLabel = "Aç", href, onClick }: { label: string; value: string; helper: string; actionLabel?: string; href?: string; onClick?: () => void }) {
@@ -177,29 +145,10 @@ export default function Home() {
           <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-300">Panel yükleniyor...</div>
         ) : (
           <>
-            <section className="hidden gap-4 lg:grid lg:grid-cols-4">
+            <section className="hidden gap-4 lg:grid lg:grid-cols-3">
               <StatCard label="Repertuar" value={songs.length.toString()} helper="Kaydettiğin toplam şarkı" actionLabel="Repertuvara git" href="/repertuar" />
               <StatCard label="Favoriler" value={favoriteCount.toString()} helper="Sık döndüğün parçalar" actionLabel="Favorileri göster" href="#favoriler" />
               <StatCard label="Son Eklenen" value={songs[0]?.title ?? "Henüz yok"} helper="En yeni repertuar kaydı" actionLabel={songs[0] ? "Şarkıyı aç" : "Şarkı ara"} href={songs[0] ? `/sarki/${songs[0].id}` : "/sarki-ara"} />
-              <StatCard label="Yoda" value="Hazır" helper="Gitar ve uygulama sorularını sor" actionLabel="Yoda'yı aç" onClick={openYodaChat} />
-            </section>
-
-            <section className="mt-8 hidden gap-4 lg:grid lg:grid-cols-4">
-              {QUICK_ACTIONS.map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className={`rounded-3xl border p-5 transition hover:-translate-y-1 ${
-                    action.primary
-                      ? "border-red-500/50 bg-red-600 text-white shadow-xl shadow-red-950/30 hover:bg-red-500"
-                      : "border-zinc-800 bg-zinc-900/80 text-zinc-100 hover:border-red-500/50 hover:bg-zinc-900"
-                  }`}
-                >
-                  <span className="text-3xl">{action.icon}</span>
-                  <h2 className="mt-4 text-xl font-black">{action.title}</h2>
-                  <p className={`mt-2 text-sm leading-6 ${action.primary ? "text-red-50" : "text-zinc-400"}`}>{action.description}</p>
-                </Link>
-              ))}
             </section>
 
             <section className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[1.2fr_0.8fr]">
