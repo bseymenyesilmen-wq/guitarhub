@@ -25,10 +25,10 @@ function renderMessage(content: string) {
 }
 
 const SUGGESTIONS = [
-  "Nereden şarkı arayabilirim?",
-  "Akorlara nereden bakarım?",
-  "Gamları nasıl açarım?",
-  "Repertuarımı nerede görürüm?",
+  "Duman tarzı akor yürüyüşü öner",
+  "F#m nasıl basılır?",
+  "Beste yaparken nakarat nasıl güçlenir?",
+  "Mix mastering için vokali nasıl öne alırım?",
 ];
 
 function getConversationId() {
@@ -49,7 +49,7 @@ export function ChatbotWidget() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Selam, ben Yoda. GuitarHub içinde sana şarkı arama, repertuar, akorlar, gamlar ve gitar konularında yardımcı olurum. Ne sormak istersin?",
+      content: "Selam, ben Yoda. Müzik hakkında her şeyi sorabilirsin: şarkı, akor, gam, gitar, beste, prodüksiyon, mix mastering, repertuar ve GuitarHub kullanımı. Müzik dışı konulara girmem kanka.",
     },
   ]);
 
@@ -111,7 +111,7 @@ export function ChatbotWidget() {
                 </div>
               </div>
             ))}
-            {loading && <div className="rounded-2xl bg-zinc-900 px-4 py-3 text-sm text-zinc-400">Yoda yazıyor...</div>}
+            {loading && <div className="rounded-2xl bg-zinc-900 px-4 py-3 text-sm text-zinc-400">Yoda cevaplıyor...</div>}
           </div>
 
           <div className="border-t border-zinc-800 p-3">

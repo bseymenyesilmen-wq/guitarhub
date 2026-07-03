@@ -3,7 +3,9 @@ import {
   asksForRestrictedCapability,
   buildConversationMessages,
   buildFallbackReply,
+  OUT_OF_SCOPE_REPLY,
   RESTRICTED_REPLY,
+  isMusicRelatedMessage,
   type ChatMessage,
 } from "@/lib/chatbot";
 
@@ -92,6 +94,12 @@ export async function POST(request: Request) {
 
   if (asksForRestrictedCapability(message)) {
     return NextResponse.json({ reply: RESTRICTED_REPLY });
+  }
+
+  const normalizedMessage = message.toLocaleLowerCase("tr-TR");
+  const isGreeting = ["selam", "merhaba", "naber", "hey"].some((word) => normalizedMessage.includes(word));
+  if (!isMusicRelatedMessage(message) && !isGreeting) {
+    return NextResponse.json({ reply: OUT_OF_SCOPE_REPLY });
   }
 
   const hermesReply = await callHermes(message, history, conversationId).catch(() => null);
