@@ -46,14 +46,28 @@ function pickContinueSong(songs: Song[]) {
   return songs.find((song) => Boolean(song.favorite)) ?? songs[0] ?? null;
 }
 
-function StatCard({ label, value, helper }: { label: string; value: string; helper: string }) {
-  return (
-    <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-lg shadow-black/10">
-      <p className="text-sm font-semibold text-zinc-400">{label}</p>
+function openYodaChat() {
+  window.dispatchEvent(new CustomEvent("guitarhub:open-yoda"));
+}
+
+function StatCard({ label, value, helper, actionLabel = "Aç", href, onClick }: { label: string; value: string; helper: string; actionLabel?: string; href?: string; onClick?: () => void }) {
+  const content = (
+    <>
+      <p className="text-sm font-semibold text-zinc-400 group-hover:text-red-200">{label}</p>
       <p className="mt-3 line-clamp-1 text-2xl font-black text-white">{value}</p>
-      <p className="mt-2 text-xs text-zinc-500">{helper}</p>
-    </div>
+      <p className="mt-2 text-xs text-zinc-500 group-hover:text-zinc-300">{helper}</p>
+      <span className="mt-4 inline-flex rounded-full bg-zinc-950 px-3 py-1 text-xs font-black text-red-300 opacity-80 group-hover:bg-red-600 group-hover:text-white">
+        {actionLabel}
+      </span>
+    </>
   );
+  const cardClassName = "group block w-full rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5 text-left shadow-lg shadow-black/10 transition active:scale-[0.99] hover:border-red-500/60 hover:bg-zinc-900";
+
+  if (href) {
+    return <Link href={href} className={cardClassName}>{content}</Link>;
+  }
+
+  return <button type="button" onClick={onClick} className={cardClassName}>{content}</button>;
 }
 
 function SongRow({ song, actionLabel = "Aç" }: { song: Song; actionLabel?: string }) {
@@ -166,10 +180,10 @@ export default function Home() {
         ) : (
           <>
             <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="Repertuar" value={songs.length.toString()} helper="Kaydettiğin toplam şarkı" />
-              <StatCard label="Favoriler" value={favoriteCount.toString()} helper="Sık döndüğün parçalar" />
-              <StatCard label="Son Eklenen" value={songs[0]?.title ?? "Henüz yok"} helper="En yeni repertuar kaydı" />
-              <StatCard label="Yoda" value="Hazır" helper="Gitar ve uygulama sorularını sor" />
+              <StatCard label="Repertuar" value={songs.length.toString()} helper="Kaydettiğin toplam şarkı" actionLabel="Repertuvara git" href="/repertuar" />
+              <StatCard label="Favoriler" value={favoriteCount.toString()} helper="Sık döndüğün parçalar" actionLabel="Favorileri göster" href="#favoriler" />
+              <StatCard label="Son Eklenen" value={songs[0]?.title ?? "Henüz yok"} helper="En yeni repertuar kaydı" actionLabel={songs[0] ? "Şarkıyı aç" : "Şarkı ara"} href={songs[0] ? `/sarki/${songs[0].id}` : "/sarki-ara"} />
+              <StatCard label="Yoda" value="Hazır" helper="Gitar ve uygulama sorularını sor" actionLabel="Yoda'yı aç" onClick={openYodaChat} />
             </section>
 
             <section className="mt-8 hidden gap-4 lg:grid lg:grid-cols-4">
@@ -216,7 +230,7 @@ export default function Home() {
               </div>
 
               <div className="grid gap-6">
-                <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
+                <div id="favoriler" className="scroll-mt-24 rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Favoriler</p>

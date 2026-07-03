@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { ChatMessage } from "@/lib/chatbot";
 
 type UiMessage = ChatMessage & { id: string };
@@ -57,6 +57,15 @@ export function ChatbotWidget() {
     () => messages.filter((message) => message.id !== "welcome").map(({ role, content }) => ({ role, content })),
     [messages],
   );
+
+  useEffect(() => {
+    function openYoda() {
+      setOpen(true);
+    }
+
+    window.addEventListener("guitarhub:open-yoda", openYoda);
+    return () => window.removeEventListener("guitarhub:open-yoda", openYoda);
+  }, []);
 
   async function sendMessage(text = input) {
     const trimmed = text.trim();
