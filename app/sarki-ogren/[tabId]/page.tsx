@@ -66,6 +66,9 @@ export default function SongLearnDetailPage() {
   const [loopEnabled, setLoopEnabled] = useState(true);
   const [metronomeEnabled, setMetronomeEnabled] = useState(false);
   const [countInEnabled, setCountInEnabled] = useState(true);
+  const [countInActive, setCountInActive] = useState(false);
+  const [countInBeat, setCountInBeat] = useState(4);
+  const [metronomeBeat, setMetronomeBeat] = useState(1);
   const [currentMeasure, setCurrentMeasure] = useState(0);
   const [loopStartMeasure, setLoopStartMeasure] = useState(0);
   const [loopEndMeasure, setLoopEndMeasure] = useState(9);
@@ -262,6 +265,29 @@ export default function SongLearnDetailPage() {
     setLoopEnabled(true);
   }, [currentMeasure]);
 
+  const startCountIn = useCallback(() => {
+    setPlaying(false);
+    setCountInBeat(4);
+    setCountInActive(true);
+  }, []);
+
+  const togglePlayback = useCallback(() => {
+    if (countInActive) {
+      setCountInActive(false);
+      setPlaying(false);
+      return;
+    }
+    if (playing) {
+      setPlaying(false);
+      return;
+    }
+    if (countInEnabled) {
+      startCountIn();
+      return;
+    }
+    setPlaying(true);
+  }, [countInActive, countInEnabled, playing, startCountIn]);
+
   const setMeasureRef = useCallback((index: number, element: HTMLSpanElement | null) => {
     measureRefs.current[index] = element;
   }, []);
@@ -293,6 +319,32 @@ export default function SongLearnDetailPage() {
     return () => window.clearInterval(intervalId);
   }, [advanceCurrentMeasure, playing, speed]);
 
+  useEffect(() => {
+    if (!countInActive) return;
+    const beatMs = Math.max(260, 60000 / Math.max(40, tab?.bpm || 90));
+    const intervalId = window.setInterval(() => {
+      setCountInBeat((beat) => {
+        if (beat <= 1) {
+          window.clearInterval(intervalId);
+          setCountInActive(false);
+          setPlaying(true);
+          return 4;
+        }
+        return beat - 1;
+      });
+    }, beatMs);
+    return () => window.clearInterval(intervalId);
+  }, [countInActive, tab?.bpm]);
+
+  useEffect(() => {
+    if (!playing || !metronomeEnabled) return;
+    const beatMs = Math.max(260, 60000 / Math.max(40, tab?.bpm || 90));
+    const intervalId = window.setInterval(() => {
+      setMetronomeBeat((beat) => (beat % 4) + 1);
+    }, beatMs);
+    return () => window.clearInterval(intervalId);
+  }, [metronomeEnabled, playing, tab?.bpm]);
+
   const toggleSelectedTrackMute = useCallback(() => {
     if (selectedTrackNumericId == null) return;
     setMutedTrackIds((current) =>
@@ -311,7 +363,7 @@ export default function SongLearnDetailPage() {
 
     if (event.code === "Space") {
       event.preventDefault();
-      setPlaying((value) => !value);
+      togglePlayback();
       return;
     }
     if (event.key.toLowerCase() === "s") {
@@ -373,7 +425,7 @@ export default function SongLearnDetailPage() {
       event.preventDefault();
       setCurrentMeasure((value) => Math.max(0, value - 1));
     }
-  }, [markLoopEnd, markLoopStart, toggleSelectedTrackMute, toggleSelectedTrackSolo]);
+  }, [markLoopEnd, markLoopStart, togglePlayback, toggleSelectedTrackMute, toggleSelectedTrackSolo]);
 
   useEffect(() => {
     window.addEventListener("keydown", handlePlayerShortcut);
@@ -488,8 +540,8 @@ export default function SongLearnDetailPage() {
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Büyük Tab Player</p>
                     <h2 className="mt-1 text-2xl font-black">{selectedTrack?.name || "Ana Tab"}</h2>
                   </div>
-                  <button onClick={() => setPlaying((value) => !value)} className={`min-h-12 rounded-2xl px-6 font-black ${playing ? "bg-white text-zinc-950" : "bg-red-600 text-white hover:bg-red-500"}`}>
-                    {playing ? "Duraklat" : "Oynat"}
+                  <button onClick={togglePlayback} className={`min-h-12 rounded-2xl px-6 font-black ${playing ? "bg-white text-zinc-950" : countInActive ? "bg-yellow-400 text-zinc-950" : "bg-red-600 text-white hover:bg-red-500"}`}>
+                    {countInActive ? `Hazırlan: ${countInBeat}` : playing ? "Duraklat" : "Oynat"}
                   </button>
                 </div>
 
@@ -508,11 +560,13 @@ export default function SongLearnDetailPage() {
                     <span className="rounded-full bg-zinc-900 px-3 py-1">Auto-scroll: Açık</span>
                     <span className="rounded-full bg-zinc-900 px-3 py-1">Loop aralığı: {safeLoopStart + 1}–{safeLoopEnd + 1}</span>
                     <span className="rounded-full bg-zinc-900 px-3 py-1">Metronom: {metronomeEnabled ? "Açık" : "Kapalı"}</span>
+                    <span className="rounded-full bg-zinc-900 px-3 py-1">Metronom vuruşu: Vuruş {metronomeBeat}/4</span>
                     <span className="rounded-full bg-zinc-900 px-3 py-1">Count-in: {countInEnabled ? "Açık" : "Kapalı"}</span>
+                    <span className="rounded-full bg-zinc-900 px-3 py-1">Count-in sayımı: {countInActive ? <strong>Hazırlan: {countInBeat}</strong> : "Hazır"}</span>
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
+                <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
                   <label className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                     <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Playback Speed</span>
                     <div className="mt-3 flex items-center gap-2">
@@ -542,6 +596,10 @@ export default function SongLearnDetailPage() {
                   <button onClick={() => setLoopEnabled((value) => !value)} className={`rounded-2xl border p-4 text-left font-black ${loopEnabled ? "border-red-500 bg-red-600" : "border-zinc-800 bg-zinc-950"}`}>
                     Loop
                     <span className="mt-1 block text-sm font-semibold opacity-80">Seçili ölçüleri döndür</span>
+                  </button>
+                  <button onClick={() => setMetronomeEnabled((value) => !value)} className={`rounded-2xl border p-4 text-left font-black ${metronomeEnabled ? "border-green-500 bg-green-600 text-black" : "border-zinc-800 bg-zinc-950"}`}>
+                    Metronom
+                    <span className="mt-1 block text-sm font-semibold opacity-80">BPM {tab?.bpm || 90} · Vuruş {metronomeBeat}/4</span>
                   </button>
                   <button onClick={() => setCountInEnabled((value) => !value)} className={`rounded-2xl border p-4 text-left font-black ${countInEnabled ? "border-red-500 bg-red-600" : "border-zinc-800 bg-zinc-950"}`}>
                     Count In
