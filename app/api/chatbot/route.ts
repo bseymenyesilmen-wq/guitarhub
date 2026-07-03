@@ -44,6 +44,10 @@ function chatCompletionsUrl(baseUrl: string) {
   return `${baseUrl}/v1/chat/completions`;
 }
 
+function createTimeoutSignal(milliseconds: number) {
+  return AbortSignal.timeout(milliseconds);
+}
+
 async function callHermes(input: string, history: ChatMessage[], conversationId?: string) {
   const { apiKey, baseUrl, model } = getHermesConfig();
   if (!apiKey || !baseUrl) return null;
@@ -57,6 +61,7 @@ async function callHermes(input: string, history: ChatMessage[], conversationId?
     try {
       const response = await fetch(chatCompletionsUrl(candidateBaseUrl), {
         method: "POST",
+        signal: createTimeoutSignal(8000),
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",

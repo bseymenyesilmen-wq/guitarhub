@@ -67,19 +67,27 @@ export function ChatbotWidget() {
     setInput("");
     setLoading(true);
 
-    const response = await fetch("/api/chatbot", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ message: trimmed, history: apiHistory, conversationId: getConversationId() }),
-    }).catch(() => null);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
-    const payload = response ? await response.json().catch(() => null) : null;
-    const reply = typeof payload?.reply === "string" ? payload.reply : "Şu an cevap veremedim. Biraz sonra tekrar dener misin?";
+    try {
+      const response = await fetch("/api/chatbot", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: trimmed, history: apiHistory, conversationId: getConversationId() }),
+      }).catch(() => null);
 
-    setMessages((current) => [...current, { id: crypto.randomUUID(), role: "assistant", content: reply }]);
-    setLoading(false);
+      const payload = response ? await response.json().catch(() => null) : null;
+      const reply = typeof payload?.reply === "string" ? payload.reply : "Yoda cevap veremedi kanka. Tekrar dener misin?";
+
+      setMessages((current) => [...current, { id: crypto.randomUUID(), role: "assistant", content: reply }]);
+    } finally {
+      window.clearTimeout(timeoutId);
+      setLoading(false);
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
