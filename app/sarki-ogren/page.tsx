@@ -126,6 +126,11 @@ type NewTabForm = {
   tabText: string;
 };
 
+function buildSongsterrSearchUrl(value: string) {
+  const songsterrQuery = value.trim() || "guitar tab";
+  return `https://www.songsterr.com/?pattern=${encodeURIComponent(songsterrQuery)}`;
+}
+
 export default function SarkiOgren() {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(100);
@@ -192,6 +197,7 @@ export default function SarkiOgren() {
   }, [instrumentFilter, query, tabs]);
 
   const visibleLines = useMemo(() => tabText.split(/\r?\n/).filter(Boolean), [tabText]);
+  const songsterrBridgeUrl = buildSongsterrSearchUrl(query || `${activeTab?.artist || ""} ${activeTab?.title || ""}`);
   const favoriteTabs = tabs.filter((tab) => favorites.includes(tab.id));
   const historyTabs = history.map((id) => tabs.find((tab) => tab.id === id)).filter(Boolean);
   const playlistTabs = playlist.map((id) => tabs.find((tab) => tab.id === id)).filter(Boolean);
@@ -381,6 +387,19 @@ export default function SarkiOgren() {
                 ))}
               </select>
             </div>
+
+            <section className="mt-4 rounded-3xl border border-red-500/30 bg-red-950/20 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-red-300">Songsterr Bridge</p>
+                  <h2 className="mt-1 text-xl font-black">GuitarHub’da yoksa Songsterr’da aç</h2>
+                  <p className="mt-1 text-sm text-zinc-300">Veriyi kopyalamadan public Songsterr araması açar. Arama: {query || `${activeTab.artist} ${activeTab.title}`}</p>
+                </div>
+                <a href={songsterrBridgeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white hover:bg-red-500">
+                  Songsterr’da Ara
+                </a>
+              </div>
+            </section>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {filteredTabs.map((tab) => (
