@@ -172,7 +172,7 @@ export default function Home() {
               <StatCard label="Yoda" value="Hazır" helper="Gitar ve uygulama sorularını sor" />
             </section>
 
-            <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="mt-8 hidden gap-4 lg:grid lg:grid-cols-4">
               {QUICK_ACTIONS.map((action) => (
                 <Link
                   key={action.href}
