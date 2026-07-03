@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 import { AlphaTabPlayer } from "@/app/components/AlphaTabPlayer";
 import { supabase } from "@/lib/supabase";
@@ -78,6 +78,8 @@ export default function SongLearnDetailPage() {
   const [revisionNote, setRevisionNote] = useState("");
   const [savingEditor, setSavingEditor] = useState(false);
   const [favorite, setFavorite] = useState(false);
+  const measureRailRef = useRef<HTMLDivElement | null>(null);
+  const measureRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   const recordHistory = useCallback(async (openedTabId: number) => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -238,6 +240,36 @@ export default function SongLearnDetailPage() {
   const playerText = selectedTrack?.tab_text || tab?.tab_text || DEMO_TAB.tab_text;
   const lines = useMemo(() => playerText.split(/\r?\n/).filter(Boolean), [playerText]);
   const measureCount = 10;
+
+  const setMeasureRef = useCallback((index: number, element: HTMLSpanElement | null) => {
+    measureRefs.current[index] = element;
+  }, []);
+
+  const advanceCurrentMeasure = useCallback(() => {
+    setCurrentMeasure((current) => {
+      if (current >= measureCount - 1) {
+        if (loopEnabled) return 0;
+        setPlaying(false);
+        return loopEnabled ? 0 : measureCount - 1;
+      }
+      return current + 1;
+    });
+  }, [loopEnabled]);
+
+  useEffect(() => {
+    const activeMeasure = measureRefs.current[currentMeasure];
+    activeMeasure?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    if (measureRailRef.current) {
+      measureRailRef.current.dataset.currentMeasure = String(currentMeasure + 1);
+    }
+  }, [currentMeasure]);
+
+  useEffect(() => {
+    if (!playing) return;
+    const beatMs = Math.max(260, 60000 / Math.max(40, speed));
+    const intervalId = window.setInterval(advanceCurrentMeasure, beatMs);
+    return () => window.clearInterval(intervalId);
+  }, [advanceCurrentMeasure, playing, speed]);
 
   const toggleSelectedTrackMute = useCallback(() => {
     if (selectedTrackNumericId == null) return;
@@ -430,9 +462,9 @@ export default function SongLearnDetailPage() {
                 </div>
 
                 <div className="overflow-x-auto rounded-3xl border border-zinc-800 bg-black p-4 font-mono text-sm leading-8 text-zinc-100 sm:text-base">
-                  <div className="mb-3 flex min-w-[760px] items-center gap-2 border-b border-zinc-800 pb-3 text-xs text-zinc-500">
+                  <div ref={measureRailRef} className="mb-3 flex min-w-[760px] items-center gap-2 border-b border-zinc-800 pb-3 text-xs text-zinc-500">
                     {Array.from({ length: measureCount }, (_, index) => (
-                      <span key={index} className={`inline-flex w-20 justify-center rounded-full py-1 font-bold ${currentMeasure === index ? "bg-green-500 text-black" : "bg-zinc-900"}`}>
+                      <span ref={(element) => setMeasureRef(index, element)} data-measure-index={index} key={index} className={`inline-flex w-20 justify-center rounded-full py-1 font-bold ${currentMeasure === index ? "bg-green-500 text-black shadow-lg shadow-green-500/30" : "bg-zinc-900"}`}>
                         Ölçü {index + 1}
                       </span>
                     ))}
@@ -440,6 +472,8 @@ export default function SongLearnDetailPage() {
                   <pre className="min-w-[760px] whitespace-pre">{lines.join("\n")}</pre>
                   <div className="mt-4 flex min-w-[760px] flex-wrap gap-2 border-t border-zinc-800 pt-3 text-xs font-bold text-zinc-300">
                     <span className="rounded-full bg-green-500 px-3 py-1 text-black">Yeşil imleç: Ölçü {currentMeasure + 1}</span>
+                    <span className="rounded-full bg-zinc-900 px-3 py-1">İlerleme: {playing ? "Otomatik" : "Manuel"}</span>
+                    <span className="rounded-full bg-zinc-900 px-3 py-1">Auto-scroll: Açık</span>
                     <span className="rounded-full bg-zinc-900 px-3 py-1">Metronom: {metronomeEnabled ? "Açık" : "Kapalı"}</span>
                     <span className="rounded-full bg-zinc-900 px-3 py-1">Count-in: {countInEnabled ? "Açık" : "Kapalı"}</span>
                   </div>
