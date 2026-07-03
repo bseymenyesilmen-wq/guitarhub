@@ -67,6 +67,8 @@ export default function SongLearnDetailPage() {
   const [metronomeEnabled, setMetronomeEnabled] = useState(false);
   const [countInEnabled, setCountInEnabled] = useState(true);
   const [currentMeasure, setCurrentMeasure] = useState(0);
+  const [loopStartMeasure, setLoopStartMeasure] = useState(0);
+  const [loopEndMeasure, setLoopEndMeasure] = useState(9);
   const [mutedTrackIds, setMutedTrackIds] = useState<number[]>([]);
   const [soloTrackId, setSoloTrackId] = useState<number | null>(null);
   const [selectedTrackId, setSelectedTrackId] = useState<number | null>(null);
@@ -240,6 +242,25 @@ export default function SongLearnDetailPage() {
   const playerText = selectedTrack?.tab_text || tab?.tab_text || DEMO_TAB.tab_text;
   const lines = useMemo(() => playerText.split(/\r?\n/).filter(Boolean), [playerText]);
   const measureCount = 10;
+  const { safeLoopStart, safeLoopEnd } = normalizeLoopRange(loopStartMeasure, loopEndMeasure, measureCount);
+
+  function normalizeLoopRange(start: number, end: number, total: number) {
+    const normalizedStart = clamp(start, 0, total - 1);
+    const normalizedEnd = clamp(end, 0, total - 1);
+    return normalizedStart <= normalizedEnd
+      ? { safeLoopStart: normalizedStart, safeLoopEnd: normalizedEnd }
+      : { safeLoopStart: normalizedEnd, safeLoopEnd: normalizedStart };
+  }
+
+  const markLoopStart = useCallback(() => {
+    setLoopStartMeasure(currentMeasure);
+    setLoopEnabled(true);
+  }, [currentMeasure]);
+
+  const markLoopEnd = useCallback(() => {
+    setLoopEndMeasure(currentMeasure);
+    setLoopEnabled(true);
+  }, [currentMeasure]);
 
   const setMeasureRef = useCallback((index: number, element: HTMLSpanElement | null) => {
     measureRefs.current[index] = element;
@@ -247,14 +268,15 @@ export default function SongLearnDetailPage() {
 
   const advanceCurrentMeasure = useCallback(() => {
     setCurrentMeasure((current) => {
-      if (current >= measureCount - 1) {
-        if (loopEnabled) return 0;
+      if (loopEnabled && current < safeLoopStart) return safeLoopStart;
+      if (loopEnabled && current >= safeLoopEnd) return safeLoopStart;
+      if (!loopEnabled && current >= measureCount - 1) {
         setPlaying(false);
-        return loopEnabled ? 0 : measureCount - 1;
+        return measureCount - 1;
       }
       return current + 1;
     });
-  }, [loopEnabled]);
+  }, [loopEnabled, safeLoopEnd, safeLoopStart]);
 
   useEffect(() => {
     const activeMeasure = measureRefs.current[currentMeasure];
@@ -327,6 +349,16 @@ export default function SongLearnDetailPage() {
       setEditorOpen((value) => !value);
       return;
     }
+    if (event.key === "[") {
+      event.preventDefault();
+      markLoopStart();
+      return;
+    }
+    if (event.key === "]") {
+      event.preventDefault();
+      markLoopEnd();
+      return;
+    }
     if (event.key === "Backspace") {
       event.preventDefault();
       setCurrentMeasure(0);
@@ -341,7 +373,7 @@ export default function SongLearnDetailPage() {
       event.preventDefault();
       setCurrentMeasure((value) => Math.max(0, value - 1));
     }
-  }, [toggleSelectedTrackMute, toggleSelectedTrackSolo]);
+  }, [markLoopEnd, markLoopStart, toggleSelectedTrackMute, toggleSelectedTrackSolo]);
 
   useEffect(() => {
     window.addEventListener("keydown", handlePlayerShortcut);
@@ -474,12 +506,13 @@ export default function SongLearnDetailPage() {
                     <span className="rounded-full bg-green-500 px-3 py-1 text-black">Yeşil imleç: Ölçü {currentMeasure + 1}</span>
                     <span className="rounded-full bg-zinc-900 px-3 py-1">İlerleme: {playing ? "Otomatik" : "Manuel"}</span>
                     <span className="rounded-full bg-zinc-900 px-3 py-1">Auto-scroll: Açık</span>
+                    <span className="rounded-full bg-zinc-900 px-3 py-1">Loop aralığı: {safeLoopStart + 1}–{safeLoopEnd + 1}</span>
                     <span className="rounded-full bg-zinc-900 px-3 py-1">Metronom: {metronomeEnabled ? "Açık" : "Kapalı"}</span>
                     <span className="rounded-full bg-zinc-900 px-3 py-1">Count-in: {countInEnabled ? "Açık" : "Kapalı"}</span>
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
                   <label className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                     <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Playback Speed</span>
                     <div className="mt-3 flex items-center gap-2">
@@ -487,6 +520,24 @@ export default function SongLearnDetailPage() {
                       <strong className="min-w-16 text-center">{speed}%</strong>
                       <button onClick={() => setSpeed((value) => clamp(value + 5, 25, 150))} className="rounded-lg bg-zinc-800 px-3 py-2 font-bold">+</button>
                     </div>
+                  </label>
+                  <label className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                    <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Loop Başlangıç</span>
+                    <div className="mt-3 flex items-center gap-2">
+                      <button onClick={() => setLoopStartMeasure((value) => clamp(value - 1, 0, measureCount - 1))} className="rounded-lg bg-zinc-800 px-3 py-2 font-bold">-</button>
+                      <strong className="min-w-12 text-center">{loopStartMeasure + 1}</strong>
+                      <button onClick={() => setLoopStartMeasure((value) => clamp(value + 1, 0, measureCount - 1))} className="rounded-lg bg-zinc-800 px-3 py-2 font-bold">+</button>
+                    </div>
+                    <button onClick={markLoopStart} className="mt-3 rounded-xl bg-zinc-800 px-3 py-2 text-xs font-black hover:bg-zinc-700">[ aktif ölçü</button>
+                  </label>
+                  <label className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                    <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Loop Bitiş</span>
+                    <div className="mt-3 flex items-center gap-2">
+                      <button onClick={() => setLoopEndMeasure((value) => clamp(value - 1, 0, measureCount - 1))} className="rounded-lg bg-zinc-800 px-3 py-2 font-bold">-</button>
+                      <strong className="min-w-12 text-center">{loopEndMeasure + 1}</strong>
+                      <button onClick={() => setLoopEndMeasure((value) => clamp(value + 1, 0, measureCount - 1))} className="rounded-lg bg-zinc-800 px-3 py-2 font-bold">+</button>
+                    </div>
+                    <button onClick={markLoopEnd} className="mt-3 rounded-xl bg-zinc-800 px-3 py-2 text-xs font-black hover:bg-zinc-700">] aktif ölçü</button>
                   </label>
                   <button onClick={() => setLoopEnabled((value) => !value)} className={`rounded-2xl border p-4 text-left font-black ${loopEnabled ? "border-red-500 bg-red-600" : "border-zinc-800 bg-zinc-950"}`}>
                     Loop
@@ -535,6 +586,8 @@ export default function SongLearnDetailPage() {
                   <span>Space = Play/Pause</span>
                   <span>S = Speed</span>
                   <span>L = Loop</span>
+                  <span>[ = Loop başlangıcı</span>
+                  <span>] = Loop bitişi</span>
                   <span>M = Mute</span>
                   <span>Alt+M = Solo</span>
                   <span>N = Metronome</span>

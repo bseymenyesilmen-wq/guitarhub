@@ -14,7 +14,6 @@ const required = [
   "window.setInterval",
   "window.clearInterval",
   "Math.max(260, 60000 /",
-  "loopEnabled ? 0 : measureCount - 1",
   "setPlaying(false)",
   "scrollIntoView({ behavior: \"smooth\"",
   "data-measure-index={index}",
