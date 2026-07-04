@@ -13,22 +13,20 @@ const required = [
   "grid-cols-6",
   "Şarkı Yaz",
   "Şarkı Oluştur",
-  "Chord Progression",
-  "Hüzünlü",
-  "Mutlu",
-  "Karanlık",
-  "Pop",
-  "Rock",
   "Şarkı defteri",
   "Akor ve sözleri tek alana yaz",
-  "Progression'u deftere ekle",
   "Taslağı kaydet",
   "guitarhub-songwriter-draft",
-  "Repertuvar önizlemesi",
-  "whiteSpace: \"pre\"",
 ];
 
 const forbidden = [
+  "Chord Progression",
+  "Progression'u deftere ekle",
+  "Repertuvar önizlemesi",
+  "PROGRESSIONS",
+  "selectedProgression",
+  "insertProgression",
+  "whiteSpace: \"pre\"",
   "type LyricLine",
   "Söz satırı",
   "Akor satırı",
@@ -42,9 +40,9 @@ const haystack = `${nav}\n${page}`;
 const missing = required.filter((snippet) => !haystack.includes(snippet));
 const presentForbidden = forbidden.filter((snippet) => haystack.includes(snippet));
 if (missing.length || presentForbidden.length) {
-  if (missing.length) console.error(`Missing songwriter notebook snippets:\n${missing.join("\n")}`);
-  if (presentForbidden.length) console.error(`Old row editor clutter still present:\n${presentForbidden.join("\n")}`);
+  if (missing.length) console.error(`Missing simplified songwriter snippets:\n${missing.join("\n")}`);
+  if (presentForbidden.length) console.error(`Removed songwriter clutter still present:\n${presentForbidden.join("\n")}`);
   process.exit(1);
 }
 
-console.log("Songwriter section uses a clean notebook editor.");
+console.log("Songwriter section is a clean draft notebook.");
