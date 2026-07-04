@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
 import { ChordTextViewer } from "@/app/components/ChordTextViewer";
-import { extractChords, transposeCapo, transposeText } from "@/lib/music";
+import { extractChords, findSimplifiedSongOption, transposeCapo, transposeText } from "@/lib/music";
 import { CHORD_LIBRARY, type ChordDefinition } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
 import type { Song } from "@/lib/types";
@@ -72,6 +72,7 @@ export default function SarkiDetay() {
   const transposedChords = useMemo(() => transposeText(sourceText, shift), [shift, sourceText]);
   const transposedCapo = useMemo(() => transposeCapo(song?.capo, shift), [shift, song?.capo]);
   const chordList = useMemo(() => extractChords(transposedChords), [transposedChords]);
+  const simplifiedOption = useMemo(() => findSimplifiedSongOption(sourceText, song?.capo), [song?.capo, sourceText]);
 
   function openChord(chordName: string) {
     const chord = findChord(chordName);
@@ -136,6 +137,49 @@ export default function SarkiDetay() {
                 </button>
               </div>
             </div>
+
+            <section className="mb-6 rounded-2xl border border-red-500/30 bg-gradient-to-br from-red-950/30 to-zinc-900 p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-red-300">Kapo Sihirbazı</p>
+                  <h2 className="mt-2 text-2xl font-black">Şarkıyı kolaylaştır</h2>
+                  <p className="mt-2 text-sm leading-6 text-zinc-300">
+                    GuitarHub akorları tarayıp en kolay transpose/capo seçeneğini önerir. Zor bareli akorları azaltmaya çalışır.
+                  </p>
+                </div>
+
+                {simplifiedOption ? (
+                  <button
+                    onClick={() => setShift(simplifiedOption.steps)}
+                    className="min-h-12 rounded-2xl bg-white px-5 py-3 text-sm font-black text-zinc-950 hover:bg-red-100"
+                  >
+                    Kolaylaştır
+                  </button>
+                ) : (
+                  <span className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-400">Akor bulunamadı</span>
+                )}
+              </div>
+
+              {simplifiedOption && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl bg-zinc-950 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Önerilen ton</p>
+                    <p className="mt-2 text-lg font-black text-white">{simplifiedOption.steps > 0 ? `+${simplifiedOption.steps}` : simplifiedOption.steps}</p>
+                    <p className="mt-1 text-xs text-zinc-400">Capo: {simplifiedOption.capo}</p>
+                  </div>
+                  <div className="rounded-2xl bg-zinc-950 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Kolay akor</p>
+                    <p className="mt-2 text-lg font-black text-white">{simplifiedOption.easyChordCount}</p>
+                    <p className="mt-1 line-clamp-1 text-xs text-zinc-400">{simplifiedOption.chords.slice(0, 5).join(" · ")}</p>
+                  </div>
+                  <div className="rounded-2xl bg-zinc-950 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Zor akor</p>
+                    <p className="mt-2 text-lg font-black text-white">{simplifiedOption.hardChords.length}</p>
+                    <p className="mt-1 line-clamp-1 text-xs text-zinc-400">{simplifiedOption.hardChords.slice(0, 4).join(" · ") || "Azaldı"}</p>
+                  </div>
+                </div>
+              )}
+            </section>
 
             <section className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
               <h2 className="text-xl font-bold">Kullanılan Akorlar</h2>
