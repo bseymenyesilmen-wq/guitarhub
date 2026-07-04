@@ -19,19 +19,32 @@ const required = [
   "Karanlık",
   "Pop",
   "Rock",
-  "Söz satırı",
-  "Akor satırı",
-  "Progression'u akora yaz",
+  "Şarkı defteri",
+  "Akor ve sözleri tek alana yaz",
+  "Progression'u deftere ekle",
   "Taslağı kaydet",
   "guitarhub-songwriter-draft",
   "Repertuvar önizlemesi",
   "whiteSpace: \"pre\"",
 ];
 
-const missing = required.filter((snippet) => !`${nav}\n${page}`.includes(snippet));
-if (missing.length) {
-  console.error(`Missing songwriter section snippets:\n${missing.join("\n")}`);
+const forbidden = [
+  "type LyricLine",
+  "Söz satırı",
+  "Akor satırı",
+  "Satır ekle",
+  "draft.lines.map",
+  "updateLine",
+  "addLine",
+];
+
+const haystack = `${nav}\n${page}`;
+const missing = required.filter((snippet) => !haystack.includes(snippet));
+const presentForbidden = forbidden.filter((snippet) => haystack.includes(snippet));
+if (missing.length || presentForbidden.length) {
+  if (missing.length) console.error(`Missing songwriter notebook snippets:\n${missing.join("\n")}`);
+  if (presentForbidden.length) console.error(`Old row editor clutter still present:\n${presentForbidden.join("\n")}`);
   process.exit(1);
 }
 
-console.log("Songwriter section is wired.");
+console.log("Songwriter section uses a clean notebook editor.");
