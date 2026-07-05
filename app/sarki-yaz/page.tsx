@@ -30,6 +30,9 @@ const SUGGESTION_TYPES = [
   { value: "continue", label: "Devamını yaz", hint: "Aynı havada 1-2 satır devam önerir." },
   { value: "chorus", label: "Nakarat üret", hint: "Daha akılda kalan, yükselen bölüm önerir." },
   { value: "bridge", label: "Bridge öner", hint: "Nakarata geçiş için farklı renk verir." },
+  { value: "lyrics-only", label: "Sadece söz öner", hint: "Akorlara ve duyguya göre sadece söz önerir." },
+  { value: "chords-only", label: "Sadece akor öner", hint: "Sözlerin duygu/kafiyesine göre sadece akor önerir." },
+  { value: "polish-lyrics", label: "Sözleri parlat", hint: "Yazdığın sözleri bozmadan daha güçlü yapar." },
   { value: "sadder", label: "Daha hüzünlü yap", hint: "Söz ve akoru daha duygusal tarafa çeker." },
 ] as const;
 

@@ -36,14 +36,23 @@ function getConversationId() {
   const existing = window.localStorage.getItem(key);
   if (existing) return existing;
 
-  const created = crypto.randomUUID();
+  const created = makeClientId();
   window.localStorage.setItem(key, created);
   return created;
+}
+
+function makeClientId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `yoda-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
 export function ChatbotWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [chatError, setChatError] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<UiMessage[]>([
     {
@@ -71,9 +80,10 @@ export function ChatbotWidget() {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
 
-    const userMessage: UiMessage = { id: crypto.randomUUID(), role: "user", content: trimmed };
+    const userMessage: UiMessage = { id: makeClientId(), role: "user", content: trimmed };
     setMessages((current) => [...current, userMessage]);
     setInput("");
+    setChatError("");
     setLoading(true);
 
     const controller = new AbortController();
@@ -90,9 +100,13 @@ export function ChatbotWidget() {
       }).catch(() => null);
 
       const payload = response ? await response.json().catch(() => null) : null;
+      if (!response) setChatError("Yoda gönderemedi kanka. Bağlantıyı kontrol edip tekrar dene.");
       const reply = typeof payload?.reply === "string" ? payload.reply : "Yoda cevap veremedi kanka. Tekrar dener misin?";
 
-      setMessages((current) => [...current, { id: crypto.randomUUID(), role: "assistant", content: reply }]);
+      setMessages((current) => [...current, { id: makeClientId(), role: "assistant", content: reply }]);
+    } catch {
+      setChatError("Yoda gönderemedi kanka. Bağlantıyı kontrol edip tekrar dene.");
+      setMessages((current) => [...current, { id: makeClientId(), role: "assistant", content: "Yoda gönderemedi kanka. Tekrar dener misin?" }]);
     } finally {
       window.clearTimeout(timeoutId);
       setLoading(false);
@@ -134,11 +148,12 @@ export function ChatbotWidget() {
           <div className="border-t border-zinc-800 p-3">
             <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
               {SUGGESTIONS.map((suggestion) => (
-                <button key={suggestion} onClick={() => void sendMessage(suggestion)} className="shrink-0 rounded-full bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800">
+                <button type="button" key={suggestion} onClick={() => void sendMessage(suggestion)} className="shrink-0 rounded-full bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800">
                   {suggestion}
                 </button>
               ))}
             </div>
+            {chatError && <p className="mb-2 rounded-xl bg-red-950/70 px-3 py-2 text-xs font-bold text-red-100">{chatError}</p>}
             <form onSubmit={handleSubmit} className="flex gap-2">
               <input
                 value={input}
@@ -146,7 +161,7 @@ export function ChatbotWidget() {
                 placeholder="Bir şey sor..."
                 className="min-h-11 flex-1 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 text-sm text-white outline-none focus:border-red-500"
               />
-              <button disabled={loading} className="min-h-11 rounded-2xl bg-red-600 px-4 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">
+              <button type="submit" disabled={loading} className="min-h-11 rounded-2xl bg-red-600 px-4 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">
                 Gönder
               </button>
             </form>
