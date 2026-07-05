@@ -14,6 +14,18 @@ C         G
 Akorları sözlerin üstüne denk getir`;
 const SECTION_IDEAS = ["Verse", "Pre-chorus", "Nakarat", "Bridge", "Solo", "Outro"];
 const SECTION_BLOCKS = ["[Verse]", "[Nakarat]", "[Bridge]", "[Solo]", "[Outro]"];
+const MOOD_OPTIONS = [
+  { value: "sad", label: "Hüzünlü", hint: "Kırılgan, içe dönük, minor hisli." },
+  { value: "happy", label: "Mutlu", hint: "Açık, pozitif, melodik." },
+  { value: "romantic", label: "Romantik", hint: "Sıcak, yakın, duygusal." },
+  { value: "angry", label: "Öfkeli", hint: "Sert, direkt, rock/alternatif hisli." },
+  { value: "hopeful", label: "Umutlu", hint: "Yükselen, ferah, çözülme hissi." },
+  { value: "dark", label: "Karanlık", hint: "Gergin, gece, dramatik." },
+  { value: "arabesk", label: "Arabesk", hint: "Acılı, uzun vokal cümleli." },
+  { value: "rock", label: "Rock", hint: "Güçlü, vurucu, sahne hissi." },
+  { value: "pop", label: "Pop", hint: "Basit, akılda kalıcı, nakarat odaklı." },
+  { value: "lofi", label: "Lo-fi", hint: "Yumuşak, sakin, renkli akorlar." },
+] as const;
 const SUGGESTION_TYPES = [
   { value: "continue", label: "Devamını yaz", hint: "Aynı havada 1-2 satır devam önerir." },
   { value: "chorus", label: "Nakarat üret", hint: "Daha akılda kalan, yükselen bölüm önerir." },
@@ -27,6 +39,7 @@ type Draft = {
   tempo: string;
   sectionName: string;
   suggestionType: string;
+  moodPreset: string;
   notebook: string;
 };
 
@@ -44,6 +57,7 @@ function makeDraft(): Draft {
     tempo: "90",
     sectionName: "Verse",
     suggestionType: "continue",
+    moodPreset: "sad",
     notebook: DEFAULT_NOTEBOOK,
   };
 }
@@ -69,6 +83,7 @@ export default function SarkiYaz() {
   const [suggestion, setSuggestion] = useState<SystemSuggestion | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [savingToRepertuar, setSavingToRepertuar] = useState(false);
+  const moodPresetLabel = MOOD_OPTIONS.find((mood) => mood.value === draft.moodPreset)?.label ?? "Hüzünlü";
 
   useEffect(() => {
     async function loadExistingSongDraft() {
@@ -275,6 +290,13 @@ export default function SarkiYaz() {
                 </select>
                 <p className="mt-2 text-xs leading-5 text-zinc-500">{SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.hint}</p>
               </label>
+              <label className="block sm:col-span-3 lg:col-span-1">
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Duygu</span>
+                <select value={draft.moodPreset} onChange={(event) => setDraft({ ...draft, moodPreset: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500">
+                  {MOOD_OPTIONS.map((mood) => <option key={mood.value} value={mood.value}>{mood.label}</option>)}
+                </select>
+                <p className="mt-2 text-xs leading-5 text-zinc-500">{MOOD_OPTIONS.find((mood) => mood.value === draft.moodPreset)?.hint}</p>
+              </label>
             </div>
           </aside>
 
@@ -304,12 +326,17 @@ export default function SarkiYaz() {
               <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.16em] text-red-300">Sistem önerisi · {SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.label} · {suggestion.mood}</p>
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-red-300">Sistem önerisi · {SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.label} · Seçilen duygu: {moodPresetLabel} · {suggestion.mood}</p>
                     <p className="mt-2 text-sm leading-6 text-zinc-300">{suggestion.idea}</p>
                   </div>
-                  <button onClick={applySuggestion} className="rounded-xl bg-white px-3 py-2 text-xs font-black text-zinc-950 hover:bg-red-100">
-                    Öneriyi uygula
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={getSystemSuggestion} disabled={suggestionLoading} className="rounded-xl bg-zinc-950 px-3 py-2 text-xs font-black text-red-200 hover:bg-zinc-800 disabled:opacity-60">
+                      {suggestionLoading ? "Üretiliyor..." : "Başka öneri üret"}
+                    </button>
+                    <button onClick={applySuggestion} className="rounded-xl bg-white px-3 py-2 text-xs font-black text-zinc-950 hover:bg-red-100">
+                      Öneriyi uygula
+                    </button>
+                  </div>
                 </div>
                 <pre className="mt-3 overflow-x-auto rounded-xl bg-zinc-950 p-3 font-mono text-sm leading-7 text-zinc-100">{`${suggestion.suggestedChords}\n${suggestion.suggestedLyrics}`}</pre>
               </div>

@@ -5,6 +5,7 @@ type SongwriterRequest = {
   keyName?: string;
   sectionName?: string;
   suggestionType?: string;
+  moodPreset?: string;
   notebook?: string;
 };
 
@@ -46,15 +47,41 @@ function suggestionTypeLabel(value?: string) {
   }
 }
 
-function fallbackSuggestion(notebook: string, sectionName: string, suggestionType?: string): SongwriterSuggestion {
+function moodPresetLabel(value?: string) {
+  switch (value) {
+    case "happy":
+      return "Mutlu";
+    case "romantic":
+      return "Romantik";
+    case "angry":
+      return "Öfkeli";
+    case "hopeful":
+      return "Umutlu";
+    case "dark":
+      return "Karanlık";
+    case "arabesk":
+      return "Arabesk";
+    case "rock":
+      return "Rock";
+    case "pop":
+      return "Pop";
+    case "lofi":
+      return "Lo-fi";
+    default:
+      return "Hüzünlü";
+  }
+}
+
+function fallbackSuggestion(notebook: string, sectionName: string, suggestionType?: string, moodPreset?: string): SongwriterSuggestion {
   const lower = notebook.toLocaleLowerCase("tr-TR");
+  const selectedMood = moodPresetLabel(moodPreset);
   const sadWords = ["gece", "yalnız", "özledim", "ağla", "kırık", "yorgun", "duman", "acı"];
-  const isSad = suggestionType === "sadder" || sadWords.some((word) => lower.includes(word));
+  const isSad = moodPreset === "sad" || suggestionType === "sadder" || sadWords.some((word) => lower.includes(word));
   const isBridge = suggestionType === "bridge" || sectionName.toLocaleLowerCase("tr-TR").includes("bridge");
   const isChorus = suggestionType === "chorus";
 
   return {
-    mood: isSad ? "hüzünlü" : "umutlu",
+    mood: selectedMood,
     idea: isBridge
       ? "Bridge bölümünde gerilimi biraz artırıp nakarata temiz çöz."
       : isChorus
@@ -62,15 +89,23 @@ function fallbackSuggestion(notebook: string, sectionName: string, suggestionTyp
         : suggestionType === "sadder"
           ? "Aynı fikri daha kırılgan ve içe dönük bir tona çek."
           : "Aynı havayı bozmadan 1-2 satır devam ettir.",
-    suggestedChords: isSad ? "Am        F        C        G" : "C         G        Am       F",
+    suggestedChords: isSad ? "Am        F        C        G" : moodPreset === "lofi" ? "Am7       Dm7      G7       Cmaj7" : moodPreset === "rock" || moodPreset === "angry" ? "Em        G        D        A" : "C         G        Am       F",
     suggestedLyrics: isSad
       ? "İçimde susmayan bir gece var\nAdını söylesem yine dağılır"
-      : "Yeniden başlar gibi bak bana\nSesinle açılır bu karanlık",
+      : moodPreset === "happy"
+        ? "Güneş gibi doğdu içime sesin\nBugün her yol bize çıkar"
+        : moodPreset === "romantic"
+          ? "Elini tutsam şehir susar\nKalbim adını yavaşça yazar"
+          : moodPreset === "angry"
+            ? "Kırdığın yerden ayağa kalktım\nBu defa susmam, ateşi yaktım"
+            : moodPreset === "arabesk"
+              ? "Yaktın beni gecelerin ortasında\nAdın kaldı sigaramın dumanında"
+              : "Yeniden başlar gibi bak bana\nSesinle açılır bu karanlık",
   };
 }
 
-function parseSuggestion(raw: string | null, notebook: string, sectionName: string, suggestionType?: string): SongwriterSuggestion {
-  if (!raw) return fallbackSuggestion(notebook, sectionName, suggestionType);
+function parseSuggestion(raw: string | null, notebook: string, sectionName: string, suggestionType?: string, moodPreset?: string): SongwriterSuggestion {
+  if (!raw) return fallbackSuggestion(notebook, sectionName, suggestionType, moodPreset);
   const cleaned = raw.replace(/^```json/i, "").replace(/^```/, "").replace(/```$/, "").trim();
   try {
     const parsed = JSON.parse(cleaned) as Partial<SongwriterSuggestion>;
@@ -85,7 +120,7 @@ function parseSuggestion(raw: string | null, notebook: string, sectionName: stri
   } catch {
     // Fallback below.
   }
-  return fallbackSuggestion(notebook, sectionName, suggestionType);
+  return fallbackSuggestion(notebook, sectionName, suggestionType, moodPreset);
 }
 
 async function callHermes(body: SongwriterRequest) {
@@ -95,6 +130,7 @@ async function callHermes(body: SongwriterRequest) {
   if (!apiKey || !baseUrl) return null;
 
   const suggestionLabel = suggestionTypeLabel(body.suggestionType);
+  const selectedMood = moodPresetLabel(body.moodPreset);
   const prompt = `Şarkı sözü ve akor önerisi üret.
 Kullanıcı GuitarHub Şarkı Yaz içinde beste yapıyor.
 Yoda chat değilsin; sayfanın otomatik beste öneri sistemisin.
@@ -104,10 +140,12 @@ Başlık: ${body.title || "Yeni Şarkı"}
 Ton: ${body.keyName || "belirsiz"}
 Bölüm: ${body.sectionName || "Nakarat"}
 İstenen öneri tipi: ${suggestionLabel}
+Duygu seçimi: ${selectedMood}
 Defter:
 ${body.notebook || ""}
 Kurallar:
-- Sözlerin duygusunu analiz et: hüzünlü/mutlu/karanlık/umutlu.
+- Sözlerin duygusunu analiz et ama seçilen duygu öncelikli: ${selectedMood}.
+- Bu duyguya göre söz ve akor öner: hüzünlü/mutlu/romantik/öfkeli/umutlu/karanlık/arabesk/rock/pop/lo-fi olabilir.
 - Var olan akorlara uyumlu 3-4 akorlu bir satır öner.
 - suggestedChords tek satır olsun, akorlar boşluklu dizilsin.
 - suggestedLyrics 1-2 satır Türkçe şarkı sözü olsun.
@@ -153,8 +191,9 @@ export async function POST(request: Request) {
   const notebook = body?.notebook?.trim() ?? "";
   const sectionName = body?.sectionName?.trim() ?? "Nakarat";
   const suggestionType = body?.suggestionType?.trim() ?? "continue";
+  const moodPreset = body?.moodPreset?.trim() ?? "sad";
 
   const raw = await callHermes(body ?? {}).catch(() => null);
-  const suggestion = parseSuggestion(raw, notebook, sectionName, suggestionType);
+  const suggestion = parseSuggestion(raw, notebook, sectionName, suggestionType, moodPreset);
   return NextResponse.json(suggestion);
 }
