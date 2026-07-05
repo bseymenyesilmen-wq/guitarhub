@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 import { supabase } from "@/lib/supabase";
 
@@ -61,10 +61,56 @@ function loadDraft() {
 export default function SarkiYaz() {
   const router = useRouter();
   const [draft, setDraft] = useState<Draft>(() => loadDraft());
+  const [editingSongId, setEditingSongId] = useState<number | null>(null);
   const [savedMessage, setSavedMessage] = useState("");
   const [suggestion, setSuggestion] = useState<SystemSuggestion | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [savingToRepertuar, setSavingToRepertuar] = useState(false);
+
+  useEffect(() => {
+    async function loadExistingSongDraft() {
+      const songId = new URLSearchParams(window.location.search).get("songId");
+      if (!songId) return;
+      const parsedSongId = Number(songId);
+      if (!Number.isFinite(parsedSongId)) return;
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.push("/giris");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("songs")
+        .select("*")
+        .eq("id", parsedSongId)
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error || !data) {
+        setSavedMessage(error?.message ?? "Şarkı bulunamadı.");
+        return;
+      }
+
+      setEditingSongId(parsedSongId);
+      setDraft({
+        ...makeDraft(),
+        title: String(data.title ?? "Yeni Şarkı"),
+        keyName: String(data.key ?? ""),
+        tempo: data.bpm ? String(data.bpm) : "",
+        sectionName: String(data.notes ?? "").match(/Bölüm:\s*([^\n]+)/)?.[1] ?? "Verse",
+        notebook: String(data.chords ?? data.lyrics ?? ""),
+      });
+    }
+
+    const timer = window.setTimeout(() => {
+      void loadExistingSongDraft();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [router]);
 
   function saveDraft() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
@@ -112,21 +158,40 @@ export default function SarkiYaz() {
       return;
     }
 
-    const { data: created, error } = await supabase
-      .from("songs")
-      .insert({
-        title: draft.title.trim() || "Yeni Şarkı",
-        artist: "Kendi Şarkım",
-        key: draft.keyName.trim() || null,
-        bpm: Number(draft.tempo) || null,
-        chords: draft.notebook,
-        lyrics: draft.notebook,
-        notes: `${OWN_SONG_MARKER}\nBölüm: ${draft.sectionName}`,
-        difficulty: "Kendi Şarkıların",
-        user_id: session.user.id,
-      })
-      .select("id")
-      .single();
+    const payload = {
+      title: draft.title.trim() || "Yeni Şarkı",
+      artist: "Kendi Şarkım",
+      key: draft.keyName.trim() || null,
+      bpm: Number(draft.tempo) || null,
+      chords: draft.notebook,
+      lyrics: draft.notebook,
+      notes: `${OWN_SONG_MARKER}\nBölüm: ${draft.sectionName}`,
+      difficulty: "Kendi Şarkıların",
+      user_id: session.user.id,
+    };
+
+    const { data: created, error } = editingSongId
+      ? await supabase
+        .from("songs")
+        .update({
+          title: payload.title,
+          artist: payload.artist,
+          key: payload.key,
+          bpm: payload.bpm,
+          chords: payload.chords,
+          lyrics: payload.lyrics,
+          notes: payload.notes,
+          difficulty: payload.difficulty,
+        })
+        .eq("id", editingSongId)
+        .eq("user_id", session.user.id)
+        .select("id")
+        .single()
+      : await supabase
+        .from("songs")
+        .insert(payload)
+        .select("id")
+        .single();
 
     setSavingToRepertuar(false);
 
@@ -198,7 +263,7 @@ export default function SarkiYaz() {
                   Taslağı kaydet
                 </button>
                 <button onClick={saveToRepertuar} disabled={savingToRepertuar} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-zinc-950 hover:bg-red-100 disabled:opacity-60">
-                  {savingToRepertuar ? "Kaydediliyor..." : "Repertuvara Kaydet"}
+                  {savingToRepertuar ? "Kaydediliyor..." : editingSongId ? "Repertuvarda Güncelle" : "Repertuvara Kaydet"}
                 </button>
               </div>
             </div>
