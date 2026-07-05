@@ -29,6 +29,17 @@ function sortedSetlistSongs(setlist?: LoadedSetlist | null) {
   return [...(setlist?.setlist_songs ?? [])].sort((a, b) => a.position - b.position);
 }
 
+function RepertuarQuickCard({ title, value, helper, action, href, accent = false }: { title: string; value: string; helper: string; action: string; href: string; accent?: boolean }) {
+  return (
+    <Link href={href} className={`rounded-3xl border p-4 transition hover:-translate-y-0.5 hover:border-red-400/70 ${accent ? "border-red-500/30 bg-gradient-to-br from-red-600/25 to-zinc-950" : "border-zinc-800 bg-zinc-900"}`}>
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">{title}</p>
+      <p className="mt-2 text-3xl font-black text-white">{value}</p>
+      <p className="mt-1 text-sm text-zinc-400">{helper}</p>
+      <span className="mt-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-black text-zinc-950">{action}</span>
+    </Link>
+  );
+}
+
 export default function Repertuar() {
   const router = useRouter();
   const [setlists, setSetlists] = useState<LoadedSetlist[]>([]);
@@ -267,6 +278,12 @@ export default function Repertuar() {
 
         {message && <p className="mb-4 rounded-lg bg-zinc-900 p-3 text-sm text-zinc-200">{message}</p>}
 
+        <section className="mb-5 grid gap-3 md:grid-cols-3">
+          <RepertuarQuickCard title="Kendi Şarkıların" value={ownSongs.length.toString()} helper="Şarkı Yaz’dan kaydedilen bestelerin" action="Şarkı Yaz'a git" href="/sarki-yaz" accent />
+          <RepertuarQuickCard title="Taslaklar" value="1" helper="Taslak cihazda otomatik saklanır" action="Taslağı aç" href="/sarki-yaz" />
+          <RepertuarQuickCard title="Setlistler" value={setlists.length.toString()} helper="Konser/prova klasörlerin" action="Setlistlere bak" href="#setlistler" />
+        </section>
+
         <section className="mb-5 rounded-3xl border border-red-500/25 bg-gradient-to-br from-zinc-900 to-red-950/25 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -280,11 +297,19 @@ export default function Repertuar() {
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {ownSongs.map((song) => (
-              <Link key={song.id} href={`/sarki/${song.id}`} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 transition hover:border-red-500/60 hover:bg-zinc-900">
-                <strong className="line-clamp-1 text-white">{song.title}</strong>
-                <span className="mt-1 block text-sm text-zinc-400">Ton: {song.key || "-"} · BPM: {song.bpm || "-"}</span>
-                <span className="mt-3 inline-flex rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white">Aç</span>
-              </Link>
+              <div key={song.id} className="rounded-2xl border border-red-500/20 bg-gradient-to-br from-zinc-950 to-zinc-900 p-4 shadow-lg shadow-black/20">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="rounded-full bg-red-600/20 px-2 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-red-200">Kendi besten</span>
+                    <strong className="mt-3 block line-clamp-1 text-lg text-white">{song.title}</strong>
+                    <span className="mt-1 block text-sm text-zinc-400">Ton: {song.key || "-"} · BPM: {song.bpm || "-"}</span>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link href={`/sarki/${song.id}`} className="rounded-xl bg-white px-3 py-2 text-xs font-black text-zinc-950 hover:bg-red-100">Aç</Link>
+                  <Link href={`/sarki-yaz?songId=${song.id}`} className="rounded-xl bg-zinc-800 px-3 py-2 text-xs font-black text-red-200 hover:bg-zinc-700">Düzenle</Link>
+                </div>
+              </div>
             ))}
             {ownSongs.length === 0 && <p className="rounded-2xl border border-dashed border-zinc-700 p-5 text-sm text-zinc-400">Şarkı Yaz’dan repertuvara kaydedince burada görünecek.</p>}
           </div>
@@ -312,7 +337,7 @@ export default function Repertuar() {
         {loading ? (
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-zinc-300">Repertuar yükleniyor...</div>
         ) : (
-          <section className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <section id="setlistler" className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
             <aside className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 lg:sticky lg:top-4 lg:self-start">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-xl font-black">Setlistler</h2>
