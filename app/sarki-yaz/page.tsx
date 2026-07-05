@@ -13,6 +13,7 @@ Buraya ilk söz satırını yaz
 C         G
 Akorları sözlerin üstüne denk getir`;
 const SECTION_IDEAS = ["Verse", "Pre-chorus", "Nakarat", "Bridge", "Solo", "Outro"];
+const SECTION_BLOCKS = ["[Verse]", "[Nakarat]", "[Bridge]", "[Solo]", "[Outro]"];
 const SUGGESTION_TYPES = [
   { value: "continue", label: "Devamını yaz", hint: "Aynı havada 1-2 satır devam önerir." },
   { value: "chorus", label: "Nakarat üret", hint: "Daha akılda kalan, yükselen bölüm önerir." },
@@ -142,6 +143,15 @@ export default function SarkiYaz() {
     setDraft((current) => ({
       ...current,
       notebook: `${current.notebook.trim()}\n\n${block}`.trim(),
+    }));
+  }
+
+  function insertSectionBlock(sectionBlock: string) {
+    const block = `${sectionBlock}\n\n`;
+    setDraft((current) => ({
+      ...current,
+      notebook: `${current.notebook.trim()}\n\n${block}`.trim(),
+      sectionName: sectionBlock.replace(/[\[\]]/g, ""),
     }));
   }
 
@@ -284,6 +294,17 @@ export default function SarkiYaz() {
                 <pre className="mt-3 overflow-x-auto rounded-xl bg-zinc-950 p-3 font-mono text-sm leading-7 text-zinc-100">{`${suggestion.suggestedChords}\n${suggestion.suggestedLyrics}`}</pre>
               </div>
             )}
+
+            <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">Bölüm ekle</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {SECTION_BLOCKS.map((sectionBlock) => (
+                  <button key={sectionBlock} onClick={() => insertSectionBlock(sectionBlock)} className="rounded-xl bg-zinc-900 px-3 py-2 text-xs font-black text-red-300 hover:bg-red-600 hover:text-white">
+                    Bölümü deftere ekle {sectionBlock}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <label className="mt-4 block">
               <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Akor ve sözleri tek alana yaz</span>
