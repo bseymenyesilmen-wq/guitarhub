@@ -249,50 +249,51 @@ export default function SarkiYaz() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.16),transparent_34%),#09090b] p-4 pb-28 text-white sm:p-6 md:pb-6">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.16),transparent_34%),#09090b] p-3 pb-24 text-white sm:p-5 md:pb-5">
+      <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="mb-6 rounded-[2rem] border border-zinc-800 bg-zinc-950/75 p-5 shadow-2xl shadow-black/30 sm:p-8">
-          <p className="text-sm font-black uppercase tracking-[0.2em] text-red-400">Şarkı Oluştur</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">Şarkı Yaz</h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-300 sm:text-lg">
-            Sözlerini ve akorlarını tek defter alanında yaz. Repertuvardaki gibi akor satırını sözün üstüne koy, taslağı bu cihazda sakla.
+        <section className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-950/75 p-4 shadow-xl shadow-black/25">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-red-400">Şarkı Yaz · kompakt beste defteri</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Şarkı Yaz</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
+            Akor/söz defteri, AI öneri ve repertuvara kaydetme tek ekranda.
           </p>
         </section>
 
-        <section className="grid gap-5 lg:grid-cols-[0.75fr_1.25fr]">
-          <aside className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
-            <h2 className="text-2xl font-black">Şarkı bilgisi</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+        <section className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+          <aside className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
+            <h2 className="text-lg font-black">Kısa bilgi</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
               <label className="block sm:col-span-3 lg:col-span-1">
                 <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Başlık</span>
-                <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500" />
+                <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} className="mt-2 min-h-10 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500" />
               </label>
               <label className="block">
                 <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Ton</span>
-                <input value={draft.keyName} onChange={(event) => setDraft({ ...draft, keyName: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500" />
+                <input value={draft.keyName} onChange={(event) => setDraft({ ...draft, keyName: event.target.value })} className="mt-2 min-h-10 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500" />
               </label>
               <label className="block">
                 <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">BPM</span>
-                <input value={draft.tempo} onChange={(event) => setDraft({ ...draft, tempo: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500" />
+                <input value={draft.tempo} onChange={(event) => setDraft({ ...draft, tempo: event.target.value })} className="mt-2 min-h-10 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500" />
               </label>
+              <p className="sm:col-span-3 xl:col-span-1 text-xs font-black uppercase tracking-[0.16em] text-red-300">AI ayarları</p>
               <label className="block">
                 <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Bölüm</span>
-                <select value={draft.sectionName} onChange={(event) => setDraft({ ...draft, sectionName: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500">
+                <select value={draft.sectionName} onChange={(event) => setDraft({ ...draft, sectionName: event.target.value })} className="mt-2 min-h-10 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500">
                   {SECTION_IDEAS.map((section) => <option key={section}>{section}</option>)}
                 </select>
               </label>
               <label className="block sm:col-span-3 lg:col-span-1">
                 <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Öneri tipi</span>
-                <select value={draft.suggestionType} onChange={(event) => setDraft({ ...draft, suggestionType: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500">
+                <select value={draft.suggestionType} onChange={(event) => setDraft({ ...draft, suggestionType: event.target.value })} className="mt-2 min-h-10 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500">
                   {SUGGESTION_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
                 </select>
                 <p className="mt-2 text-xs leading-5 text-zinc-500">{SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.hint}</p>
               </label>
               <label className="block sm:col-span-3 lg:col-span-1">
                 <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Duygu</span>
-                <select value={draft.moodPreset} onChange={(event) => setDraft({ ...draft, moodPreset: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500">
+                <select value={draft.moodPreset} onChange={(event) => setDraft({ ...draft, moodPreset: event.target.value })} className="mt-2 min-h-10 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500">
                   {MOOD_OPTIONS.map((mood) => <option key={mood.value} value={mood.value}>{mood.label}</option>)}
                 </select>
                 <p className="mt-2 text-xs leading-5 text-zinc-500">{MOOD_OPTIONS.find((mood) => mood.value === draft.moodPreset)?.hint}</p>
@@ -300,20 +301,20 @@ export default function SarkiYaz() {
             </div>
           </aside>
 
-          <section className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
+          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-black">Şarkı defteri</h2>
-                <p className="mt-1 text-sm text-zinc-400">Akor ve sözleri tek alana yaz. Örnek: akor satırı, altına söz satırı.</p>
+                <h2 className="text-xl font-black">Şarkı defteri</h2>
+                <p className="mt-1 text-xs text-zinc-500">Akor satırı üstte, söz satırı altta.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button onClick={getSystemSuggestion} disabled={suggestionLoading} className="rounded-2xl bg-red-600 px-4 py-3 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">
-                  {suggestionLoading ? "Sistem düşünüyor..." : "Sistemden öneri al"}
+                <button onClick={getSystemSuggestion} disabled={suggestionLoading} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">
+                  {suggestionLoading ? "Düşünüyor..." : SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.label ?? "Öneri al"}
                 </button>
-                <button onClick={saveDraft} className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-black text-red-300 hover:bg-zinc-800">
-                  Taslağı kaydet
+                <button onClick={saveDraft} className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-black text-red-300 hover:bg-zinc-800">
+                  Kaydet
                 </button>
-                <button onClick={saveToRepertuar} disabled={savingToRepertuar} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-zinc-950 hover:bg-red-100 disabled:opacity-60">
+                <button onClick={saveToRepertuar} disabled={savingToRepertuar} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100 disabled:opacity-60">
                   {savingToRepertuar ? "Kaydediliyor..." : editingSongId ? "Repertuvarda Güncelle" : "Repertuvara Kaydet"}
                 </button>
               </div>
@@ -342,12 +343,12 @@ export default function SarkiYaz() {
               </div>
             )}
 
-            <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-3">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">Bölüm ekle</p>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-950 p-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="mr-1 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">Bölüm</span>
                 {SECTION_BLOCKS.map((sectionBlock) => (
-                  <button key={sectionBlock} onClick={() => insertSectionBlock(sectionBlock)} className="rounded-xl bg-zinc-900 px-3 py-2 text-xs font-black text-red-300 hover:bg-red-600 hover:text-white">
-                    Bölümü deftere ekle {sectionBlock}
+                  <button key={sectionBlock} onClick={() => insertSectionBlock(sectionBlock)} className="rounded-lg bg-zinc-900 px-2.5 py-1.5 text-xs font-black text-red-300 hover:bg-red-600 hover:text-white">
+                    + {sectionBlock.replace(/[\[\]]/g, "")}
                   </button>
                 ))}
               </div>
@@ -358,7 +359,7 @@ export default function SarkiYaz() {
               <textarea
                 value={draft.notebook}
                 onChange={(event) => setDraft({ ...draft, notebook: event.target.value })}
-                rows={22}
+                rows={18}
                 spellCheck={false}
                 className="mt-2 w-full rounded-2xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-7 text-zinc-100 outline-none focus:border-red-500"
                 placeholder={DEFAULT_NOTEBOOK}

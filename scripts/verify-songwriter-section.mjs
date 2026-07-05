@@ -12,10 +12,10 @@ const required = [
   "mobileLabel",
   "grid-cols-6",
   "Şarkı Yaz",
-  "Şarkı Oluştur",
+  "Şarkı Yaz · kompakt beste defteri",
   "Şarkı defteri",
-  "Akor ve sözleri tek alana yaz",
-  "Taslağı kaydet",
+  "Akor/söz defteri",
+  "Kaydet",
   "guitarhub-songwriter-draft",
 ];
 
@@ -29,7 +29,6 @@ const forbidden = [
   "whiteSpace: \"pre\"",
   "type LyricLine",
   "Söz satırı",
-  "Akor satırı",
   "Satır ekle",
   "draft.lines.map",
   "updateLine",

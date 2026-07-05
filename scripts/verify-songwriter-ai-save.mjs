@@ -21,7 +21,6 @@ const required = [
   "Daha hüzünlü yap",
   "suggestionType",
   "suggestionTypeLabel",
-  "Sistemden öneri al",
   "getSystemSuggestion",
   "Öneriyi uygula",
   "applySuggestion",

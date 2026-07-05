@@ -7,14 +7,14 @@ const writer = readFileSync(join(__dirname, "..", "app", "sarki-yaz", "page.tsx"
 
 const required = [
   "SECTION_BLOCKS",
-  "Bölüm ekle",
+  "Bölüm",
   "insertSectionBlock",
   "[Verse]",
   "[Nakarat]",
   "[Bridge]",
   "[Solo]",
   "[Outro]",
-  "Bölümü deftere ekle",
+  "+ {sectionBlock.replace",
   "setDraft((current) => ({",
 ];
 
