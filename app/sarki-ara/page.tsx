@@ -94,6 +94,10 @@ function findChord(chordName: string) {
   return CHORD_LIBRARY.find((item) => item.name === normalized || item.aliases?.includes(normalized)) ?? null;
 }
 
+function variationLabel(index: number) {
+  return `Varyasyon ${index + 1}`;
+}
+
 export default function SarkiAra() {
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -106,6 +110,7 @@ export default function SarkiAra() {
   const [editedChords, setEditedChords] = useState("");
   const [transposeSteps, setTransposeSteps] = useState(0);
   const [selectedChord, setSelectedChord] = useState<ChordDefinition | null>(null);
+  const [playMode, setPlayMode] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -137,6 +142,7 @@ export default function SarkiAra() {
     setEditedChords("");
     setProviderChoices(null);
     setTransposeSteps(0);
+    setPlayMode(false);
   }
 
   function openChord(chordName: string) {
@@ -450,7 +456,7 @@ export default function SarkiAra() {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">Akor ve söz arama</p>
           <h1 className="mt-3 text-4xl font-black">Şarkı Ara</h1>
           <p className="mt-2 max-w-2xl text-zinc-400">
-            Sanatçı yazınca şarkıları listeler. Şarkı da yazarsan daha net arar. Repertuarım, Ultimate Guitar ve uAkor kaynakları birlikte denenir.
+            Sanatçı yazınca şarkıları listeler. Şarkı da yazarsan daha net arar. Aynı şarkı için bulunan farklı akor/söz varyasyonları birlikte denenir.
           </p>
         </section>
 
@@ -539,8 +545,8 @@ export default function SarkiAra() {
                     <span className="min-w-0">
                       <span className="block truncate font-black">{song.title}</span>
                       <span className="mt-1 block truncate text-sm text-zinc-500">
-                        {song.artist}{song.provider ? ` - ${song.provider}` : ""}
-                        {song.variants?.length ? ` - ${song.variants.length} kaynak` : ""}
+                        {song.artist}
+                        {song.variants?.length ? ` - ${song.variants.length} varyasyon` : ""}
                       </span>
                     </span>
                   </button>
@@ -554,15 +560,15 @@ export default function SarkiAra() {
           <section className="mt-4 rounded-3xl border border-red-900/60 bg-zinc-900 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Kaynak seç</p>
-                <h3 className="mt-1 text-xl font-black">Bu şarkı birkaç sitede var</h3>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Varyasyon seç</p>
+                <h3 className="mt-1 text-xl font-black">Bu şarkı için {providerChoices.length} varyasyon var</h3>
               </div>
               <button onClick={() => setProviderChoices(null)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-bold hover:bg-zinc-700">
                 Kapat
               </button>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {providerChoices.map((variant) => (
+              {providerChoices.map((variant, index) => (
                 <button
                   key={variant.source}
                   onClick={() => selectSong(variant)}
@@ -573,7 +579,7 @@ export default function SarkiAra() {
                     style={variant.cover ? { backgroundImage: `url(${variant.cover})` } : undefined}
                   />
                   <span className="min-w-0">
-                    <span className="block truncate font-black">{variant.provider ?? "Kaynak"}</span>
+                    <span className="block truncate font-black">{variationLabel(index)}</span>
                     <span className="mt-1 block truncate text-sm text-zinc-500">{variant.artist} - {variant.title}</span>
                   </span>
                 </button>
@@ -592,7 +598,6 @@ export default function SarkiAra() {
                     {result.artist}
                     {transposedKey ? ` - Ton: ${transposedKey}` : ""}
                     {transposedCapo ? ` - Capo: ${transposedCapo}` : ""}
-                    {result.provider ? ` - Kaynak: ${result.provider}` : ""}
                   </p>
                 </div>
 
@@ -611,6 +616,12 @@ export default function SarkiAra() {
                     className={`min-h-11 rounded-lg px-4 py-3 font-bold ${favorite ? "bg-red-600 hover:bg-red-500" : "bg-zinc-800 hover:bg-zinc-700"}`}
                   >
                     {favorite ? "Favoride" : "Favorilere Ekle"}
+                  </button>
+                  <button
+                    onClick={() => setPlayMode(true)}
+                    className="min-h-11 rounded-lg bg-white px-4 py-3 font-bold text-zinc-950 hover:bg-red-100"
+                  >
+                    Çalma Modu
                   </button>
                   <button
                     onClick={openSetlistModal}
@@ -659,11 +670,34 @@ export default function SarkiAra() {
                       </button>
                     ))
                   ) : (
-                    <p className="rounded-2xl bg-zinc-950 p-4 text-sm text-zinc-500">Bu kaynak için öneri yok.</p>
+                    <p className="rounded-2xl bg-zinc-950 p-4 text-sm text-zinc-500">Bu varyasyon için öneri yok.</p>
                   )}
                 </div>
               </div>
             </aside>
+          </section>
+        )}
+
+        {result && playMode && (
+          <section className="fixed inset-0 z-[80] flex flex-col bg-zinc-950 p-2 text-white sm:p-4">
+            <div className="mb-2 rounded-2xl border border-zinc-800 bg-zinc-950/95 p-3 shadow-xl shadow-black/40">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-red-400">Çalma Modu · ekrana sığdırılmış</p>
+                  <h2 className="truncate text-xl font-black sm:text-2xl">{result.title}</h2>
+                  <p className="truncate text-xs text-zinc-400">{result.artist} {transposedKey ? `· Ton: ${transposedKey}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""}</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button onClick={() => setTransposeSteps((value) => value - 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">-1</button>
+                  <button onClick={() => setTransposeSteps(0)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">{transposeSteps > 0 ? `+${transposeSteps}` : transposeSteps}</button>
+                  <button onClick={() => setTransposeSteps((value) => value + 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">+1</button>
+                  <button onClick={() => setPlayMode(false)} className="rounded-lg bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
+                </div>
+              </div>
+            </div>
+            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre rounded-2xl bg-zinc-900 p-3 font-mono text-[clamp(0.82rem,2vw,1.25rem)] leading-[1.45] text-zinc-100 sm:p-4">
+              {transposedChords || "Akor/söz yok."}
+            </pre>
           </section>
         )}
       </div>

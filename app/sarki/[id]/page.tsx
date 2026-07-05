@@ -172,27 +172,25 @@ export default function SarkiDetay() {
             </section>
 
             {playMode && (
-              <section className="fixed inset-0 z-[80] overflow-y-auto bg-zinc-950 p-4 text-white sm:p-8">
-                <div className="mx-auto max-w-5xl">
-                  <div className="sticky top-0 z-10 mb-4 rounded-2xl border border-zinc-800 bg-zinc-950/95 p-4 backdrop-blur">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-[0.18em] text-red-400">Prova/çalma modu · Temiz ekran</p>
-                        <h2 className="mt-1 text-2xl font-black">{song.title}</h2>
-                        <p className="text-sm text-zinc-400">{song.artist} {song.key ? `· Ton: ${transposeText(song.key, shift)}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button onClick={() => setShift((value) => value - 1)} className="rounded-xl bg-zinc-800 px-4 py-3 font-black hover:bg-zinc-700">-1</button>
-                        <button onClick={() => setShift(0)} className="rounded-xl bg-zinc-800 px-4 py-3 font-black hover:bg-zinc-700">Ton: {shift > 0 ? `+${shift}` : shift}</button>
-                        <button onClick={() => setShift((value) => value + 1)} className="rounded-xl bg-zinc-800 px-4 py-3 font-black hover:bg-zinc-700">+1</button>
-                        <button onClick={() => setPlayMode(false)} className="rounded-xl bg-white px-4 py-3 font-black text-zinc-950 hover:bg-red-100">Çalma modundan çık</button>
-                      </div>
+              <section className="fixed inset-0 z-[80] flex flex-col bg-zinc-950 p-2 text-white sm:p-4">
+                <div className="mb-2 rounded-2xl border border-zinc-800 bg-zinc-950/95 p-3 shadow-xl shadow-black/40">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-red-400">Prova/çalma modu · ekrana sığdırılmış</p>
+                      <h2 className="truncate text-xl font-black sm:text-2xl">{song.title}</h2>
+                      <p className="truncate text-xs text-zinc-400">{song.artist} {song.key ? `· Ton: ${transposeText(song.key, shift)}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button onClick={() => setShift((value) => value - 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">-1</button>
+                      <button onClick={() => setShift(0)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">Ton: {shift > 0 ? `+${shift}` : shift}</button>
+                      <button onClick={() => setShift((value) => value + 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">+1</button>
+                      <button onClick={() => setPlayMode(false)} className="rounded-lg bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
                     </div>
                   </div>
-                  <pre className="whitespace-pre overflow-x-auto rounded-2xl bg-zinc-900 p-5 font-mono text-2xl leading-10 text-zinc-100">
-                    {transposedChords || "Akor/söz yok."}
-                  </pre>
                 </div>
+                <pre className="min-h-0 flex-1 overflow-auto whitespace-pre rounded-2xl bg-zinc-900 p-3 font-mono text-[clamp(0.82rem,2vw,1.25rem)] leading-[1.45] text-zinc-100 sm:p-4">
+                  {transposedChords || "Akor/söz yok."}
+                </pre>
               </section>
             )}
           </>

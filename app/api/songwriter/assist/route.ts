@@ -36,10 +36,6 @@ function chatCompletionsUrl(baseUrl: string) {
 
 function suggestionTypeLabel(value?: string) {
   switch (value) {
-    case "chorus":
-      return "Nakarat üret";
-    case "bridge":
-      return "Bridge öner";
     case "lyrics-only":
       return "Sadece söz öner";
     case "chords-only":
@@ -102,8 +98,8 @@ function fallbackSuggestion(notebook: string, sectionName: string, suggestionTyp
   const existingRhymeHint = detectRhymeHint(notebook);
   const sadWords = ["gece", "yalnız", "özledim", "ağla", "kırık", "yorgun", "duman", "acı"];
   const isSad = moodPreset === "sad" || suggestionType === "sadder" || sadWords.some((word) => lower.includes(word));
-  const isBridge = suggestionType === "bridge" || sectionName.toLocaleLowerCase("tr-TR").includes("bridge");
-  const isChorus = suggestionType === "chorus";
+  const isBridge = sectionName.toLocaleLowerCase("tr-TR").includes("bridge");
+  const isChorus = sectionName.toLocaleLowerCase("tr-TR").includes("nakarat");
 
   return {
     mood: selectedMood,
@@ -181,9 +177,7 @@ Kurallar:
 - suggestedChords tek satır olsun, akorlar boşluklu dizilsin.
 - suggestedLyrics 1-2 satır Türkçe şarkı sözü olsun.
 - Çok uzun yazma.
-- Eğer öneri tipi "Devamını yaz" ise mevcut sözün doğal devamını yaz.
-- Eğer öneri tipi "Nakarat üret" ise daha tekrar edilebilir, güçlü bir nakarat yaz.
-- Eğer öneri tipi "Bridge öner" ise bölüm değişimi hissi veren farklı ama uyumlu bir renk yaz.
+- Eğer öneri tipi "Devamını yaz" ise seçilen bölümün doğal devamını yaz; Bölüm Nakarat ise daha tekrar edilebilir ve güçlü, Bölüm Bridge ise geçiş hissi veren farklı ama uyumlu renk kullan.
 - Eğer öneri tipi "Sadece söz öner" ise suggestedLyrics'i güçlendir, suggestedChords alanında mevcut/uyumlu akoru kısa tut.
 - Eğer öneri tipi "Sadece akor öner" ise suggestedChords'u öne çıkar, suggestedLyrics alanında mevcut sözleri bozma ve kısa not yaz.
 - Eğer öneri tipi "Sözleri parlat" ise mevcut sözleri aynı anlamda daha kafiyeli, daha doğal ve daha vurucu yap.

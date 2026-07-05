@@ -14,10 +14,10 @@ const required = [
   "const FOREIGN_PLAY_NEXT_QUERIES",
   "const TURKISH_PLAY_NEXT_QUERIES",
   "isLikelyForeignSong",
-  "recommendations: await buildSystemWideRecommendations",
+  "recommendations: await buildFastDetailRecommendations",
   "cover?: string",
   "backgroundImage: `url(${recommendation.cover})`",
-  "Bu kaynak için öneri yok.",
+  "Bu varyasyon için öneri yok.",
 ];
 const missing = required.filter((snippet) => !haystack.includes(snippet));
 if (missing.length) {

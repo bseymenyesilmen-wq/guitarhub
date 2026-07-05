@@ -11,7 +11,7 @@ const required = [
   "variants?: SongSearchListItem[]",
   "function groupSongVariants",
   "providerChoices",
-  "Kaynak seç",
+  "Varyasyon seç",
   "song.variants?.length",
   "selectSong(variant)",
 ];

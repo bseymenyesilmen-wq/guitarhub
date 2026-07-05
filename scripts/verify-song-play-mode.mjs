@@ -8,18 +8,22 @@ const detail = readFileSync(join(__dirname, "..", "app", "sarki", "[id]", "page.
 const required = [
   "playMode",
   "Çalma Modu",
-  "Çalma modundan çık",
   "Prova/çalma modu",
-  "text-2xl leading-10",
+  "ekrana sığdırılmış",
+  "text-[clamp(0.82rem,2vw,1.25rem)]",
+  "min-h-0 flex-1 overflow-auto",
   "setPlayMode(true)",
   "setPlayMode(false)",
-  "Temiz ekran",
+  "Çık",
 ];
 
+const forbidden = ["text-2xl leading-10", "Çalma modundan çık", "Temiz ekran"];
 const missing = required.filter((snippet) => !detail.includes(snippet));
-if (missing.length) {
-  console.error(`Missing play mode snippets:\n${missing.join("\n")}`);
+const presentForbidden = forbidden.filter((snippet) => detail.includes(snippet));
+if (missing.length || presentForbidden.length) {
+  if (missing.length) console.error(`Missing play mode snippets:\n${missing.join("\n")}`);
+  if (presentForbidden.length) console.error(`Old play mode snippets still present:\n${presentForbidden.join("\n")}`);
   process.exit(1);
 }
 
-console.log("Song detail play mode is wired.");
+console.log("Song detail play mode is compact.");

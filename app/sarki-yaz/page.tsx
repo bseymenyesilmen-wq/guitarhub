@@ -27,9 +27,7 @@ const MOOD_OPTIONS = [
   { value: "lofi", label: "Lo-fi", hint: "Yumuşak, sakin, renkli akorlar." },
 ] as const;
 const SUGGESTION_TYPES = [
-  { value: "continue", label: "Devamını yaz", hint: "Aynı havada 1-2 satır devam önerir." },
-  { value: "chorus", label: "Nakarat üret", hint: "Daha akılda kalan, yükselen bölüm önerir." },
-  { value: "bridge", label: "Bridge öner", hint: "Nakarata geçiş için farklı renk verir." },
+  { value: "continue", label: "Devamını yaz", hint: "Seçilen bölüme göre aynı havada 1-2 satır devam önerir." },
   { value: "lyrics-only", label: "Sadece söz öner", hint: "Akorlara ve duyguya göre sadece söz önerir." },
   { value: "chords-only", label: "Sadece akor öner", hint: "Sözlerin duygu/kafiyesine göre sadece akor önerir." },
   { value: "polish-lyrics", label: "Sözleri parlat", hint: "Yazdığın sözleri bozmadan daha güçlü yapar." },
@@ -149,12 +147,6 @@ export default function SarkiYaz() {
     }, 500);
     return () => window.clearTimeout(timer);
   }, [autoSaveReady, draft]);
-
-  function saveDraft() {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-    setSavedMessage("Taslak bu cihazda kaydedildi kanka.");
-    window.setTimeout(() => setSavedMessage(""), 2500);
-  }
 
   async function getSystemSuggestion() {
     setSuggestionLoading(true);
@@ -313,9 +305,6 @@ export default function SarkiYaz() {
               <div className="flex flex-wrap gap-2">
                 <button onClick={getSystemSuggestion} disabled={suggestionLoading} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">
                   {suggestionLoading ? "Düşünüyor..." : SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.label ?? "Öneri al"}
-                </button>
-                <button onClick={saveDraft} className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-black text-red-300 hover:bg-zinc-800">
-                  Kaydet
                 </button>
                 <button onClick={saveToRepertuar} disabled={savingToRepertuar} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100 disabled:opacity-60">
                   {savingToRepertuar ? "Kaydediliyor..." : editingSongId ? "Repertuvarda Güncelle" : "Repertuvara Kaydet"}
