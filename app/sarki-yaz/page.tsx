@@ -1,9 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
+import { supabase } from "@/lib/supabase";
 
 const STORAGE_KEY = "guitarhub-songwriter-draft";
+const OWN_SONG_MARKER = "GUITARHUB_OWN_SONG";
 const DEFAULT_NOTEBOOK = `Am        F
 Buraya ilk söz satırını yaz
 
@@ -17,6 +20,13 @@ type Draft = {
   tempo: string;
   sectionName: string;
   notebook: string;
+};
+
+type SystemSuggestion = {
+  mood: string;
+  idea: string;
+  suggestedChords: string;
+  suggestedLyrics: string;
 };
 
 function makeDraft(): Draft {
@@ -40,13 +50,84 @@ function loadDraft() {
 }
 
 export default function SarkiYaz() {
+  const router = useRouter();
   const [draft, setDraft] = useState<Draft>(() => loadDraft());
   const [savedMessage, setSavedMessage] = useState("");
+  const [suggestion, setSuggestion] = useState<SystemSuggestion | null>(null);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const [savingToRepertuar, setSavingToRepertuar] = useState(false);
 
   function saveDraft() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
     setSavedMessage("Taslak bu cihazda kaydedildi kanka.");
     window.setTimeout(() => setSavedMessage(""), 2500);
+  }
+
+  async function getSystemSuggestion() {
+    setSuggestionLoading(true);
+    setSavedMessage("");
+    try {
+      const response = await fetch("/api/songwriter/assist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draft),
+      });
+      const data = (await response.json()) as SystemSuggestion;
+      setSuggestion(data);
+    } catch {
+      setSavedMessage("Sistem önerisi alınamadı. Birazdan tekrar dene.");
+    } finally {
+      setSuggestionLoading(false);
+    }
+  }
+
+  function applySuggestion() {
+    if (!suggestion) return;
+    const block = `${suggestion.suggestedChords}\n${suggestion.suggestedLyrics}`;
+    setDraft((current) => ({
+      ...current,
+      notebook: `${current.notebook.trim()}\n\n${block}`.trim(),
+    }));
+  }
+
+  async function saveToRepertuar() {
+    setSavingToRepertuar(true);
+    setSavedMessage("");
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      router.push("/giris");
+      return;
+    }
+
+    const { data: created, error } = await supabase
+      .from("songs")
+      .insert({
+        title: draft.title.trim() || "Yeni Şarkı",
+        artist: "Kendi Şarkım",
+        key: draft.keyName.trim() || null,
+        bpm: Number(draft.tempo) || null,
+        chords: draft.notebook,
+        lyrics: draft.notebook,
+        notes: `${OWN_SONG_MARKER}\nBölüm: ${draft.sectionName}`,
+        difficulty: "Kendi Şarkıların",
+        user_id: session.user.id,
+      })
+      .select("id")
+      .single();
+
+    setSavingToRepertuar(false);
+
+    if (error || !created) {
+      setSavedMessage(error?.message ?? "Repertuvara kaydedilemedi.");
+      return;
+    }
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    router.push(`/sarki/${created.id}`);
   }
 
   return (
@@ -93,12 +174,35 @@ export default function SarkiYaz() {
                 <h2 className="text-2xl font-black">Şarkı defteri</h2>
                 <p className="mt-1 text-sm text-zinc-400">Akor ve sözleri tek alana yaz. Örnek: akor satırı, altına söz satırı.</p>
               </div>
-              <button onClick={saveDraft} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-zinc-950 hover:bg-red-100">
-                Taslağı kaydet
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={getSystemSuggestion} disabled={suggestionLoading} className="rounded-2xl bg-red-600 px-4 py-3 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">
+                  {suggestionLoading ? "Sistem düşünüyor..." : "Sistemden öneri al"}
+                </button>
+                <button onClick={saveDraft} className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-black text-red-300 hover:bg-zinc-800">
+                  Taslağı kaydet
+                </button>
+                <button onClick={saveToRepertuar} disabled={savingToRepertuar} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-zinc-950 hover:bg-red-100 disabled:opacity-60">
+                  {savingToRepertuar ? "Kaydediliyor..." : "Repertuvara Kaydet"}
+                </button>
+              </div>
             </div>
 
             {savedMessage && <p className="mt-3 rounded-2xl bg-green-950/50 p-3 text-sm font-bold text-green-200">{savedMessage}</p>}
+
+            {suggestion && (
+              <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-red-300">Sistem önerisi · {suggestion.mood}</p>
+                    <p className="mt-2 text-sm leading-6 text-zinc-300">{suggestion.idea}</p>
+                  </div>
+                  <button onClick={applySuggestion} className="rounded-xl bg-white px-3 py-2 text-xs font-black text-zinc-950 hover:bg-red-100">
+                    Öneriyi uygula
+                  </button>
+                </div>
+                <pre className="mt-3 overflow-x-auto rounded-xl bg-zinc-950 p-3 font-mono text-sm leading-7 text-zinc-100">{`${suggestion.suggestedChords}\n${suggestion.suggestedLyrics}`}</pre>
+              </div>
+            )}
 
             <label className="mt-4 block">
               <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Akor ve sözleri tek alana yaz</span>

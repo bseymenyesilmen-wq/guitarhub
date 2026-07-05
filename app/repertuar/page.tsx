@@ -32,6 +32,7 @@ function sortedSetlistSongs(setlist?: LoadedSetlist | null) {
 export default function Repertuar() {
   const router = useRouter();
   const [setlists, setSetlists] = useState<LoadedSetlist[]>([]);
+  const [ownSongs, setOwnSongs] = useState<Song[]>([]);
   const [storageMode, setStorageMode] = useState<"supabase" | "local">("supabase");
   const [selectedSetlistId, setSelectedSetlistId] = useState<number | null>(null);
   const [userId, setUserId] = useState("");
@@ -56,6 +57,14 @@ export default function Repertuar() {
     }
 
     setUserId(session.user.id);
+
+    const { data: ownSongData } = await supabase
+      .from("songs")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .ilike("notes", "%GUITARHUB_OWN_SONG%")
+      .order("created_at", { ascending: false });
+    setOwnSongs((ownSongData ?? []) as Song[]);
 
     const { data, error } = await supabase
       .from("setlists")
@@ -257,6 +266,29 @@ export default function Repertuar() {
         </section>
 
         {message && <p className="mb-4 rounded-lg bg-zinc-900 p-3 text-sm text-zinc-200">{message}</p>}
+
+        <section className="mb-5 rounded-3xl border border-red-500/25 bg-gradient-to-br from-zinc-900 to-red-950/25 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-red-300">Kendi Şarkıların</p>
+              <h2 className="mt-1 text-2xl font-black">Şarkı Yaz’dan kaydedilenler</h2>
+            </div>
+            <Link href="/sarki-yaz" className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-zinc-950 hover:bg-red-100">
+              Yeni şarkı yaz
+            </Link>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {ownSongs.map((song) => (
+              <Link key={song.id} href={`/sarki/${song.id}`} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 transition hover:border-red-500/60 hover:bg-zinc-900">
+                <strong className="line-clamp-1 text-white">{song.title}</strong>
+                <span className="mt-1 block text-sm text-zinc-400">Ton: {song.key || "-"} · BPM: {song.bpm || "-"}</span>
+                <span className="mt-3 inline-flex rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white">Aç</span>
+              </Link>
+            ))}
+            {ownSongs.length === 0 && <p className="rounded-2xl border border-dashed border-zinc-700 p-5 text-sm text-zinc-400">Şarkı Yaz’dan repertuvara kaydedince burada görünecek.</p>}
+          </div>
+        </section>
 
         <section className="mb-5 grid gap-3 rounded-3xl border border-zinc-800 bg-zinc-900 p-4 md:grid-cols-[1fr_auto]">
           <input
