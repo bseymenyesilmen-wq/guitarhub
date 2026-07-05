@@ -13,12 +13,19 @@ Buraya ilk söz satırını yaz
 C         G
 Akorları sözlerin üstüne denk getir`;
 const SECTION_IDEAS = ["Verse", "Pre-chorus", "Nakarat", "Bridge", "Solo", "Outro"];
+const SUGGESTION_TYPES = [
+  { value: "continue", label: "Devamını yaz", hint: "Aynı havada 1-2 satır devam önerir." },
+  { value: "chorus", label: "Nakarat üret", hint: "Daha akılda kalan, yükselen bölüm önerir." },
+  { value: "bridge", label: "Bridge öner", hint: "Nakarata geçiş için farklı renk verir." },
+  { value: "sadder", label: "Daha hüzünlü yap", hint: "Söz ve akoru daha duygusal tarafa çeker." },
+] as const;
 
 type Draft = {
   title: string;
   keyName: string;
   tempo: string;
   sectionName: string;
+  suggestionType: string;
   notebook: string;
 };
 
@@ -35,6 +42,7 @@ function makeDraft(): Draft {
     keyName: "Am",
     tempo: "90",
     sectionName: "Verse",
+    suggestionType: "continue",
     notebook: DEFAULT_NOTEBOOK,
   };
 }
@@ -43,7 +51,8 @@ function loadDraft() {
   if (typeof window === "undefined") return makeDraft();
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved ? (JSON.parse(saved) as Draft) : makeDraft();
+    if (!saved) return makeDraft();
+    return { ...makeDraft(), ...(JSON.parse(saved) as Partial<Draft>) };
   } catch {
     return makeDraft();
   }
@@ -165,6 +174,13 @@ export default function SarkiYaz() {
                   {SECTION_IDEAS.map((section) => <option key={section}>{section}</option>)}
                 </select>
               </label>
+              <label className="block sm:col-span-3 lg:col-span-1">
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Öneri tipi</span>
+                <select value={draft.suggestionType} onChange={(event) => setDraft({ ...draft, suggestionType: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 font-bold text-white outline-none focus:border-red-500">
+                  {SUGGESTION_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+                </select>
+                <p className="mt-2 text-xs leading-5 text-zinc-500">{SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.hint}</p>
+              </label>
             </div>
           </aside>
 
@@ -193,7 +209,7 @@ export default function SarkiYaz() {
               <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.16em] text-red-300">Sistem önerisi · {suggestion.mood}</p>
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-red-300">Sistem önerisi · {SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.label} · {suggestion.mood}</p>
                     <p className="mt-2 text-sm leading-6 text-zinc-300">{suggestion.idea}</p>
                   </div>
                   <button onClick={applySuggestion} className="rounded-xl bg-white px-3 py-2 text-xs font-black text-zinc-950 hover:bg-red-100">
