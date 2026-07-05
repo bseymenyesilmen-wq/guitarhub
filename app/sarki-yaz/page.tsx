@@ -64,6 +64,8 @@ export default function SarkiYaz() {
   const [draft, setDraft] = useState<Draft>(() => loadDraft());
   const [editingSongId, setEditingSongId] = useState<number | null>(null);
   const [savedMessage, setSavedMessage] = useState("");
+  const [autoSaveMessage, setAutoSaveMessage] = useState("");
+  const [autoSaveReady, setAutoSaveReady] = useState(false);
   const [suggestion, setSuggestion] = useState<SystemSuggestion | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [savingToRepertuar, setSavingToRepertuar] = useState(false);
@@ -71,9 +73,15 @@ export default function SarkiYaz() {
   useEffect(() => {
     async function loadExistingSongDraft() {
       const songId = new URLSearchParams(window.location.search).get("songId");
-      if (!songId) return;
+      if (!songId) {
+        setAutoSaveReady(true);
+        return;
+      }
       const parsedSongId = Number(songId);
-      if (!Number.isFinite(parsedSongId)) return;
+      if (!Number.isFinite(parsedSongId)) {
+        setAutoSaveReady(true);
+        return;
+      }
 
       const {
         data: { session },
@@ -93,6 +101,7 @@ export default function SarkiYaz() {
 
       if (error || !data) {
         setSavedMessage(error?.message ?? "Şarkı bulunamadı.");
+        setAutoSaveReady(true);
         return;
       }
 
@@ -105,6 +114,7 @@ export default function SarkiYaz() {
         sectionName: String(data.notes ?? "").match(/Bölüm:\s*([^\n]+)/)?.[1] ?? "Verse",
         notebook: String(data.chords ?? data.lyrics ?? ""),
       });
+      setAutoSaveReady(true);
     }
 
     const timer = window.setTimeout(() => {
@@ -112,6 +122,15 @@ export default function SarkiYaz() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [router]);
+
+  useEffect(() => {
+    if (!autoSaveReady) return;
+    const timer = window.setTimeout(() => {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+      setAutoSaveMessage("Otomatik kaydedildi");
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [autoSaveReady, draft]);
 
   function saveDraft() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
@@ -279,6 +298,7 @@ export default function SarkiYaz() {
             </div>
 
             {savedMessage && <p className="mt-3 rounded-2xl bg-green-950/50 p-3 text-sm font-bold text-green-200">{savedMessage}</p>}
+            {autoSaveMessage && <p className="mt-3 text-xs font-bold text-zinc-500">{autoSaveMessage}</p>}
 
             {suggestion && (
               <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 p-4">
