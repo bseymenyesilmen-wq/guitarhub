@@ -72,9 +72,28 @@ function moodPresetLabel(value?: string) {
   }
 }
 
+const CHORD_LINE_PATTERN = /^\s*(?:[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\/[A-G](?:#|b)?)?\s*)+$/i;
+
+function extractLyricLines(notebook: string) {
+  return notebook
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("[") && !CHORD_LINE_PATTERN.test(line));
+}
+
+function detectRhymeHint(notebook: string) {
+  const lyricLines = extractLyricLines(notebook).slice(-4);
+  const endings = lyricLines
+    .map((line) => line.toLocaleLowerCase("tr-TR").replace(/[^a-zçğıöşü0-9\s]/gi, "").trim().split(/\s+/).pop() ?? "")
+    .filter(Boolean)
+    .map((word) => word.slice(-4));
+  return endings.length ? endings.join(" / ") : "yok";
+}
+
 function fallbackSuggestion(notebook: string, sectionName: string, suggestionType?: string, moodPreset?: string): SongwriterSuggestion {
   const lower = notebook.toLocaleLowerCase("tr-TR");
   const selectedMood = moodPresetLabel(moodPreset);
+  const existingRhymeHint = detectRhymeHint(notebook);
   const sadWords = ["gece", "yalnız", "özledim", "ağla", "kırık", "yorgun", "duman", "acı"];
   const isSad = moodPreset === "sad" || suggestionType === "sadder" || sadWords.some((word) => lower.includes(word));
   const isBridge = suggestionType === "bridge" || sectionName.toLocaleLowerCase("tr-TR").includes("bridge");
@@ -88,7 +107,7 @@ function fallbackSuggestion(notebook: string, sectionName: string, suggestionTyp
         ? "Nakaratta cümleyi daha kısa, tekrar edilebilir ve akılda kalır yap."
         : suggestionType === "sadder"
           ? "Aynı fikri daha kırılgan ve içe dönük bir tona çek."
-          : "Aynı havayı bozmadan 1-2 satır devam ettir.",
+          : `Aynı havayı bozmadan 1-2 satır devam ettir. Kafiye ipucu: ${existingRhymeHint}.`,
     suggestedChords: isSad ? "Am        F        C        G" : moodPreset === "lofi" ? "Am7       Dm7      G7       Cmaj7" : moodPreset === "rock" || moodPreset === "angry" ? "Em        G        D        A" : "C         G        Am       F",
     suggestedLyrics: isSad
       ? "İçimde susmayan bir gece var\nAdını söylesem yine dağılır"
@@ -131,6 +150,7 @@ async function callHermes(body: SongwriterRequest) {
 
   const suggestionLabel = suggestionTypeLabel(body.suggestionType);
   const selectedMood = moodPresetLabel(body.moodPreset);
+  const existingRhymeHint = detectRhymeHint(body.notebook || "");
   const prompt = `Şarkı sözü ve akor önerisi üret.
 Kullanıcı GuitarHub Şarkı Yaz içinde beste yapıyor.
 Yoda chat değilsin; sayfanın otomatik beste öneri sistemisin.
@@ -141,11 +161,16 @@ Ton: ${body.keyName || "belirsiz"}
 Bölüm: ${body.sectionName || "Nakarat"}
 İstenen öneri tipi: ${suggestionLabel}
 Duygu seçimi: ${selectedMood}
+Kafiye ipucu: ${existingRhymeHint}
 Defter:
 ${body.notebook || ""}
 Kurallar:
-- Sözlerin duygusunu analiz et ama seçilen duygu öncelikli: ${selectedMood}.
+- Önce mevcut sözleri analiz et: ana duygu, imgeler, son kelimeler, kafiye/uyak hissi.
+- Sözlerin duygusunu analiz et ama seçilen duygu öncelikli: ${selectedMood}; öneri duygusal olarak passend olmalı.
 - Bu duyguya göre söz ve akor öner: hüzünlü/mutlu/romantik/öfkeli/umutlu/karanlık/arabesk/rock/pop/lo-fi olabilir.
+- Son satırların kafiye ucuna yaklaş; tam aynı kelimeyi tekrar etmek zorunda değilsin ama uyak hissi korunsun.
+- Sözlerin imgesini ve kelime dünyasını koru; başka bir şarkı gibi değil aynı şarkının devamı gibi yaz.
+- Aynı kelimeleri birebir kopyalama; yeni ama bağlı bir satır üret.
 - Var olan akorlara uyumlu 3-4 akorlu bir satır öner.
 - suggestedChords tek satır olsun, akorlar boşluklu dizilsin.
 - suggestedLyrics 1-2 satır Türkçe şarkı sözü olsun.
