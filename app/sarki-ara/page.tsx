@@ -13,8 +13,15 @@ import type { SongArtistResult, SongSearchListItem, SongSearchResponse, SongSear
 
 const NOT_FOUND_MESSAGE = "Şarkı bulunamadı.";
 const LOCAL_SETLISTS_KEY = "guitarhub.localSetlists.v1";
+const RECENT_SEARCHES_KEY = "guitarhub.songSearchHistory.v1";
 const AUTO_SCROLL_SPEEDS = { off: 0, slow: 1, medium: 2, fast: 3 } as const;
 type AutoScrollSpeed = keyof typeof AUTO_SCROLL_SPEEDS;
+
+type SearchHistoryItem = {
+  title: string;
+  artist: string;
+  searchedAt: string;
+};
 
 type SetlistOption = {
   id: number;
@@ -66,6 +73,20 @@ function writeLocalSetlists(setlists: LocalSetlist[]) {
   window.localStorage.setItem(LOCAL_SETLISTS_KEY, JSON.stringify(setlists));
 }
 
+function readRecentSearches(): SearchHistoryItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(RECENT_SEARCHES_KEY) ?? "[]") as SearchHistoryItem[];
+    return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentSearches(searches: SearchHistoryItem[]) {
+  window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches.slice(0, 8)));
+}
+
 function resultToForm(result: SongSearchResult, favorite: boolean, chords: string): SongForm {
   return {
     title: result.title,
@@ -104,6 +125,7 @@ export default function SarkiAra() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
+  const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>(() => readRecentSearches());
   const [artistResults, setArtistResults] = useState<SongArtistResult[]>([]);
   const [songResults, setSongResults] = useState<SongSearchListItem[]>([]);
   const [providerChoices, setProviderChoices] = useState<SongSearchListItem[] | null>(null);
@@ -184,23 +206,39 @@ export default function SarkiAra() {
     setMessage(payload.message);
   }
 
-  async function searchSong() {
+  function saveRecentSearch(searchTitle: string, searchArtist: string) {
+    const trimmedTitle = searchTitle.trim();
+    const trimmedArtist = searchArtist.trim();
+    if (!trimmedTitle && !trimmedArtist) return;
+    const nextSearch: SearchHistoryItem = { title: trimmedTitle, artist: trimmedArtist, searchedAt: new Date().toISOString() };
+    const deduped = recentSearches.filter(
+      (item) => item.title.toLocaleLowerCase("tr-TR") !== trimmedTitle.toLocaleLowerCase("tr-TR") || item.artist.toLocaleLowerCase("tr-TR") !== trimmedArtist.toLocaleLowerCase("tr-TR"),
+    );
+    const nextSearches = [nextSearch, ...deduped].slice(0, 8);
+    setRecentSearches(nextSearches);
+    writeRecentSearches(nextSearches);
+  }
+
+  async function searchSong(nextTitle = title, nextArtist = artist) {
+    const trimmedTitle = nextTitle.trim();
+    const trimmedArtist = nextArtist.trim();
     setMessage("");
     resetSongView();
     setArtistResults([]);
     setSongResults([]);
 
-    if (!title.trim() && !artist.trim()) {
+    if (!trimmedTitle && !trimmedArtist) {
       setMessage("Sanatçı veya şarkı ara.");
       return;
     }
 
+    saveRecentSearch(trimmedTitle, trimmedArtist);
     setLoading(true);
 
     const response = await fetch("/api/song-search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: title.trim(), artist: artist.trim() }),
+      body: JSON.stringify({ title: trimmedTitle, artist: trimmedArtist }),
     }).catch(() => null);
 
     setLoading(false);
@@ -524,7 +562,7 @@ export default function SarkiAra() {
               className="min-h-12 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
             />
             <button
-              onClick={searchSong}
+              onClick={() => void searchSong()}
               disabled={loading}
               className="min-h-12 rounded-xl bg-red-600 px-5 py-3 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -533,14 +571,43 @@ export default function SarkiAra() {
           </div>
           <p className="mt-3 text-sm text-zinc-500">Örnek: Sanatçıya Duman yaz; istersen şarkıya Senden Daha Güzel yaz.</p>
 
+          {recentSearches.length > 0 && !result && (
+            <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-sm font-black uppercase tracking-[0.16em] text-red-300">Daha önce arananlar</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecentSearches([]);
+                    writeRecentSearches([]);
+                  }}
+                  className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-zinc-400 hover:bg-zinc-800"
+                >
+                  Temizle
+                </button>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {recentSearches.map((item) => (
+                  <button
+                    key={`${item.artist}-${item.title}-${item.searchedAt}`}
+                    type="button"
+                    onClick={() => {
+                      setTitle(item.title);
+                      setArtist(item.artist);
+                      void searchSong(item.title, item.artist);
+                    }}
+                    className="shrink-0 rounded-2xl bg-zinc-900 px-4 py-3 text-left hover:bg-zinc-800"
+                  >
+                    <span className="block max-w-44 truncate text-sm font-black text-white">{item.title || item.artist}</span>
+                    {item.title && item.artist && <span className="mt-1 block max-w-44 truncate text-xs text-zinc-500">{item.artist}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {message && <p className="mt-4 rounded-lg bg-zinc-950 p-3 text-sm text-zinc-200">{message}</p>}
         </section>
-
-        {!loading && !result && !message && !songResults.length && !artistResults.length && (
-          <div className="mt-6 rounded-lg border border-dashed border-zinc-700 p-8 text-center text-zinc-400">
-            Aramak istediğin sanatçıyı veya şarkıyı yaz.
-          </div>
-        )}
 
         {(artistResults.length > 0 || songResults.length > 0) && (
           <section className="mt-6 grid gap-4 lg:grid-cols-[320px_1fr]">

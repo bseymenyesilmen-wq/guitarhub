@@ -6,23 +6,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repertuar = readFileSync(join(__dirname, "..", "app", "repertuar", "page.tsx"), "utf8");
 const detail = readFileSync(join(__dirname, "..", "app", "sarki", "[id]", "page.tsx"), "utf8");
 
-const required = [
+const forbidden = [
   "guitarhub.recentSongs.v1",
-  "type RecentSong",
+  "RECENT_SONGS_KEY",
   "readRecentSongs",
+  "saveRecentSong",
   "recentSongs",
-  "setRecentSongs(readRecentSongs())",
   "Son açılanlar",
   "En son baktığın şarkılar",
-  "Henüz son açılan şarkı yok",
-  "saveRecentSong",
 ];
 
-const haystack = `${repertuar}\n${detail}`;
-const missing = required.filter((snippet) => !haystack.includes(snippet));
-if (missing.length) {
-  console.error(`Missing repertuar recent song snippets:\n${missing.join("\n")}`);
-  process.exit(1);
+for (const marker of forbidden) {
+  if (repertuar.includes(marker) || detail.includes(marker)) {
+    throw new Error(`Recent opened songs should be removed: ${marker}`);
+  }
 }
 
-console.log("Repertuar recent songs are wired.");
+console.log("Repertuar recent opened songs section is removed.");

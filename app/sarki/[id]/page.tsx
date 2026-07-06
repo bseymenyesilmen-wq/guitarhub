@@ -12,21 +12,8 @@ import { supabase } from "@/lib/supabase";
 import type { Song } from "@/lib/types";
 
 const FLAT_TO_SHARP: Record<string, string> = { Bb: "A#", Db: "C#", Eb: "D#", Gb: "F#", Ab: "G#" };
-const RECENT_SONGS_KEY = "guitarhub.recentSongs.v1";
 const AUTO_SCROLL_SPEEDS = { off: 0, slow: 1, medium: 2, fast: 3 } as const;
 type AutoScrollSpeed = keyof typeof AUTO_SCROLL_SPEEDS;
-
-function saveRecentSong(song: Song) {
-  if (typeof window === "undefined") return;
-  const entry = { id: song.id, title: song.title, artist: song.artist, key: song.key, capo: song.capo, openedAt: new Date().toISOString() };
-  try {
-    const current = JSON.parse(window.localStorage.getItem(RECENT_SONGS_KEY) ?? "[]") as Array<typeof entry>;
-    const next = [entry, ...current.filter((item) => item.id !== song.id)].slice(0, 8);
-    window.localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(next));
-  } catch {
-    window.localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify([entry]));
-  }
-}
 
 function normalizeChordName(chordName: string) {
   return chordName
@@ -79,7 +66,6 @@ export default function SarkiDetay() {
         setMessage(error.message);
       } else {
         setSong(data as Song);
-        saveRecentSong(data as Song);
       }
 
       setLoading(false);

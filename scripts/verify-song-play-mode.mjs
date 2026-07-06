@@ -21,8 +21,6 @@ const required = [
   "A-",
   "A+",
   "style={{ fontSize: `${playFontSize}rem` }}",
-  "saveRecentSong",
-  "guitarhub.recentSongs.v1",
   "min-h-0 flex-1 overflow-auto",
   "setPlayMode(true)",
   "setPlayMode(false)",
@@ -35,4 +33,4 @@ if (missing.length) {
   process.exit(1);
 }
 
-console.log("Song detail play mode has autoscroll, font controls, and recent tracking.");
+console.log("Song detail play mode has autoscroll and font controls.");
