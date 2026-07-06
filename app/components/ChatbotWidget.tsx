@@ -121,12 +121,16 @@ export function ChatbotWidget() {
   return (
     <div className="fixed bottom-24 right-4 z-50 md:bottom-6 md:right-6">
       {open && (
-        <section className="mb-3 flex h-[520px] w-[calc(100vw-2rem)] max-w-[390px] flex-col overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/40">
-          <header className="border-b border-zinc-800 bg-zinc-900 p-4">
+        <section className="mb-3 flex h-[540px] w-[calc(100vw-2rem)] max-w-[410px] flex-col overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/95 shadow-2xl shadow-red-950/20 ring-1 ring-white/10 backdrop-blur-xl">
+          <header className="border-b border-white/10 bg-gradient-to-br from-red-950/50 to-zinc-950 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">GuitarHub Yardımcı</p>
-                <h2 className="mt-1 text-lg font-black text-white">Yoda Chatbot</h2>
+                <h2 className="mt-1 text-lg font-black text-white">Yoda · Müzik Asistanı</h2>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-black text-red-100">
+                  <button type="button" onClick={() => void sendMessage("Akor soracağım")} className="rounded-full bg-white/10 px-3 py-2 hover:bg-white/15">Akor sor</button>
+                  <button type="button" onClick={() => void sendMessage("Söz yazmama yardım et")} className="rounded-full bg-white/10 px-3 py-2 hover:bg-white/15">Söz yaz</button>
+                </div>
               </div>
               <button onClick={() => setOpen(false)} className="min-h-10 min-w-10 rounded-full bg-zinc-800 text-xl font-black text-white hover:bg-zinc-700">
                 ×
@@ -169,7 +173,8 @@ export function ChatbotWidget() {
         </section>
       )}
 
-      <button onClick={() => setOpen((value) => !value)} className="flex min-h-14 items-center gap-2 rounded-full bg-red-600 px-5 font-black text-white shadow-xl shadow-black/30 hover:bg-red-500">
+      <button onClick={() => setOpen((value) => !value)} className="group relative flex min-h-14 items-center gap-2 rounded-full bg-gradient-to-br from-red-500 to-red-700 px-5 font-black text-white shadow-2xl shadow-red-950/40 ring-2 ring-red-400/20 transition hover:-translate-y-0.5 hover:shadow-red-900/60">
+        <span className="absolute -inset-1 -z-10 rounded-full bg-red-600/30 blur-xl transition group-hover:bg-red-500/40" />
         <span>Yoda</span>
         <span className="text-xl">✦</span>
       </button>

@@ -24,8 +24,8 @@ export function AppNav() {
 
   return (
     <>
-      <nav className="mb-8 hidden flex-wrap items-center gap-2 border-b border-zinc-800 pb-4 md:flex">
-        <Link href="/" className="mr-2 text-xl font-black tracking-tight text-white">
+      <nav className="mb-8 hidden flex-wrap items-center gap-2 rounded-[1.75rem] border border-white/10 bg-zinc-950/70 p-2 shadow-xl shadow-black/20 backdrop-blur-xl md:flex">
+        <Link href="/" className="mr-2 rounded-2xl bg-gradient-to-br from-red-600/25 to-zinc-900 px-4 py-2 text-xl font-black tracking-tight text-white ring-1 ring-red-500/20">
           GuitarHub
         </Link>
 
@@ -35,10 +35,10 @@ export function AppNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold ${
+              className={`rounded-2xl px-3 py-2 text-sm font-black transition hover:-translate-y-0.5 ${
                 active
-                  ? "bg-red-600 text-white"
-                  : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                  ? "bg-red-600 text-white shadow-lg shadow-red-950/40"
+                  : "bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
               }`}
             >
               {item.label}
@@ -48,31 +48,31 @@ export function AppNav() {
 
         <button
           onClick={signOut}
-          className="ml-auto rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-zinc-300 hover:bg-red-700 hover:text-white"
+          className="ml-auto rounded-2xl bg-white/5 px-3 py-2 text-sm font-black text-zinc-300 transition hover:bg-red-700 hover:text-white"
         >
           Çıkış
         </button>
       </nav>
 
-      <div className="mb-6 flex items-center justify-between md:hidden">
+      <div className="mb-6 flex items-center justify-between rounded-[1.5rem] border border-white/10 bg-zinc-950/70 p-2 pl-4 shadow-lg shadow-black/20 backdrop-blur-xl md:hidden">
         <Link href="/" className="text-xl font-black tracking-tight text-white">
           GuitarHub
         </Link>
-        <button onClick={signOut} className="min-h-11 rounded-full bg-zinc-900 px-4 text-sm font-bold text-zinc-300 hover:bg-red-700">
+        <button onClick={signOut} className="min-h-11 rounded-full bg-white/5 px-4 text-sm font-bold text-zinc-300 hover:bg-red-700">
           Çıkış
         </button>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-zinc-950/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.35rem)] pt-2 backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-6 gap-1">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black/70 px-2 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2 shadow-2xl shadow-black backdrop-blur-2xl md:hidden">
+        <div className="mx-auto grid max-w-lg grid-cols-6 gap-1 rounded-[1.4rem] border border-white/10 bg-zinc-950/70 p-1">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex min-h-14 flex-col items-center justify-center rounded-2xl text-[11px] font-bold ${
-                  active ? "bg-red-600 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                className={`flex min-h-14 flex-col items-center justify-center rounded-2xl text-[11px] font-black transition ${
+                  active ? "scale-[1.03] bg-red-600 text-white shadow-lg shadow-red-950/50" : "text-zinc-400 hover:bg-white/5 hover:text-white"
                 }`}
               >
                 <span className="text-lg leading-none">{item.icon}</span>

@@ -146,6 +146,7 @@ export default function SarkiAra() {
   const [transposeSteps, setTransposeSteps] = useState(0);
   const [selectedChord, setSelectedChord] = useState<ChordDefinition | null>(null);
   const [playMode, setPlayMode] = useState(false);
+  const [playControlsVisible, setPlayControlsVisible] = useState(true);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
   const [autoScrollLevel, setAutoScrollLevel] = useState(4);
   const [playFontSize, setPlayFontSize] = useState(1);
@@ -191,6 +192,7 @@ export default function SarkiAra() {
     setProviderChoices(null);
     setTransposeSteps(0);
     setPlayMode(false);
+    setPlayControlsVisible(true);
     setAutoScrollEnabled(false);
   }
 
@@ -539,49 +541,56 @@ export default function SarkiAra() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
+    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.18),transparent_34%),linear-gradient(180deg,#050505,#0a0a0b_42%,#09090b)] p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="mb-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">Akor ve söz arama</p>
-          <h1 className="mt-3 text-4xl font-black">Şarkı Ara</h1>
-          <p className="mt-2 max-w-2xl text-zinc-400">
-            Sanatçı yazınca şarkıları listeler. Şarkı da yazarsan daha net arar. Aynı şarkı için bulunan farklı akor/söz varyasyonları birlikte denenir.
+        <section className="relative mb-5 overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-600/20 blur-3xl" />
+          <p className="text-sm font-black uppercase tracking-[0.28em] text-red-300">Akor ve söz arama</p>
+          <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Şarkı Ara</h1>
+          <p className="mt-3 max-w-2xl text-zinc-400">
+            Şarkı, sanatçı veya ikisini birlikte ara. Bulunan akor/söz seçenekleri sadece Varyasyon 1, 2, 3 olarak görünür.
           </p>
         </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+        <section className="rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/20 backdrop-blur sm:p-5">
           <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-            <input
-              type="text"
-              placeholder="Şarkı adı"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") searchSong();
-              }}
-              className="min-h-12 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
-            />
-            <input
-              type="text"
-              placeholder="Sanatçı"
-              value={artist}
-              onChange={(event) => setArtist(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") searchSong();
-              }}
-              className="min-h-12 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
-            />
+            <label className="rounded-2xl border border-zinc-800 bg-black/40 px-4 py-3 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20">
+              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500">Şarkı</span>
+              <input
+                type="text"
+                placeholder="Senden Daha Güzel"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") searchSong();
+                }}
+                className="mt-1 min-h-8 w-full bg-transparent text-base font-bold text-white outline-none placeholder:text-zinc-600"
+              />
+            </label>
+            <label className="rounded-2xl border border-zinc-800 bg-black/40 px-4 py-3 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20">
+              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500">Sanatçı</span>
+              <input
+                type="text"
+                placeholder="Duman"
+                value={artist}
+                onChange={(event) => setArtist(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") searchSong();
+                }}
+                className="mt-1 min-h-8 w-full bg-transparent text-base font-bold text-white outline-none placeholder:text-zinc-600"
+              />
+            </label>
             <button
               onClick={() => void searchSong()}
               disabled={loading}
-              className="min-h-12 rounded-xl bg-red-600 px-5 py-3 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className="min-h-16 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 px-6 py-3 font-black shadow-lg shadow-red-950/40 transition hover:-translate-y-0.5 hover:from-red-400 hover:to-red-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Aranıyor..." : "Ara"}
             </button>
           </div>
-          <p className="mt-3 text-sm text-zinc-500">Örnek: Sanatçıya Duman yaz; istersen şarkıya Senden Daha Güzel yaz.</p>
+          <p className="mt-3 text-sm text-zinc-500">Örnek: Duman + Senden Daha Güzel. Son aramalar aşağıda chip olarak kalır.</p>
 
           {recentSearches.length > 0 && !result && (
             <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
@@ -623,7 +632,7 @@ export default function SarkiAra() {
 
         {(artistResults.length > 0 || songResults.length > 0) && (
           <section className="mt-6 grid gap-4 lg:grid-cols-[320px_1fr]">
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+            <div className="rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/15 backdrop-blur">
               <h2 className="text-xl font-black">Sanatçılar</h2>
               <div className="mt-3 space-y-2">
                 {artistResults.length ? (
@@ -631,7 +640,7 @@ export default function SarkiAra() {
                     <button
                       key={`${item.name}-${item.source ?? ""}`}
                       onClick={() => selectArtist(item.name)}
-                      className="w-full rounded-2xl bg-zinc-950 p-4 text-left hover:bg-zinc-800"
+                      className="w-full rounded-2xl border border-zinc-800/70 bg-zinc-950/80 p-4 text-left transition hover:-translate-y-0.5 hover:border-red-500/40 hover:bg-zinc-900"
                     >
                       <span className="block font-black">{item.name}</span>
                       <span className="mt-1 block text-sm text-zinc-500">{item.songCount ? `${item.songCount} şarkı` : "Şarkılarını listele"}</span>
@@ -643,7 +652,7 @@ export default function SarkiAra() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+            <div className="rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/15 backdrop-blur">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-black">Şarkılar</h2>
@@ -656,19 +665,20 @@ export default function SarkiAra() {
                   <button
                     key={song.source}
                     onClick={() => selectSong(song)}
-                    className="flex items-center gap-3 rounded-2xl bg-zinc-950 p-3 text-left hover:bg-zinc-800"
+                    className="group flex items-center gap-4 rounded-[1.4rem] border border-zinc-800/80 bg-zinc-950/80 p-3 text-left shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:border-red-500/50 hover:bg-zinc-900"
                   >
                     <span
-                      className="h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center"
+                      className="h-16 w-16 shrink-0 rounded-2xl bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center shadow-lg shadow-black/30 ring-1 ring-white/5"
                       style={song.cover ? { backgroundImage: `url(${song.cover})` } : undefined}
                     />
-                    <span className="min-w-0">
-                      <span className="block truncate font-black">{song.title}</span>
-                      <span className="mt-1 block truncate text-sm text-zinc-500">
-                        {song.artist}
-                        {song.variants?.length ? ` - ${song.variants.length} varyasyon` : ""}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-base font-black text-white">{song.title}</span>
+                      <span className="mt-1 block truncate text-sm text-zinc-400">{song.artist}</span>
+                      <span className="mt-2 inline-flex rounded-full bg-red-600/15 px-2.5 py-1 text-[11px] font-black text-red-200">
+                        {song.variants?.length ? `${song.variants.length} varyasyon` : "Tek varyasyon"}
                       </span>
                     </span>
+                    <span className="hidden rounded-full bg-white px-3 py-1 text-xs font-black text-zinc-950 group-hover:inline-flex">Aç</span>
                   </button>
                 ))}
               </div>
@@ -738,7 +748,7 @@ export default function SarkiAra() {
                     {favorite ? "Favoride" : "Favorilere Ekle"}
                   </button>
                   <button
-                    onClick={() => setPlayMode(true)}
+                    onClick={() => { setPlayControlsVisible(true); setPlayMode(true); }}
                     className="min-h-11 rounded-lg bg-white px-4 py-3 font-bold text-zinc-950 hover:bg-red-100"
                   >
                     Çalma Modu
@@ -799,37 +809,35 @@ export default function SarkiAra() {
         )}
 
         {result && playMode && (
-          <section className="fixed inset-0 z-[80] flex flex-col bg-zinc-950 p-2 text-white sm:p-4">
-            <div className="mb-2 rounded-2xl border border-zinc-800 bg-zinc-950/95 p-3 shadow-xl shadow-black/40">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-red-400">Çalma Modu · ekrana sığdırılmış</p>
-                  <h2 className="truncate text-xl font-black sm:text-2xl">{result.title}</h2>
-                  <p className="truncate text-xs text-zinc-400">{result.artist} {transposedKey ? `· Ton: ${transposedKey}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""}</p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <button onClick={() => setTransposeSteps((value) => value - 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">-1</button>
-                  <button onClick={() => setTransposeSteps(0)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">{transposeSteps > 0 ? `+${transposeSteps}` : transposeSteps}</button>
-                  <button onClick={() => setTransposeSteps((value) => value + 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">+1</button>
-                  <button onClick={() => setPlayFontSize((value) => Math.max(0.75, Number((value - 0.1).toFixed(2))))} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">A-</button>
-                  <button onClick={() => setPlayFontSize((value) => Math.min(1.6, Number((value + 0.1).toFixed(2))))} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">A+</button>
-                  <button onClick={() => setAutoScrollEnabled((value) => !value)} className={`rounded-lg px-3 py-2 text-sm font-black ${autoScrollEnabled ? "bg-red-600 hover:bg-red-500" : "bg-zinc-800 hover:bg-zinc-700"}`}>Oto Kaydır</button>
-                  <label className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-black text-zinc-200">
-                    Hız {autoScrollLevel}
-                    <input
-                      type="range"
-                      min="1"
-                      max="10"
-                      value={autoScrollLevel}
-                      onChange={(event) => setAutoScrollLevel(Number(event.target.value))}
-                      className="w-24 accent-red-600"
-                    />
-                  </label>
-                  <button onClick={() => { setAutoScrollEnabled(false); setPlayMode(false); }} className="rounded-lg bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
+          <section onClick={() => setPlayControlsVisible((value) => !value)} className="fixed inset-0 z-[80] flex flex-col bg-black text-white">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(220,38,38,0.18),transparent_42%)]" />
+            {playControlsVisible && (
+              <div onClick={(event) => event.stopPropagation()} className="relative z-10 m-2 rounded-[1.5rem] border border-white/10 bg-black/70 p-3 shadow-2xl shadow-black/70 backdrop-blur-xl transition sm:m-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-300">Sahne Modu · ekrana dokun gizle/göster</p>
+                    <h2 className="truncate text-xl font-black sm:text-2xl">{result.title}</h2>
+                    <p className="truncate text-xs text-zinc-400">{result.artist} {transposedKey ? `· Ton: ${transposedKey}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button onClick={() => setTransposeSteps((value) => value - 1)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">-1</button>
+                    <button onClick={() => setTransposeSteps(0)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">{transposeSteps > 0 ? `+${transposeSteps}` : transposeSteps}</button>
+                    <button onClick={() => setTransposeSteps((value) => value + 1)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">+1</button>
+                    <button onClick={() => setPlayFontSize((value) => Math.max(0.75, Number((value - 0.1).toFixed(2))))} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">A-</button>
+                    <button onClick={() => setPlayFontSize((value) => Math.min(1.6, Number((value + 0.1).toFixed(2))))} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">A+</button>
+                    <button onClick={() => setAutoScrollEnabled((value) => !value)} className={`rounded-xl px-3 py-2 text-sm font-black ${autoScrollEnabled ? "bg-red-600 hover:bg-red-500" : "bg-white/10 hover:bg-white/15"}`}>Oto Kaydır</button>
+                    <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-black text-zinc-200">
+                      Hız {autoScrollLevel}
+                      <input type="range" min="1" max="10" value={autoScrollLevel} onChange={(event) => setAutoScrollLevel(Number(event.target.value))} className="w-24 accent-red-600" />
+                    </label>
+                    <button onClick={() => setPlayControlsVisible(false)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">Gizle</button>
+                    <button onClick={() => { setAutoScrollEnabled(false); setPlayMode(false); }} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             <pre
+              onClick={(event) => { event.stopPropagation(); setPlayControlsVisible((value) => !value); }}
               ref={playTextRef}
               style={{
                 fontSize: `${playFontSize}rem`,
@@ -837,10 +845,11 @@ export default function SarkiAra() {
                 tabSize: 4,
                 whiteSpace: "pre",
               }}
-              className="m-0 min-h-0 flex-1 overflow-auto whitespace-pre rounded-2xl bg-zinc-900 p-3 leading-[1.45] text-zinc-100 sm:p-4"
+              className="relative z-0 m-2 min-h-0 flex-1 overflow-auto whitespace-pre rounded-[1.5rem] bg-zinc-950/95 p-4 leading-[1.48] text-zinc-100 shadow-inner shadow-black sm:m-4 sm:p-6"
             >
               {transposedChords || "Akor/söz yok."}
             </pre>
+            {!playControlsVisible && <div className="pointer-events-none fixed left-1/2 top-3 z-20 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-black text-zinc-300 backdrop-blur">Kontroller için ekrana dokun</div>}
           </section>
         )}
       </div>

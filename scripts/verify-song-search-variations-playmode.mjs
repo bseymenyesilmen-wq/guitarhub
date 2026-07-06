@@ -15,7 +15,7 @@ const required = [
   "playMode",
   "setPlayMode(true)",
   "setPlayMode(false)",
-  "ekrana sığdırılmış",
+  "Sahne Modu · ekrana dokun gizle/göster",
   "Oto Kaydır",
   "Hız {autoScrollLevel}",
   "min=\"1\"",

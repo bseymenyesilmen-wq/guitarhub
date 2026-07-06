@@ -29,9 +29,13 @@ function sortedSetlistSongs(setlist?: LoadedSetlist | null) {
   return [...(setlist?.setlist_songs ?? [])].sort((a, b) => a.position - b.position);
 }
 
+function setlistAccent(index: number) {
+  return ["from-red-600/25", "from-purple-600/25", "from-sky-600/20", "from-amber-500/20"][index % 4];
+}
+
 function RepertuarQuickCard({ title, value, helper, action, href, accent = false }: { title: string; value: string; helper: string; action: string; href: string; accent?: boolean }) {
   return (
-    <Link href={href} className={`rounded-3xl border p-4 transition hover:-translate-y-0.5 hover:border-red-400/70 ${accent ? "border-red-500/30 bg-gradient-to-br from-red-600/25 to-zinc-950" : "border-zinc-800 bg-zinc-900"}`}>
+    <Link href={href} className={`rounded-[1.6rem] border p-4 shadow-xl shadow-black/15 transition hover:-translate-y-0.5 hover:border-red-400/70 ${accent ? "border-red-500/30 bg-gradient-to-br from-red-600/25 to-zinc-950" : "border-white/10 bg-zinc-900/80"}`}>
       <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">{title}</p>
       <p className="mt-2 text-3xl font-black text-white">{value}</p>
       <p className="mt-1 text-sm text-zinc-400">{helper}</p>
@@ -258,11 +262,12 @@ export default function Repertuar() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
+    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.16),transparent_34%),linear-gradient(180deg,#050505,#0a0a0b_45%,#09090b)] p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="mb-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+        <section className="relative mb-6 overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-600/20 blur-3xl" />
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">Setlist klasörleri</p>
           <h1 className="mt-3 text-4xl font-black">Repertuarım</h1>
           <p className="mt-2 max-w-2xl text-zinc-400">
@@ -344,14 +349,14 @@ export default function Repertuar() {
                 <span className="rounded-full bg-zinc-950 px-3 py-1 text-sm font-bold text-zinc-400">{setlists.length}</span>
               </div>
               <div className="mt-4 space-y-2">
-                {setlists.map((setlist) => {
+                {setlists.map((setlist, index) => {
                   const count = setlist.setlist_songs?.length ?? 0;
                   const lastSong = sortedSetlistSongs(setlist).at(-1)?.songs;
                   return (
                     <button
                       key={setlist.id}
                       onClick={() => setSelectedSetlistId(setlist.id)}
-                      className={`w-full rounded-2xl p-4 text-left hover:bg-zinc-800 ${selectedSetlist?.id === setlist.id ? "bg-red-600/20 ring-1 ring-red-600" : "bg-zinc-950"}`}
+                      className={`w-full rounded-[1.4rem] border p-4 text-left shadow-lg shadow-black/15 transition hover:-translate-y-0.5 hover:border-red-500/50 ${selectedSetlist?.id === setlist.id ? `border-red-500/50 bg-gradient-to-br ${setlistAccent(index)} to-zinc-950 ring-1 ring-red-600/40` : `border-white/10 bg-gradient-to-br ${setlistAccent(index)} to-zinc-950/80`}`}
                     >
                       <span className="block truncate font-black">{setlist.name}</span>
                       <span className="mt-1 block text-sm text-zinc-500">{count} şarkı</span>

@@ -45,6 +45,7 @@ export default function SarkiDetay() {
   const [loading, setLoading] = useState(true);
   const [selectedChord, setSelectedChord] = useState<ChordDefinition | null>(null);
   const [playMode, setPlayMode] = useState(false);
+  const [playControlsVisible, setPlayControlsVisible] = useState(true);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
   const [autoScrollLevel, setAutoScrollLevel] = useState(4);
   const [playFontSize, setPlayFontSize] = useState(1);
@@ -158,7 +159,7 @@ export default function SarkiDetay() {
                 <button onClick={toggleFavorite} className="min-h-11 rounded-lg bg-red-600 px-4 py-3 font-bold hover:bg-red-500">
                   {song.favorite ? "Favoride" : "Favorile"}
                 </button>
-                <button onClick={() => setPlayMode(true)} className="min-h-11 rounded-lg bg-white px-4 py-3 font-bold text-zinc-950 hover:bg-red-100">
+                <button onClick={() => { setPlayControlsVisible(true); setPlayMode(true); }} className="min-h-11 rounded-lg bg-white px-4 py-3 font-bold text-zinc-950 hover:bg-red-100">
                   Çalma Modu
                 </button>
                 {isOwnSong && (
@@ -194,37 +195,35 @@ export default function SarkiDetay() {
             </section>
 
             {playMode && (
-              <section className="fixed inset-0 z-[80] flex flex-col bg-zinc-950 p-2 text-white sm:p-4">
-                <div className="mb-2 rounded-2xl border border-zinc-800 bg-zinc-950/95 p-3 shadow-xl shadow-black/40">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-red-400">Prova/çalma modu · ekrana sığdırılmış</p>
-                      <h2 className="truncate text-xl font-black sm:text-2xl">{song.title}</h2>
-                      <p className="truncate text-xs text-zinc-400">{song.artist} {song.key ? `· Ton: ${transposeText(song.key, shift)}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <button onClick={() => setShift((value) => value - 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">-1</button>
-                      <button onClick={() => setShift(0)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">Ton: {shift > 0 ? `+${shift}` : shift}</button>
-                      <button onClick={() => setShift((value) => value + 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">+1</button>
-                      <button onClick={() => setPlayFontSize((value) => Math.max(0.75, Number((value - 0.1).toFixed(2))))} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">A-</button>
-                      <button onClick={() => setPlayFontSize((value) => Math.min(1.6, Number((value + 0.1).toFixed(2))))} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">A+</button>
-                      <button onClick={() => setAutoScrollEnabled((value) => !value)} className={`rounded-lg px-3 py-2 text-sm font-black ${autoScrollEnabled ? "bg-red-600 hover:bg-red-500" : "bg-zinc-800 hover:bg-zinc-700"}`}>Oto Kaydır</button>
-                      <label className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-black text-zinc-200">
-                        Hız {autoScrollLevel}
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          value={autoScrollLevel}
-                          onChange={(event) => setAutoScrollLevel(Number(event.target.value))}
-                          className="w-24 accent-red-600"
-                        />
-                      </label>
-                      <button onClick={() => { setAutoScrollEnabled(false); setPlayMode(false); }} className="rounded-lg bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
+              <section onClick={() => setPlayControlsVisible((value) => !value)} className="fixed inset-0 z-[80] flex flex-col bg-black text-white">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(220,38,38,0.18),transparent_42%)]" />
+                {playControlsVisible && (
+                  <div onClick={(event) => event.stopPropagation()} className="relative z-10 m-2 rounded-[1.5rem] border border-white/10 bg-black/70 p-3 shadow-2xl shadow-black/70 backdrop-blur-xl transition sm:m-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-300">Sahne Modu · ekrana dokun gizle/göster</p>
+                        <h2 className="truncate text-xl font-black sm:text-2xl">{song.title}</h2>
+                        <p className="truncate text-xs text-zinc-400">{song.artist} {song.key ? `· Ton: ${transposeText(song.key, shift)}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => setShift((value) => value - 1)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">-1</button>
+                        <button onClick={() => setShift(0)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">Ton: {shift > 0 ? `+${shift}` : shift}</button>
+                        <button onClick={() => setShift((value) => value + 1)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">+1</button>
+                        <button onClick={() => setPlayFontSize((value) => Math.max(0.75, Number((value - 0.1).toFixed(2))))} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">A-</button>
+                        <button onClick={() => setPlayFontSize((value) => Math.min(1.6, Number((value + 0.1).toFixed(2))))} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">A+</button>
+                        <button onClick={() => setAutoScrollEnabled((value) => !value)} className={`rounded-xl px-3 py-2 text-sm font-black ${autoScrollEnabled ? "bg-red-600 hover:bg-red-500" : "bg-white/10 hover:bg-white/15"}`}>Oto Kaydır</button>
+                        <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-black text-zinc-200">
+                          Hız {autoScrollLevel}
+                          <input type="range" min="1" max="10" value={autoScrollLevel} onChange={(event) => setAutoScrollLevel(Number(event.target.value))} className="w-24 accent-red-600" />
+                        </label>
+                        <button onClick={() => setPlayControlsVisible(false)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">Gizle</button>
+                        <button onClick={() => { setAutoScrollEnabled(false); setPlayMode(false); }} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
                 <pre
+                  onClick={(event) => { event.stopPropagation(); setPlayControlsVisible((value) => !value); }}
                   ref={playTextRef}
                   style={{
                     fontSize: `${playFontSize}rem`,
@@ -232,10 +231,11 @@ export default function SarkiDetay() {
                     tabSize: 4,
                     whiteSpace: "pre",
                   }}
-                  className="m-0 min-h-0 flex-1 overflow-auto whitespace-pre rounded-2xl bg-zinc-900 p-3 leading-[1.45] text-zinc-100 sm:p-4"
+                  className="relative z-0 m-2 min-h-0 flex-1 overflow-auto whitespace-pre rounded-[1.5rem] bg-zinc-950/95 p-4 leading-[1.48] text-zinc-100 shadow-inner shadow-black sm:m-4 sm:p-6"
                 >
                   {transposedChords || "Akor/söz yok."}
                 </pre>
+                {!playControlsVisible && <div className="pointer-events-none fixed left-1/2 top-3 z-20 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-black text-zinc-300 backdrop-blur">Kontroller için ekrana dokun</div>}
               </section>
             )}
           </>

@@ -8,8 +8,8 @@ const detail = readFileSync(join(__dirname, "..", "app", "sarki", "[id]", "page.
 const required = [
   "playMode",
   "Çalma Modu",
-  "Prova/çalma modu",
-  "ekrana sığdırılmış",
+  "Sahne Modu · ekrana dokun gizle/göster",
+  "playControlsVisible",
   "AUTO_SCROLL_INTERVAL_MS",
   "autoScrollEnabled",
   "autoScrollLevel",
