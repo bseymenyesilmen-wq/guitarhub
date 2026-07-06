@@ -14,8 +14,11 @@ import type { SongArtistResult, SongSearchListItem, SongSearchResponse, SongSear
 const NOT_FOUND_MESSAGE = "Şarkı bulunamadı.";
 const LOCAL_SETLISTS_KEY = "guitarhub.localSetlists.v1";
 const RECENT_SEARCHES_KEY = "guitarhub.songSearchHistory.v1";
-const AUTO_SCROLL_SPEEDS = { off: 0, slow: 1, medium: 2, fast: 3 } as const;
-type AutoScrollSpeed = keyof typeof AUTO_SCROLL_SPEEDS;
+const AUTO_SCROLL_INTERVAL_MS = 80;
+const PLAY_MODE_FONT_FAMILY = {
+  proportional: "Arial, Helvetica, sans-serif",
+  monospace: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+} as const;
 
 type SearchHistoryItem = {
   title: string;
@@ -121,6 +124,14 @@ function variationLabel(index: number) {
   return `Varyasyon ${index + 1}`;
 }
 
+function isMonospaceProvider(sourceProvider = "") {
+  return sourceProvider === "Ultimate Guitar" || sourceProvider === "ultimate-guitar";
+}
+
+function isTechnicalTabContent(text: string) {
+  return /[|][\-0-9hpsbx/\\~ ]{8,}[|]?/.test(text);
+}
+
 export default function SarkiAra() {
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -135,7 +146,8 @@ export default function SarkiAra() {
   const [transposeSteps, setTransposeSteps] = useState(0);
   const [selectedChord, setSelectedChord] = useState<ChordDefinition | null>(null);
   const [playMode, setPlayMode] = useState(false);
-  const [autoScrollSpeed, setAutoScrollSpeed] = useState<AutoScrollSpeed>("off");
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
+  const [autoScrollLevel, setAutoScrollLevel] = useState(4);
   const [playFontSize, setPlayFontSize] = useState(1);
   const playTextRef = useRef<HTMLPreElement | null>(null);
   const [message, setMessage] = useState("");
@@ -164,13 +176,13 @@ export default function SarkiAra() {
   }, [result, transposeSteps]);
 
   useEffect(() => {
-    if (!playMode || autoScrollSpeed === "off") return;
+    if (!playMode || !autoScrollEnabled) return;
     const timer = window.setInterval(() => {
       if (!playTextRef.current) return;
-      playTextRef.current.scrollTop += AUTO_SCROLL_SPEEDS[autoScrollSpeed];
-    }, 80);
+      playTextRef.current.scrollTop += autoScrollLevel;
+    }, AUTO_SCROLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [autoScrollSpeed, playMode]);
+  }, [autoScrollEnabled, autoScrollLevel, playMode]);
 
 
   function resetSongView() {
@@ -179,7 +191,7 @@ export default function SarkiAra() {
     setProviderChoices(null);
     setTransposeSteps(0);
     setPlayMode(false);
-    setAutoScrollSpeed("off");
+    setAutoScrollEnabled(false);
   }
 
   function openChord(chordName: string) {
@@ -801,18 +813,32 @@ export default function SarkiAra() {
                   <button onClick={() => setTransposeSteps((value) => value + 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">+1</button>
                   <button onClick={() => setPlayFontSize((value) => Math.max(0.75, Number((value - 0.1).toFixed(2))))} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">A-</button>
                   <button onClick={() => setPlayFontSize((value) => Math.min(1.6, Number((value + 0.1).toFixed(2))))} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">A+</button>
-                  <button onClick={() => setAutoScrollSpeed((value) => value === "off" ? "medium" : "off")} className={`rounded-lg px-3 py-2 text-sm font-black ${autoScrollSpeed === "off" ? "bg-zinc-800 hover:bg-zinc-700" : "bg-red-600 hover:bg-red-500"}`}>Oto Kaydır</button>
-                  <select value={autoScrollSpeed} onChange={(event) => setAutoScrollSpeed(event.target.value as AutoScrollSpeed)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm font-black outline-none">
-                    <option value="off">Kapalı</option>
-                    <option value="slow">Yavaş</option>
-                    <option value="medium">Orta</option>
-                    <option value="fast">Hızlı</option>
-                  </select>
-                  <button onClick={() => { setAutoScrollSpeed("off"); setPlayMode(false); }} className="rounded-lg bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
+                  <button onClick={() => setAutoScrollEnabled((value) => !value)} className={`rounded-lg px-3 py-2 text-sm font-black ${autoScrollEnabled ? "bg-red-600 hover:bg-red-500" : "bg-zinc-800 hover:bg-zinc-700"}`}>Oto Kaydır</button>
+                  <label className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-black text-zinc-200">
+                    Hız {autoScrollLevel}
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={autoScrollLevel}
+                      onChange={(event) => setAutoScrollLevel(Number(event.target.value))}
+                      className="w-24 accent-red-600"
+                    />
+                  </label>
+                  <button onClick={() => { setAutoScrollEnabled(false); setPlayMode(false); }} className="rounded-lg bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
                 </div>
               </div>
             </div>
-            <pre ref={playTextRef} style={{ fontSize: `${playFontSize}rem` }} className="min-h-0 flex-1 overflow-auto whitespace-pre rounded-2xl bg-zinc-900 p-3 font-mono leading-[1.45] text-zinc-100 sm:p-4">
+            <pre
+              ref={playTextRef}
+              style={{
+                fontSize: `${playFontSize}rem`,
+                fontFamily: isMonospaceProvider(result.provider) || isTechnicalTabContent(transposedChords) ? PLAY_MODE_FONT_FAMILY.monospace : PLAY_MODE_FONT_FAMILY.proportional,
+                tabSize: 4,
+                whiteSpace: "pre",
+              }}
+              className="m-0 min-h-0 flex-1 overflow-auto whitespace-pre rounded-2xl bg-zinc-900 p-3 leading-[1.45] text-zinc-100 sm:p-4"
+            >
               {transposedChords || "Akor/söz yok."}
             </pre>
           </section>

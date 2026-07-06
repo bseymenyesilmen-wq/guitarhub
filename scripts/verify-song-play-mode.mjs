@@ -10,17 +10,25 @@ const required = [
   "Çalma Modu",
   "Prova/çalma modu",
   "ekrana sığdırılmış",
-  "AUTO_SCROLL_SPEEDS",
-  "autoScrollSpeed",
+  "AUTO_SCROLL_INTERVAL_MS",
+  "autoScrollEnabled",
+  "autoScrollLevel",
   "playFontSize",
   "playTextRef",
+  "PLAY_MODE_FONT_FAMILY.proportional",
+  "PLAY_MODE_FONT_FAMILY.monospace",
+  "isTechnicalTabContent(transposedChords)",
+  "fontFamily:",
+  "tabSize: 4",
+  "whiteSpace: \"pre\"",
   "Oto Kaydır",
-  "Yavaş",
-  "Orta",
-  "Hızlı",
+  "Hız {autoScrollLevel}",
+  "min=\"1\"",
+  "max=\"10\"",
+  "type=\"range\"",
   "A-",
   "A+",
-  "style={{ fontSize: `${playFontSize}rem` }}",
+  "style={{",
   "min-h-0 flex-1 overflow-auto",
   "setPlayMode(true)",
   "setPlayMode(false)",
@@ -33,4 +41,12 @@ if (missing.length) {
   process.exit(1);
 }
 
-console.log("Song detail play mode has autoscroll and font controls.");
+const forbidden = ["font-mono leading", "AUTO_SCROLL_SPEEDS", "AutoScrollSpeed", "autoScrollSpeed", "<select value={autoScroll"];
+for (const snippet of forbidden) {
+  if (detail.includes(snippet)) {
+    console.error(`Forbidden old play mode snippet still present: ${snippet}`);
+    process.exit(1);
+  }
+}
+
+console.log("Song detail play mode preserves chord alignment and has 1-10 speed control.");
