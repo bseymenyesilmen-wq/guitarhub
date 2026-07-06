@@ -16,7 +16,10 @@ const required = [
   "setPlayMode(true)",
   "setPlayMode(false)",
   "ekrana sığdırılmış",
-  "text-[clamp(0.82rem,2vw,1.25rem)]",
+  "Oto Kaydır",
+  "A-",
+  "A+",
+  "style={{ fontSize: `${playFontSize}rem` }}",
 ];
 
 const forbidden = [

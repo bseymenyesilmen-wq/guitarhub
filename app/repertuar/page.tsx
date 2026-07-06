@@ -9,7 +9,9 @@ import type { Setlist, SetlistSong, Song } from "@/lib/types";
 
 type LoadedSetlistSong = SetlistSong & { songs?: Song | null };
 type LoadedSetlist = Setlist & { setlist_songs?: LoadedSetlistSong[] };
+type RecentSong = Pick<Song, "id" | "title" | "artist" | "key" | "capo"> & { openedAt: string };
 const LOCAL_SETLISTS_KEY = "guitarhub.localSetlists.v1";
+const RECENT_SONGS_KEY = "guitarhub.recentSongs.v1";
 
 function readLocalSetlists(): LoadedSetlist[] {
   if (typeof window === "undefined") return [];
@@ -23,6 +25,16 @@ function readLocalSetlists(): LoadedSetlist[] {
 
 function writeLocalSetlists(setlists: LoadedSetlist[]) {
   window.localStorage.setItem(LOCAL_SETLISTS_KEY, JSON.stringify(setlists));
+}
+
+function readRecentSongs(): RecentSong[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(RECENT_SONGS_KEY) ?? "[]") as RecentSong[];
+    return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
+  } catch {
+    return [];
+  }
 }
 
 function sortedSetlistSongs(setlist?: LoadedSetlist | null) {
@@ -44,6 +56,7 @@ export default function Repertuar() {
   const router = useRouter();
   const [setlists, setSetlists] = useState<LoadedSetlist[]>([]);
   const [ownSongs, setOwnSongs] = useState<Song[]>([]);
+  const [recentSongs, setRecentSongs] = useState<RecentSong[]>([]);
   const [storageMode, setStorageMode] = useState<"supabase" | "local">("supabase");
   const [selectedSetlistId, setSelectedSetlistId] = useState<number | null>(null);
   const [userId, setUserId] = useState("");
@@ -68,6 +81,7 @@ export default function Repertuar() {
     }
 
     setUserId(session.user.id);
+    setRecentSongs(readRecentSongs());
 
     const { data: ownSongData } = await supabase
       .from("songs")
@@ -282,6 +296,26 @@ export default function Repertuar() {
           <RepertuarQuickCard title="Kendi Şarkıların" value={ownSongs.length.toString()} helper="Şarkı Yaz’dan kaydedilen bestelerin" action="Şarkı Yaz'a git" href="/sarki-yaz" accent />
           <RepertuarQuickCard title="Taslaklar" value="1" helper="Taslak cihazda otomatik saklanır" action="Taslağı aç" href="/sarki-yaz" />
           <RepertuarQuickCard title="Setlistler" value={setlists.length.toString()} helper="Konser/prova klasörlerin" action="Setlistlere bak" href="#setlistler" />
+        </section>
+
+        <section className="mb-5 rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-red-300">Son açılanlar</p>
+              <h2 className="mt-1 text-2xl font-black">En son baktığın şarkılar</h2>
+            </div>
+            <Link href="/sarki-ara" className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-black text-red-200 hover:bg-zinc-800">Şarkı ara</Link>
+          </div>
+          <div className="mt-4 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+            {recentSongs.map((song) => (
+              <Link key={`${song.id}-${song.openedAt}`} href={`/sarki/${song.id}`} className="rounded-2xl bg-zinc-950 p-4 hover:bg-zinc-800">
+                <span className="block truncate font-black text-white">{song.title}</span>
+                <span className="mt-1 block truncate text-sm text-zinc-400">{song.artist}</span>
+                <span className="mt-2 block text-xs font-bold text-zinc-600">{song.key ? `Ton: ${song.key}` : "Ton yok"}{song.capo ? ` · Capo: ${song.capo}` : ""}</span>
+              </Link>
+            ))}
+            {recentSongs.length === 0 && <p className="rounded-2xl border border-dashed border-zinc-700 p-5 text-sm text-zinc-400 md:col-span-2 lg:col-span-4">Henüz son açılan şarkı yok. Bir şarkı açınca burada görünecek.</p>}
+          </div>
         </section>
 
         <section className="mb-5 rounded-3xl border border-red-500/25 bg-gradient-to-br from-zinc-900 to-red-950/25 p-4">

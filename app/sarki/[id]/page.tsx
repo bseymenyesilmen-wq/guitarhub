@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
 import { ChordTextViewer } from "@/app/components/ChordTextViewer";
@@ -12,6 +12,21 @@ import { supabase } from "@/lib/supabase";
 import type { Song } from "@/lib/types";
 
 const FLAT_TO_SHARP: Record<string, string> = { Bb: "A#", Db: "C#", Eb: "D#", Gb: "F#", Ab: "G#" };
+const RECENT_SONGS_KEY = "guitarhub.recentSongs.v1";
+const AUTO_SCROLL_SPEEDS = { off: 0, slow: 1, medium: 2, fast: 3 } as const;
+type AutoScrollSpeed = keyof typeof AUTO_SCROLL_SPEEDS;
+
+function saveRecentSong(song: Song) {
+  if (typeof window === "undefined") return;
+  const entry = { id: song.id, title: song.title, artist: song.artist, key: song.key, capo: song.capo, openedAt: new Date().toISOString() };
+  try {
+    const current = JSON.parse(window.localStorage.getItem(RECENT_SONGS_KEY) ?? "[]") as Array<typeof entry>;
+    const next = [entry, ...current.filter((item) => item.id !== song.id)].slice(0, 8);
+    window.localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(next));
+  } catch {
+    window.localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify([entry]));
+  }
+}
 
 function normalizeChordName(chordName: string) {
   return chordName
@@ -36,6 +51,9 @@ export default function SarkiDetay() {
   const [loading, setLoading] = useState(true);
   const [selectedChord, setSelectedChord] = useState<ChordDefinition | null>(null);
   const [playMode, setPlayMode] = useState(false);
+  const [autoScrollSpeed, setAutoScrollSpeed] = useState<AutoScrollSpeed>("off");
+  const [playFontSize, setPlayFontSize] = useState(1);
+  const playTextRef = useRef<HTMLPreElement | null>(null);
 
   useEffect(() => {
     async function loadSong() {
@@ -61,6 +79,7 @@ export default function SarkiDetay() {
         setMessage(error.message);
       } else {
         setSong(data as Song);
+        saveRecentSong(data as Song);
       }
 
       setLoading(false);
@@ -68,6 +87,15 @@ export default function SarkiDetay() {
 
     loadSong();
   }, [params.id, router]);
+
+  useEffect(() => {
+    if (!playMode || autoScrollSpeed === "off") return;
+    const timer = window.setInterval(() => {
+      if (!playTextRef.current) return;
+      playTextRef.current.scrollTop += AUTO_SCROLL_SPEEDS[autoScrollSpeed];
+    }, 80);
+    return () => window.clearInterval(timer);
+  }, [autoScrollSpeed, playMode]);
 
   const sourceText = song?.chords?.trim() || song?.lyrics?.trim() || "";
   const transposedChords = useMemo(() => transposeText(sourceText, shift), [shift, sourceText]);
@@ -184,11 +212,20 @@ export default function SarkiDetay() {
                       <button onClick={() => setShift((value) => value - 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">-1</button>
                       <button onClick={() => setShift(0)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">Ton: {shift > 0 ? `+${shift}` : shift}</button>
                       <button onClick={() => setShift((value) => value + 1)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">+1</button>
-                      <button onClick={() => setPlayMode(false)} className="rounded-lg bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
+                      <button onClick={() => setPlayFontSize((value) => Math.max(0.75, Number((value - 0.1).toFixed(2))))} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">A-</button>
+                      <button onClick={() => setPlayFontSize((value) => Math.min(1.6, Number((value + 0.1).toFixed(2))))} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm font-black hover:bg-zinc-700">A+</button>
+                      <button onClick={() => setAutoScrollSpeed((value) => value === "off" ? "medium" : "off")} className={`rounded-lg px-3 py-2 text-sm font-black ${autoScrollSpeed === "off" ? "bg-zinc-800 hover:bg-zinc-700" : "bg-red-600 hover:bg-red-500"}`}>Oto Kaydır</button>
+                      <select value={autoScrollSpeed} onChange={(event) => setAutoScrollSpeed(event.target.value as AutoScrollSpeed)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm font-black outline-none">
+                        <option value="off">Kapalı</option>
+                        <option value="slow">Yavaş</option>
+                        <option value="medium">Orta</option>
+                        <option value="fast">Hızlı</option>
+                      </select>
+                      <button onClick={() => { setAutoScrollSpeed("off"); setPlayMode(false); }} className="rounded-lg bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
                     </div>
                   </div>
                 </div>
-                <pre className="min-h-0 flex-1 overflow-auto whitespace-pre rounded-2xl bg-zinc-900 p-3 font-mono text-[clamp(0.82rem,2vw,1.25rem)] leading-[1.45] text-zinc-100 sm:p-4">
+                <pre ref={playTextRef} style={{ fontSize: `${playFontSize}rem` }} className="min-h-0 flex-1 overflow-auto whitespace-pre rounded-2xl bg-zinc-900 p-3 font-mono leading-[1.45] text-zinc-100 sm:p-4">
                   {transposedChords || "Akor/söz yok."}
                 </pre>
               </section>

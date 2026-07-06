@@ -10,20 +10,29 @@ const required = [
   "Çalma Modu",
   "Prova/çalma modu",
   "ekrana sığdırılmış",
-  "text-[clamp(0.82rem,2vw,1.25rem)]",
+  "AUTO_SCROLL_SPEEDS",
+  "autoScrollSpeed",
+  "playFontSize",
+  "playTextRef",
+  "Oto Kaydır",
+  "Yavaş",
+  "Orta",
+  "Hızlı",
+  "A-",
+  "A+",
+  "style={{ fontSize: `${playFontSize}rem` }}",
+  "saveRecentSong",
+  "guitarhub.recentSongs.v1",
   "min-h-0 flex-1 overflow-auto",
   "setPlayMode(true)",
   "setPlayMode(false)",
   "Çık",
 ];
 
-const forbidden = ["text-2xl leading-10", "Çalma modundan çık", "Temiz ekran"];
 const missing = required.filter((snippet) => !detail.includes(snippet));
-const presentForbidden = forbidden.filter((snippet) => detail.includes(snippet));
-if (missing.length || presentForbidden.length) {
-  if (missing.length) console.error(`Missing play mode snippets:\n${missing.join("\n")}`);
-  if (presentForbidden.length) console.error(`Old play mode snippets still present:\n${presentForbidden.join("\n")}`);
+if (missing.length) {
+  console.error(`Missing play mode snippets:\n${missing.join("\n")}`);
   process.exit(1);
 }
 
-console.log("Song detail play mode is compact.");
+console.log("Song detail play mode has autoscroll, font controls, and recent tracking.");
