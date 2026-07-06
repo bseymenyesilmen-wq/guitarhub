@@ -251,6 +251,32 @@ export default function SarkiAra() {
       setProviderChoices(song.variants);
       return;
     }
+    if (song.source.startsWith("search:")) {
+      resetSongView();
+      setLoading(true);
+      const response = await fetch("/api/song-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: song.title, artist: song.artist }),
+      }).catch(() => null);
+      setLoading(false);
+      const payload = response ? ((await response.json().catch(() => null)) as SongSearchResponse | null) : null;
+      if (!response?.ok || !payload) {
+        setMessage(NOT_FOUND_MESSAGE);
+        return;
+      }
+      if (payload.found) {
+        applyPayload(payload);
+        return;
+      }
+      const firstSong = payload.songs?.[0];
+      if (firstSong) {
+        await selectSong(firstSong);
+        return;
+      }
+      setMessage(NOT_FOUND_MESSAGE);
+      return;
+    }
     resetSongView();
     setLoading(true);
 

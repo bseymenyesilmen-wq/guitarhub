@@ -20,6 +20,7 @@ const required = [
   "A-",
   "A+",
   "style={{ fontSize: `${playFontSize}rem` }}",
+  "song.source.startsWith(\"search:\")",
 ];
 
 const forbidden = [

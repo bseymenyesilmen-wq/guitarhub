@@ -134,6 +134,24 @@ const ARTIST_DISCOVERY_QUERIES: Record<string, string[]> = {
   duman: ["Duman Hayati Yasa", "Duman Tovbe", "Duman Senden Daha Guzel", "Duman Halimiz Duman", "Duman Aman Aman"],
 };
 
+const FALLBACK_TURKISH_RECOMMENDATIONS: SongSearchListItem[] = [
+  { artist: "Duman", title: "Hayatı Yaşa", source: "search:duman-hayati-yasa" },
+  { artist: "Duman", title: "Tövbe", source: "search:duman-tovbe" },
+  { artist: "Mor ve Ötesi", title: "Bir Derdim Var", source: "search:mor-ve-otesi-bir-derdim-var" },
+  { artist: "Manga", title: "Cevapsız Sorular", source: "search:manga-cevapsiz-sorular" },
+  { artist: "Teoman", title: "Paramparça", source: "search:teoman-paramparca" },
+  { artist: "Şebnem Ferah", title: "Sil Baştan", source: "search:sebnem-ferah-sil-bastan" },
+];
+
+const FALLBACK_FOREIGN_RECOMMENDATIONS: SongSearchListItem[] = [
+  { artist: "Radiohead", title: "Creep", source: "search:radiohead-creep" },
+  { artist: "Chris Isaak", title: "Wicked Game", source: "search:chris-isaak-wicked-game" },
+  { artist: "Arctic Monkeys", title: "Do I Wanna Know", source: "search:arctic-monkeys-do-i-wanna-know" },
+  { artist: "Nirvana", title: "Heart Shaped Box", source: "search:nirvana-heart-shaped-box" },
+  { artist: "Coldplay", title: "Yellow", source: "search:coldplay-yellow" },
+  { artist: "Eagles", title: "Hotel California", source: "search:eagles-hotel-california" },
+];
+
 function normalizeEscapedLineBreaks(content: string) {
   return content.replace(/\\t/g, "    ").replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n");
 }
@@ -867,13 +885,23 @@ async function fastFallbackRecommendations(existing: SongSearchListItem[], artis
   );
 }
 
+function emergencyFallbackRecommendations(artist: string, title: string) {
+  const base = isLikelyForeignSong(artist, title) ? FALLBACK_FOREIGN_RECOMMENDATIONS : FALLBACK_TURKISH_RECOMMENDATIONS;
+  return withFallbackCovers(
+    base
+      .filter((song) => normalizeText(song.title) !== normalizeText(title) || normalizeText(song.artist) !== normalizeText(artist))
+      .slice(0, 6),
+  );
+}
+
 async function buildFastDetailRecommendations(artist: string, title: string, existing: SongSearchListItem[] = [], currentProvider = "") {
   const fullRecommendationsPromise = buildSystemWideRecommendations(artist, title, existing, currentProvider);
   const quickCandidatesPromise = artist ? searchProviderRecommendationCandidates(artist, currentProvider).catch(() => []) : Promise.resolve([]);
   const quickCandidates = await withTimeout(quickCandidatesPromise, [], QUICK_RECOMMENDATION_TIMEOUT_MS);
   const quickFallback = await fastFallbackRecommendations([...existing, ...quickCandidates], artist, title);
   if (quickFallback.length >= 3) return quickFallback;
-  return withTimeout(fullRecommendationsPromise, quickFallback, DETAIL_RECOMMENDATION_TIMEOUT_MS);
+  const fullRecommendations = await withTimeout(fullRecommendationsPromise, quickFallback, DETAIL_RECOMMENDATION_TIMEOUT_MS);
+  return fullRecommendations.length ? fullRecommendations : emergencyFallbackRecommendations(artist, title);
 }
 
 async function getUakorJson<T>(url: string) {
