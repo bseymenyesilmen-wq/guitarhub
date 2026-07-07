@@ -58,7 +58,7 @@ export function ChatbotWidget() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Selam, ben Yoda. Müzik hakkında her şeyi sorabilirsin: şarkı, akor, gam, gitar, beste, prodüksiyon, mix mastering, repertuar ve GuitarHub kullanımı. Müzik dışı konulara girmem kanka.",
+      content: "Selam, ben Yoda. Müzik hakkında her şeyi sorabilirsin: şarkı, akor, gam, gitar, beste, prodüksiyon, mix mastering, repertuvar ve GuitarHub kullanımı. Müzik dışı konulara girmem kanka.",
     },
   ]);
 

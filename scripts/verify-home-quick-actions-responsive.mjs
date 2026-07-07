@@ -8,7 +8,7 @@ const page = readFileSync(join(__dirname, "..", "app", "page.tsx"), "utf8");
 const forbidden = [
   "const QUICK_ACTIONS",
   "QUICK_ACTIONS.map",
-  "Akor ve söz bul, beğendiğini repertuarına ekle.",
+  "Akor ve söz bul, beğendiğini repertuvarına ekle.",
   "Bilmediğin akorun basışını gör.",
   "Solo ve klavye çalışması için gamlara bak.",
 ];

@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 
 const NAV_ITEMS = [
   { href: "/", label: "Ana Sayfa", icon: "⌂" },
-  { href: "/repertuar", label: "Repertuar", icon: "♪" },
+  { href: "/repertuar", label: "Repertuvar", icon: "♪" },
   { href: "/sarki-ara", label: "Şarkı Ara", mobileLabel: "Ara", icon: "⌕" },
   { href: "/sarki-yaz", label: "Şarkı Yaz", mobileLabel: "Yaz", icon: "✎" },
   { href: "/akor-kutuphanesi", label: "Akorlar", icon: "♬" },

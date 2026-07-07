@@ -1,6 +1,6 @@
 # GuitarHub
 
-GuitarHub; repertuar, akor arama, pratik takibi ve müzik teorisi sayfaları olan bir Next.js uygulamasıdır.
+GuitarHub; repertuvar, akor arama, pratik takibi ve müzik teorisi sayfaları olan bir Next.js uygulamasıdır.
 
 ## Teknoloji
 

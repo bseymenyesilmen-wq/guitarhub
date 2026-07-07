@@ -49,7 +49,7 @@ export default function Kayit() {
       <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-8">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-red-400">GuitarHub</p>
         <h1 className="text-3xl font-black">Hesap olustur</h1>
-        <p className="mt-2 text-sm text-zinc-400">Kişisel repertuar ve akor arşivini hazırla.</p>
+        <p className="mt-2 text-sm text-zinc-400">Kişisel repertuvar ve akor arşivini hazırla.</p>
 
         <div className="mt-6 space-y-4">
           <input

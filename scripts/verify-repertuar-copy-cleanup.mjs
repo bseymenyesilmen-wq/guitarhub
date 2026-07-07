@@ -6,7 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repertuar = readFileSync(join(__dirname, "..", "app", "repertuar", "page.tsx"), "utf8");
 
 const required = [
-  "<h1 className=\"gh-title relative z-10 text-4xl font-black sm:text-5xl\">Repertuarım</h1>",
+  "<h1 className=\"gh-title relative z-10 text-4xl font-black sm:text-5xl\">Repertuvarım</h1>",
   "<h2 className=\"gh-section-title text-2xl font-black\">{selectedSetlist.name}</h2>",
   "draggable",
   "reorderSetlistSong",
@@ -28,4 +28,4 @@ if (missing.length || bad.length) {
   process.exit(1);
 }
 
-console.log("Repertuar marked helper copy is removed.");
+console.log("Repertuvar marked helper copy is removed.");

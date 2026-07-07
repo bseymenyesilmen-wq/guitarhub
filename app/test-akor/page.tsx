@@ -10,7 +10,7 @@ export default function TestAkor() {
         <h1 className="mt-3 text-3xl font-black">Akor testi devre dışı</h1>
         <p className="mt-3 text-zinc-300">
           Bu sayfa production build’i bozduğu için görsel akor paketi yerine güvenli bir yer tutucuya çevrildi.
-          Akor arama ve repertuar özellikleri ana uygulamada çalışmaya devam eder.
+          Akor arama ve repertuvar özellikleri ana uygulamada çalışmaya devam eder.
         </p>
         <Link href="/" className="mt-5 inline-block rounded-lg bg-red-600 px-4 py-3 font-bold hover:bg-red-500">
           Ana sayfaya dön

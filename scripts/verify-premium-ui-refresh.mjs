@@ -25,7 +25,7 @@ const checks = [
   [files.yoda, "shadow-red-950", "Yoda glow"],
   [files.repertuar, "setlistAccent", "setlist accent colors"],
   [files.repertuar, "gh-page", "repertuar premium background"],
-  [files.repertuar, "rounded-[1.4rem] border p-4", "playlist setlist cards"],
+  [files.repertuar, "rounded-[1.4rem] border p-3", "playlist setlist cards"],
 ];
 
 const missing = checks.filter(([content, snippet]) => !content.includes(snippet));

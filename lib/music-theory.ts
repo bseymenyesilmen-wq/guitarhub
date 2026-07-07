@@ -107,7 +107,7 @@ export const OPEN_STRING_NOTES_LOW_TO_HIGH = ["E", "A", "D", "G", "B", "E"];
 const POSITION_LIBRARY: Record<string, ChordPosition[]> = {
   A: [
     { id: "a-open-123", name: "Açık klasik", frets: ["x", 0, 2, 2, 2, 0], fingers: [0, 0, 1, 2, 3, 0], baseFret: 1, difficulty: "beginner", hint: "3 parmağı aynı perdeye sıkıştırmadan temiz bas." },
-    { id: "a-open-mini-barre", name: "Kolay tek parmak", frets: ["x", 0, 2, 2, 2, 0], fingers: [0, 0, 1, 1, 1, 0], baseFret: 1, barre: { fret: 2, fromString: 2, toString: 4, finger: 1 }, difficulty: "beginner", hint: "Tek parmakla mini barre; yüksek E telini açık bırakmak için parmağı hafif kıvır." },
+    { id: "a-open-mini-bare", name: "Kolay tek parmak", frets: ["x", 0, 2, 2, 2, 0], fingers: [0, 0, 1, 1, 1, 0], baseFret: 1, barre: { fret: 2, fromString: 2, toString: 4, finger: 1 }, difficulty: "beginner", hint: "Tek parmakla mini bare; yüksek E telini açık bırakmak için parmağı hafif kıvır." },
   ],
   Am: [
     { id: "am-open", name: "Açık pozisyon", frets: ["x", 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0], baseFret: 1, difficulty: "beginner", hint: "İşaret parmağı B telinde net duyulmalı." },
@@ -122,15 +122,15 @@ const POSITION_LIBRARY: Record<string, ChordPosition[]> = {
     { id: "am7-easy-one-finger", name: "Çok kolay", frets: ["x", 0, 2, 0, 1, 3], fingers: [0, 0, 2, 0, 1, 3], baseFret: 1, difficulty: "beginner", hint: "C akorundan Am7’ye geçerken yüzük parmağını yüksek E’ye al." },
   ],
   Amaj7: [{ id: "amaj7-open", name: "Açık maj7", frets: ["x", 0, 2, 1, 2, 0], fingers: [0, 0, 2, 1, 3, 0], baseFret: 1, difficulty: "intermediate", hint: "Yumuşak/jazzy major renk verir." }],
-  A6: [{ id: "a6-open", name: "Açık 6", frets: ["x", 0, 2, 2, 2, 2], fingers: [0, 0, 1, 1, 1, 1], baseFret: 1, barre: { fret: 2, fromString: 1, toString: 4, finger: 1 }, difficulty: "beginner", hint: "A major gibi ama daha parlak; tek parmakla 2. perde mini barre yapılabilir." }],
+  A6: [{ id: "a6-open", name: "Açık 6", frets: ["x", 0, 2, 2, 2, 2], fingers: [0, 0, 1, 1, 1, 1], baseFret: 1, barre: { fret: 2, fromString: 1, toString: 4, finger: 1 }, difficulty: "beginner", hint: "A major gibi ama daha parlak; tek parmakla 2. perde mini bare yapılabilir." }],
   Asus2: [{ id: "asus2-open", name: "Açık sus2", frets: ["x", 0, 2, 2, 0, 0], fingers: [0, 0, 1, 2, 0, 0], baseFret: 1, difficulty: "beginner", hint: "A akorundan B telindeki parmağı kaldır; modern pop tınısı verir." }],
   Asus4: [{ id: "asus4-open", name: "Açık sus4", frets: ["x", 0, 2, 2, 3, 0], fingers: [0, 0, 1, 2, 3, 0], baseFret: 1, difficulty: "beginner", hint: "A akoruna çözülünce güçlü asılı kalma hissi verir." }],
   Aadd9: [{ id: "aadd9-open", name: "Açık add9", frets: ["x", 0, 2, 4, 2, 0], fingers: [0, 0, 1, 3, 2, 0], baseFret: 1, difficulty: "intermediate", hint: "A, C#, E ve B seslerini verir; Asus2 ile karıştırma." }],
 
-  B7: [{ id: "b7-open", name: "Kolay açık B7", frets: ["x", 2, 1, 2, 0, 2], fingers: [0, 2, 1, 3, 0, 4], baseFret: 1, difficulty: "beginner", hint: "B barre yerine en pratik dominant çözüm; düşük E telini çalma." }],
+  B7: [{ id: "b7-open", name: "Kolay açık B7", frets: ["x", 2, 1, 2, 0, 2], fingers: [0, 2, 1, 3, 0, 4], baseFret: 1, difficulty: "beginner", hint: "B bare yerine en pratik dominant çözüm; düşük E telini çalma." }],
   Bm7: [
     { id: "bm7-easy-open", name: "Kolay açık Bm7", frets: ["x", 2, 0, 2, 0, 2], fingers: [0, 1, 0, 2, 0, 3], baseFret: 1, difficulty: "beginner", hint: "Bm bare zor geliyorsa bu açık min7 versiyonuyla eşlik edebilirsin." },
-    { id: "bm7-barre", name: "A-shape min7 barre", frets: ["x", 2, 4, 2, 3, 2], fingers: [0, 1, 3, 1, 2, 1], baseFret: 2, barre: { fret: 2, fromString: 1, toString: 5, finger: 1 }, difficulty: "intermediate", hint: "A telinden başlat; düşük E telini sustur." },
+    { id: "bm7-bare", name: "A-shape min7 bare", frets: ["x", 2, 4, 2, 3, 2], fingers: [0, 1, 3, 1, 2, 1], baseFret: 2, barre: { fret: 2, fromString: 1, toString: 5, finger: 1 }, difficulty: "intermediate", hint: "A telinden başlat; düşük E telini sustur." },
   ],
 
   C: [
@@ -144,13 +144,13 @@ const POSITION_LIBRARY: Record<string, ChordPosition[]> = {
     { id: "cmaj7-easy", name: "Çok kolay", frets: ["x", "x", 2, 0, 0, 0], fingers: [0, 0, 1, 0, 0, 0], baseFret: 1, difficulty: "beginner", hint: "Tek parmaklı mini maj7; ince tellerde temiz duyur." },
   ],
   Csus2: [{ id: "csus2-open", name: "Açık Csus2", frets: ["x", 3, 0, 0, 1, 3], fingers: [0, 3, 0, 0, 1, 4], baseFret: 1, difficulty: "beginner", hint: "Daha açık ve modern C rengi; D teli açık kalır." }],
-  Csus4: [{ id: "csus4-open", name: "Açık Csus4", frets: ["x", 3, 3, 0, 1, 1], fingers: [0, 3, 4, 0, 1, 1], baseFret: 1, difficulty: "intermediate", hint: "İnce iki teli mini barre ile tut; C’ye çözülünce güzel çalışır." }],
+  Csus4: [{ id: "csus4-open", name: "Açık Csus4", frets: ["x", 3, 3, 0, 1, 1], fingers: [0, 3, 4, 0, 1, 1], baseFret: 1, difficulty: "intermediate", hint: "İnce iki teli mini bare ile tut; C’ye çözülünce güzel çalışır." }],
   Cadd9: [{ id: "cadd9-open", name: "Açık Cadd9", frets: ["x", 3, 2, 0, 3, 3], fingers: [0, 3, 2, 0, 4, 4], baseFret: 1, difficulty: "beginner", hint: "G akoruyla geçişi kolaydır; pop/rock eşlikte çok kullanılır." }],
 
   D: [{ id: "d-open", name: "Açık klasik", frets: ["x", "x", 0, 2, 3, 2], fingers: [0, 0, 0, 1, 3, 2], baseFret: 1, difficulty: "beginner", hint: "Sadece D telinden itibaren çal; düşük telleri sustur." }],
   Dm: [{ id: "dm-open", name: "Açık Dm", frets: ["x", "x", 0, 2, 3, 1], fingers: [0, 0, 0, 2, 3, 1], baseFret: 1, difficulty: "beginner", hint: "İnce E telindeki 1. perde minör hissi verir; D telinden başla." }],
   D7: [{ id: "d7-open", name: "Açık D7", frets: ["x", "x", 0, 2, 1, 2], fingers: [0, 0, 0, 2, 1, 3], baseFret: 1, difficulty: "beginner", hint: "D’den G’ye çözülmek için klasik dominant pozisyon." }],
-  Dmaj7: [{ id: "dmaj7-open", name: "Açık Dmaj7", frets: ["x", "x", 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1], baseFret: 1, barre: { fret: 2, fromString: 1, toString: 3, finger: 1 }, difficulty: "beginner", hint: "Tek parmak mini barre; çok parlak ve yumuşak D rengi." }],
+  Dmaj7: [{ id: "dmaj7-open", name: "Açık Dmaj7", frets: ["x", "x", 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1], baseFret: 1, barre: { fret: 2, fromString: 1, toString: 3, finger: 1 }, difficulty: "beginner", hint: "Tek parmak mini bare; çok parlak ve yumuşak D rengi." }],
   Dsus2: [{ id: "dsus2-open", name: "Açık Dsus2", frets: ["x", "x", 0, 2, 3, 0], fingers: [0, 0, 0, 1, 3, 0], baseFret: 1, difficulty: "beginner", hint: "D akorundan ince E parmağını kaldır; çok kolay geçiş." }],
   Dsus4: [{ id: "dsus4-open", name: "Açık Dsus4", frets: ["x", "x", 0, 2, 3, 3], fingers: [0, 0, 0, 1, 2, 3], baseFret: 1, difficulty: "beginner", hint: "D akoruna küçük parmağı ekle; sonra D’ye çöz." }],
   Dadd9: [{ id: "dadd9-open", name: "Açık Dadd9", frets: ["x", 5, 4, 2, 3, 0], fingers: [0, 4, 3, 1, 2, 0], baseFret: 1, difficulty: "intermediate", hint: "D, F#, A ve E seslerini verir; açık ince E add9 rengidir." }],
@@ -165,19 +165,19 @@ const POSITION_LIBRARY: Record<string, ChordPosition[]> = {
   Eadd9: [{ id: "eadd9-open", name: "Açık Eadd9", frets: [0, 2, 2, 1, 0, 2], fingers: [0, 2, 3, 1, 0, 4], baseFret: 1, difficulty: "beginner", hint: "İnce E telindeki F# modern/parlak renk verir." }],
 
   F: [
-    { id: "f-easy-small", name: "Kolay mini F", frets: ["x", "x", 3, 2, 1, 1], fingers: [0, 0, 3, 2, 1, 1], baseFret: 1, barre: { fret: 1, fromString: 1, toString: 2, finger: 1 }, difficulty: "beginner", hint: "Tam barre zor geliyorsa 4 telli mini F kullan; düşük telleri çalma." },
-    { id: "fmaj7-open", name: "Fmaj7 kolay", frets: ["x", "x", 3, 2, 1, 0], fingers: [0, 0, 3, 2, 1, 0], baseFret: 1, difficulty: "beginner", hint: "F barre yerine en kolay alternatiflerden biri; pop şarkılarda çok kullanılır." },
-    { id: "f-barre", name: "E-shape barre", frets: [1, 3, 3, 2, 1, 1], fingers: [1, 3, 4, 2, 1, 1], baseFret: 1, barre: { fret: 1, fromString: 1, toString: 6, finger: 1 }, difficulty: "intermediate", hint: "Barre parmağını hafif yana yatır; bileği kasma." },
+    { id: "f-easy-small", name: "Kolay mini F", frets: ["x", "x", 3, 2, 1, 1], fingers: [0, 0, 3, 2, 1, 1], baseFret: 1, barre: { fret: 1, fromString: 1, toString: 2, finger: 1 }, difficulty: "beginner", hint: "Tam bare zor geliyorsa 4 telli mini F kullan; düşük telleri çalma." },
+    { id: "fmaj7-open", name: "Fmaj7 kolay", frets: ["x", "x", 3, 2, 1, 0], fingers: [0, 0, 3, 2, 1, 0], baseFret: 1, difficulty: "beginner", hint: "F bare yerine en kolay alternatiflerden biri; pop şarkılarda çok kullanılır." },
+    { id: "f-bare", name: "E-shape bare", frets: [1, 3, 3, 2, 1, 1], fingers: [1, 3, 4, 2, 1, 1], baseFret: 1, barre: { fret: 1, fromString: 1, toString: 6, finger: 1 }, difficulty: "intermediate", hint: "Bare parmağını hafif yana yatır; bileği kasma." },
   ],
   Fmaj7: [{ id: "fmaj7-open-library", name: "Kolay Fmaj7", frets: ["x", "x", 3, 2, 1, 0], fingers: [0, 0, 3, 2, 1, 0], baseFret: 1, difficulty: "beginner", hint: "F yerine kullanılabilecek yumuşak ve baresiz alternatif." }],
-  Fm: [{ id: "fm-small", name: "Mini Fm", frets: ["x", "x", 3, 1, 1, 1], fingers: [0, 0, 3, 1, 1, 1], baseFret: 1, barre: { fret: 1, fromString: 1, toString: 3, finger: 1 }, difficulty: "intermediate", hint: "Tam Fm barre yerine üst 4 telde kısa versiyon." }],
+  Fm: [{ id: "fm-small", name: "Mini Fm", frets: ["x", "x", 3, 1, 1, 1], fingers: [0, 0, 3, 1, 1, 1], baseFret: 1, barre: { fret: 1, fromString: 1, toString: 3, finger: 1 }, difficulty: "intermediate", hint: "Tam Fm bare yerine üst 4 telde kısa versiyon." }],
   "F#m": [
-    { id: "fsharpm-small", name: "Mini F#m", frets: ["x", "x", 4, 2, 2, 2], fingers: [0, 0, 3, 1, 1, 1], baseFret: 2, barre: { fret: 2, fromString: 1, toString: 3, finger: 1 }, difficulty: "intermediate", hint: "Tam barre zor gelirse üst 4 telde çal." },
-    { id: "fsharpm-barre", name: "E-shape minor barre", frets: [2, 4, 4, 2, 2, 2], fingers: [1, 3, 4, 1, 1, 1], baseFret: 2, barre: { fret: 2, fromString: 1, toString: 6, finger: 1 }, difficulty: "intermediate", hint: "F#m için en standart pozisyon; tüm telleri temiz duyurmaya çalış." },
+    { id: "fsharpm-small", name: "Mini F#m", frets: ["x", "x", 4, 2, 2, 2], fingers: [0, 0, 3, 1, 1, 1], baseFret: 2, barre: { fret: 2, fromString: 1, toString: 3, finger: 1 }, difficulty: "intermediate", hint: "Tam bare zor gelirse üst 4 telde çal." },
+    { id: "fsharpm-bare", name: "E-shape minor bare", frets: [2, 4, 4, 2, 2, 2], fingers: [1, 3, 4, 1, 1, 1], baseFret: 2, barre: { fret: 2, fromString: 1, toString: 6, finger: 1 }, difficulty: "intermediate", hint: "F#m için en standart pozisyon; tüm telleri temiz duyurmaya çalış." },
   ],
   "F#m7": [
     { id: "fsharpm7-easy", name: "Mini F#m7", frets: ["x", "x", 2, 2, 2, 2], fingers: [0, 0, 1, 1, 1, 1], baseFret: 2, barre: { fret: 2, fromString: 1, toString: 4, finger: 1 }, difficulty: "intermediate", hint: "Üst 4 telde F#m7 rengi; bas telleri çalma." },
-    { id: "fsharpm7-barre", name: "E-shape min7 barre", frets: [2, 4, 2, 2, 2, 2], fingers: [1, 3, 1, 1, 1, 1], baseFret: 2, barre: { fret: 2, fromString: 1, toString: 6, finger: 1 }, difficulty: "intermediate", hint: "Min7 rengi için D telindeki 4. perde yeterli." },
+    { id: "fsharpm7-bare", name: "E-shape min7 bare", frets: [2, 4, 2, 2, 2, 2], fingers: [1, 3, 1, 1, 1, 1], baseFret: 2, barre: { fret: 2, fromString: 1, toString: 6, finger: 1 }, difficulty: "intermediate", hint: "Min7 rengi için D telindeki 4. perde yeterli." },
   ],
 
   G: [

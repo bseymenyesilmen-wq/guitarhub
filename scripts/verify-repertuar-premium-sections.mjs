@@ -6,7 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repertuar = readFileSync(join(__dirname, "..", "app", "repertuar", "page.tsx"), "utf8");
 
 const required = [
-  "RepertuarQuickCard",
+  "RepertuvarQuickCard",
   "Kendi Şarkıların",
   "Taslaklar",
   "Setlistler",
@@ -14,7 +14,7 @@ const required = [
   "setlists.length.toString()",
   "Şarkı Yaz'a git",
   "Taslak cihazda",
-  "grid gap-3 md:grid-cols-3",
+  "grid gap-4 md:grid-cols-3",
   "bg-gradient-to-br from-red-600/25",
   "Kendi besten",
   "Düzenle",
@@ -27,4 +27,4 @@ if (missing.length) {
   process.exit(1);
 }
 
-console.log("Repertuar premium sections are wired.");
+console.log("Repertuvar premium sections are wired.");

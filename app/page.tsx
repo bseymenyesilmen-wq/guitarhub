@@ -103,14 +103,14 @@ export default function Home() {
                 {greeting}, {name}. Bugün ne çalıyoruz?
               </h1>
               <p className="gh-muted relative z-10 mt-4 max-w-2xl text-base sm:text-lg">
-                Repertuarına devam et, yeni şarkı ara, bilmediğin akoru aç veya gamlara göz at. Takılırsan sağ alttaki Yoda’ya sor.
+                Repertuvarına devam et, yeni şarkı ara, bilmediğin akoru aç veya gamlara göz at. Takılırsan sağ alttaki Yoda’ya sor.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link href="/sarki-ara" className="rounded-2xl bg-red-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-red-950/30 hover:bg-red-500">
                   Şarkı Ara
                 </Link>
                 <Link href="/repertuar" className="rounded-2xl border border-zinc-700 bg-zinc-900 px-6 py-4 text-center font-black text-zinc-100 hover:border-red-500 hover:bg-zinc-800">
-                  Repertuarı Aç
+                  Repertuvarı Aç
                 </Link>
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function Home() {
               ) : (
                 <div className="mt-4">
                   <h2 className="gh-section-title text-3xl font-black">İlk şarkını ekleyelim</h2>
-                  <p className="mt-3 text-zinc-300">Şarkı Ara’dan bir parça bulup repertuarına ekleyebilirsin.</p>
+                  <p className="mt-3 text-zinc-300">Şarkı Ara’dan bir parça bulup repertuvarına ekleyebilirsin.</p>
                   <Link href="/sarki-ara" className="mt-5 inline-flex rounded-2xl bg-white px-5 py-3 font-black text-zinc-950 hover:bg-red-100">
                     Şarkı Bul
                   </Link>
@@ -146,16 +146,16 @@ export default function Home() {
         ) : (
           <>
             <section className="hidden gap-4 lg:grid lg:grid-cols-3">
-              <StatCard label="Repertuar" value={songs.length.toString()} helper="Kaydettiğin toplam şarkı" actionLabel="Repertuvara git" href="/repertuar" />
+              <StatCard label="Repertuvar" value={songs.length.toString()} helper="Kaydettiğin toplam şarkı" actionLabel="Repertuvara git" href="/repertuar" />
               <StatCard label="Favoriler" value={favoriteCount.toString()} helper="Sık döndüğün parçalar" actionLabel="Favorileri göster" href="#favoriler" />
-              <StatCard label="Son Eklenen" value={songs[0]?.title ?? "Henüz yok"} helper="En yeni repertuar kaydı" actionLabel={songs[0] ? "Şarkıyı aç" : "Şarkı ara"} href={songs[0] ? `/sarki/${songs[0].id}` : "/sarki-ara"} />
+              <StatCard label="Son Eklenen" value={songs[0]?.title ?? "Henüz yok"} helper="En yeni repertuvar kaydı" actionLabel={songs[0] ? "Şarkıyı aç" : "Şarkı ara"} href={songs[0] ? `/sarki/${songs[0].id}` : "/sarki-ara"} />
             </section>
 
             <section className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[1.2fr_0.8fr]">
               <div className="gh-card rounded-3xl p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Repertuar akışı</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Repertuvar akışı</p>
                     <h2 className="gh-section-title mt-1 text-2xl font-black">Son Eklenen Şarkılar</h2>
                   </div>
                   <Link href="/repertuar" className="rounded-full bg-zinc-950 px-4 py-2 text-sm font-bold text-red-300 hover:bg-red-600 hover:text-white">
@@ -170,7 +170,7 @@ export default function Home() {
 
                   {songs.length === 0 && (
                     <div className="rounded-2xl border border-dashed border-zinc-700 p-5 text-zinc-400">
-                      Repertuarında henüz şarkı yok. İlk parçanı bulmak için Şarkı Ara’ya git.
+                      Repertuvarında henüz şarkı yok. İlk parçanı bulmak için Şarkı Ara’ya git.
                     </div>
                   )}
                 </div>

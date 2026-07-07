@@ -33,7 +33,7 @@ function setlistAccent(index: number) {
   return ["from-red-600/25", "from-purple-600/25", "from-sky-600/20", "from-amber-500/20"][index % 4];
 }
 
-function RepertuarQuickCard({ title, value, helper, action, href, accent = false }: { title: string; value: string; helper: string; action: string; href: string; accent?: boolean }) {
+function RepertuvarQuickCard({ title, value, helper, action, href, accent = false }: { title: string; value: string; helper: string; action: string; href: string; accent?: boolean }) {
   return (
     <Link href={href} className={`rounded-[1.6rem] border p-4 shadow-xl shadow-black/15 transition hover:-translate-y-0.5 hover:border-red-400/70 ${accent ? "border-red-500/30 bg-gradient-to-br from-red-600/25 to-zinc-950" : "border-white/10 bg-zinc-900/80"}`}>
       <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">{title}</p>
@@ -44,7 +44,7 @@ function RepertuarQuickCard({ title, value, helper, action, href, accent = false
   );
 }
 
-export default function Repertuar() {
+export default function Repertuvar() {
   const router = useRouter();
   const [setlists, setSetlists] = useState<LoadedSetlist[]>([]);
   const [ownSongs, setOwnSongs] = useState<Song[]>([]);
@@ -59,6 +59,7 @@ export default function Repertuar() {
   const [movingId, setMovingId] = useState<number | null>(null);
   const [draggedSetlistSongId, setDraggedSetlistSongId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingSetlistId, setDeletingSetlistId] = useState<number | null>(null);
 
   const loadSetlists = useCallback(async () => {
     setLoading(true);
@@ -173,6 +174,46 @@ export default function Repertuar() {
     setSelectedSetlistId(created.id);
     setNewSetlistName("");
     setMessage("Setlist oluşturuldu.");
+  }
+
+  async function deleteSetlist(setlist: LoadedSetlist) {
+    const confirmDelete = window.confirm(`“${setlist.name}” setlistini silmek istiyor musun?`);
+    if (!confirmDelete) return;
+
+    setDeletingSetlistId(setlist.id);
+    setMessage("");
+
+    if (storageMode === "local") {
+      const nextSetlists = readLocalSetlists().filter((item) => item.id !== setlist.id);
+      writeLocalSetlists(nextSetlists);
+      setSetlists(nextSetlists);
+      setSelectedSetlistId((current) => (current === setlist.id ? nextSetlists[0]?.id ?? null : current));
+      setDeletingSetlistId(null);
+      setMessage("Setlist silindi.");
+      return;
+    }
+
+    const { error: songsError } = await supabase.from("setlist_songs").delete().eq("setlist_id", setlist.id);
+    if (songsError) {
+      setDeletingSetlistId(null);
+      setMessage(songsError.message);
+      return;
+    }
+
+    const { error } = await supabase.from("setlists").delete().eq("id", setlist.id);
+    setDeletingSetlistId(null);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setSetlists((current) => {
+      const nextSetlists = current.filter((item) => item.id !== setlist.id);
+      setSelectedSetlistId((currentSelected) => (currentSelected === setlist.id ? nextSetlists[0]?.id ?? null : currentSelected));
+      return nextSetlists;
+    });
+    setMessage("Setlist silindi.");
   }
 
   async function deleteSetlistSong(item: LoadedSetlistSong) {
@@ -304,7 +345,7 @@ export default function Repertuar() {
         <AppNav />
 
         <section className="gh-hero mb-6 p-5 sm:p-6">
-          <h1 className="gh-title relative z-10 text-4xl font-black sm:text-5xl">Repertuarım</h1>
+          <h1 className="gh-title relative z-10 text-4xl font-black sm:text-5xl">Repertuvarım</h1>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link href="/sarki-ara" className="inline-flex min-h-11 items-center rounded-full bg-red-600 px-5 font-bold hover:bg-red-500">
               Şarkı ara ve ekle
@@ -316,9 +357,9 @@ export default function Repertuar() {
         {message && <p className="mb-4 rounded-lg bg-zinc-900 p-3 text-sm text-zinc-200">{message}</p>}
 
         <section className="mb-6 grid gap-4 md:grid-cols-3">
-          <RepertuarQuickCard title="Kendi Şarkıların" value={ownSongs.length.toString()} helper="Şarkı Yaz’dan kaydedilen bestelerin" action="Şarkı Yaz'a git" href="/sarki-yaz" accent />
-          <RepertuarQuickCard title="Taslaklar" value="1" helper="Taslak cihazda otomatik saklanır" action="Taslağı aç" href="/sarki-yaz" />
-          <RepertuarQuickCard title="Setlistler" value={setlists.length.toString()} helper="Konser/prova klasörlerin" action="Setlistlere bak" href="#setlistler" />
+          <RepertuvarQuickCard title="Kendi Şarkıların" value={ownSongs.length.toString()} helper="Şarkı Yaz’dan kaydedilen bestelerin" action="Şarkı Yaz'a git" href="/sarki-yaz" accent />
+          <RepertuvarQuickCard title="Taslaklar" value="1" helper="Taslak cihazda otomatik saklanır" action="Taslağı aç" href="/sarki-yaz" />
+          <RepertuvarQuickCard title="Setlistler" value={setlists.length.toString()} helper="Konser/prova klasörlerin" action="Setlistlere bak" href="#setlistler" />
         </section>
 
         <section className="gh-card mb-6 rounded-3xl bg-gradient-to-br from-zinc-900/90 to-red-950/20 p-4 sm:p-5">
@@ -371,7 +412,7 @@ export default function Repertuar() {
         </section>
 
         {loading ? (
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-zinc-300">Repertuar yükleniyor...</div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-zinc-300">Repertuvar yükleniyor...</div>
         ) : (
           <section id="setlistler" className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
             <aside className="gh-card rounded-3xl p-4 lg:sticky lg:top-4 lg:self-start">
@@ -384,15 +425,24 @@ export default function Repertuar() {
                   const count = setlist.setlist_songs?.length ?? 0;
                   const lastSong = sortedSetlistSongs(setlist).at(-1)?.songs;
                   return (
-                    <button
+                    <div
                       key={setlist.id}
-                      onClick={() => setSelectedSetlistId(setlist.id)}
-                      className={`w-full rounded-[1.4rem] border p-4 text-left shadow-lg shadow-black/15 transition hover:-translate-y-0.5 hover:border-red-500/50 ${selectedSetlist?.id === setlist.id ? `border-red-500/50 bg-gradient-to-br ${setlistAccent(index)} to-zinc-950 ring-1 ring-red-600/40` : `border-white/10 bg-gradient-to-br ${setlistAccent(index)} to-zinc-950/80`}`}
+                      className={`rounded-[1.4rem] border p-3 shadow-lg shadow-black/15 transition hover:-translate-y-0.5 hover:border-red-500/50 ${selectedSetlist?.id === setlist.id ? `border-red-500/50 bg-gradient-to-br ${setlistAccent(index)} to-zinc-950 ring-1 ring-red-600/40` : `border-white/10 bg-gradient-to-br ${setlistAccent(index)} to-zinc-950/80`}`}
                     >
-                      <span className="block truncate font-black">{setlist.name}</span>
-                      <span className="mt-1 block text-sm text-zinc-500">{count} şarkı</span>
-                      <span className="mt-1 block truncate text-xs text-zinc-600">Son eklenen: {lastSong ? `${lastSong.artist} - ${lastSong.title}` : "Henüz yok"}</span>
-                    </button>
+                      <button type="button" onClick={() => setSelectedSetlistId(setlist.id)} className="w-full rounded-2xl p-1 text-left">
+                        <span className="block truncate font-black">{setlist.name}</span>
+                        <span className="mt-1 block text-sm text-zinc-500">{count} şarkı</span>
+                        <span className="mt-1 block truncate text-xs text-zinc-600">Son eklenen: {lastSong ? `${lastSong.artist} - ${lastSong.title}` : "Henüz yok"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteSetlist(setlist)}
+                        disabled={deletingSetlistId === setlist.id}
+                        className="mt-3 min-h-9 rounded-xl bg-red-950/70 px-3 py-2 text-xs font-black text-red-100 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {deletingSetlistId === setlist.id ? "Siliniyor..." : "Setlisti Sil"}
+                      </button>
+                    </div>
                   );
                 })}
 
@@ -411,12 +461,22 @@ export default function Repertuar() {
                     <div>
                       <h2 className="gh-section-title text-2xl font-black">{selectedSetlist.name}</h2>
                     </div>
-                    <input
-                      className="min-h-11 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
-                      placeholder="Bu setlistte ara"
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                    />
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        className="min-h-11 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
+                        placeholder="Bu setlistte ara"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void deleteSetlist(selectedSetlist)}
+                        disabled={deletingSetlistId === selectedSetlist.id}
+                        className="min-h-11 rounded-xl bg-red-950/80 px-4 py-3 text-sm font-black text-red-100 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {deletingSetlistId === selectedSetlist.id ? "Siliniyor..." : "Setlisti Sil"}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-4 space-y-3">

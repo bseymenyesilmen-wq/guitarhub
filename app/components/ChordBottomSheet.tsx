@@ -53,7 +53,7 @@ export function ChordBottomSheet({ chord, onClose }: Props) {
                   <h3 className="font-black">{position.name}</h3>
                   <p className="text-sm text-zinc-400">Zorluk: {difficultyLabel[position.difficulty]}</p>
                 </div>
-                {position.barre && <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-bold">Barre {position.barre.fret}. perde</span>}
+                {position.barre && <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-bold">Bare {position.barre.fret}. perde</span>}
               </div>
               <ChordDiagram position={position} title={chord.name} />
             </article>
