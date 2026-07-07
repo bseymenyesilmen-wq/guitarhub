@@ -12,10 +12,10 @@ const required = [
   "chords-only",
   "Sadece akor öner",
   "polish-lyrics",
-  "Sözleri parlat",
+  "Sözleri güçlendir",
   "Eğer öneri tipi \"Sadece söz öner\"",
   "Eğer öneri tipi \"Sadece akor öner\"",
-  "Eğer öneri tipi \"Sözleri parlat\"",
+  "Eğer öneri tipi \"Sözleri güçlendir\"",
   "Sadece istenen alanı güçlendir",
 ];
 

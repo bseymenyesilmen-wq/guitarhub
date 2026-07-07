@@ -41,9 +41,7 @@ function suggestionTypeLabel(value?: string) {
     case "chords-only":
       return "Sadece akor öner";
     case "polish-lyrics":
-      return "Sözleri parlat";
-    case "sadder":
-      return "Daha hüzünlü yap";
+      return "Sözleri güçlendir";
     default:
       return "Devamını yaz";
   }
@@ -97,7 +95,7 @@ function fallbackSuggestion(notebook: string, sectionName: string, suggestionTyp
   const selectedMood = moodPresetLabel(moodPreset);
   const existingRhymeHint = detectRhymeHint(notebook);
   const sadWords = ["gece", "yalnız", "özledim", "ağla", "kırık", "yorgun", "duman", "acı"];
-  const isSad = moodPreset === "sad" || suggestionType === "sadder" || sadWords.some((word) => lower.includes(word));
+  const isSad = moodPreset === "sad" || sadWords.some((word) => lower.includes(word));
   const isBridge = sectionName.toLocaleLowerCase("tr-TR").includes("bridge");
   const isChorus = sectionName.toLocaleLowerCase("tr-TR").includes("nakarat");
 
@@ -107,9 +105,7 @@ function fallbackSuggestion(notebook: string, sectionName: string, suggestionTyp
       ? "Bridge bölümünde gerilimi biraz artırıp nakarata temiz çöz."
       : isChorus
         ? "Nakaratta cümleyi daha kısa, tekrar edilebilir ve akılda kalır yap."
-        : suggestionType === "sadder"
-          ? "Aynı fikri daha kırılgan ve içe dönük bir tona çek."
-          : `Aynı havayı bozmadan 1-2 satır devam ettir. Kafiye ipucu: ${existingRhymeHint}.`,
+        : `Aynı havayı bozmadan 1-2 satır devam ettir. Kafiye ipucu: ${existingRhymeHint}.`,
     suggestedChords: isSad ? "Am        F        C        G" : moodPreset === "lofi" ? "Am7       Dm7      G7       Cmaj7" : moodPreset === "rock" || moodPreset === "angry" ? "Em        G        D        A" : "C         G        Am       F",
     suggestedLyrics: isSad
       ? "İçimde susmayan bir gece var\nAdını söylesem yine dağılır"
@@ -180,9 +176,9 @@ Kurallar:
 - Eğer öneri tipi "Devamını yaz" ise seçilen bölümün doğal devamını yaz; Bölüm Nakarat ise daha tekrar edilebilir ve güçlü, Bölüm Bridge ise geçiş hissi veren farklı ama uyumlu renk kullan.
 - Eğer öneri tipi "Sadece söz öner" ise suggestedLyrics'i güçlendir, suggestedChords alanında mevcut/uyumlu akoru kısa tut.
 - Eğer öneri tipi "Sadece akor öner" ise suggestedChords'u öne çıkar, suggestedLyrics alanında mevcut sözleri bozma ve kısa not yaz.
-- Eğer öneri tipi "Sözleri parlat" ise mevcut sözleri aynı anlamda daha kafiyeli, daha doğal ve daha vurucu yap.
+- Eğer öneri tipi "Sözleri güçlendir" ise mevcut sözleri aynı anlamda daha kafiyeli, daha doğal ve daha vurucu yap.
 - Sadece istenen alanı güçlendir; kullanıcı söz istediyse gereksiz akor kalabalığı, akor istediyse gereksiz yeni söz yazma.
-- Eğer öneri tipi "Daha hüzünlü yap" ise sözleri daha kırılgan ve minor hisli öner.`;
+`;
 
   const candidateBaseUrls = Array.from(new Set([baseUrl, baseUrl.replace(":8642", "")])).filter(Boolean);
   for (const candidateBaseUrl of candidateBaseUrls) {

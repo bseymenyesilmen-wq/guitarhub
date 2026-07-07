@@ -12,10 +12,9 @@ const required = [
   "mobileLabel",
   "grid-cols-6",
   "Şarkı Yaz",
-  "Şarkı Yaz · kompakt beste defteri",
   "Şarkı defteri",
-  "Akor/söz defteri",
-  "Kaydet",
+  "Akor ve söz defteri",
+  "Repertuvara Kaydet",
   "guitarhub-songwriter-draft",
 ];
 

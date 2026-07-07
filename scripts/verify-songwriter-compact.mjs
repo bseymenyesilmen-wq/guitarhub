@@ -7,15 +7,14 @@ const writer = readFileSync(join(__dirname, "..", "app", "sarki-yaz", "page.tsx"
 
 const required = [
   "max-w-6xl",
-  "Şarkı Yaz · kompakt beste defteri",
-  "rounded-2xl border border-zinc-800 bg-zinc-950/75 p-4",
+  "rounded-[1.75rem] border border-white/10 bg-zinc-950/70 p-4",
   "grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]",
   "Kısa bilgi",
   "AI ayarları",
   "+ {sectionBlock.replace",
-  "rows={18}",
+  "rows={20}",
   "min-h-10",
-  "Kaydet",
+  "Repertuvara Kaydet",
 ];
 
 const forbidden = [

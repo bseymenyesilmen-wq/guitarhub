@@ -30,8 +30,7 @@ const SUGGESTION_TYPES = [
   { value: "continue", label: "Devamını yaz", hint: "Seçilen bölüme göre aynı havada 1-2 satır devam önerir." },
   { value: "lyrics-only", label: "Sadece söz öner", hint: "Akorlara ve duyguya göre sadece söz önerir." },
   { value: "chords-only", label: "Sadece akor öner", hint: "Sözlerin duygu/kafiyesine göre sadece akor önerir." },
-  { value: "polish-lyrics", label: "Sözleri parlat", hint: "Yazdığın sözleri bozmadan daha güçlü yapar." },
-  { value: "sadder", label: "Daha hüzünlü yap", hint: "Söz ve akoru daha duygusal tarafa çeker." },
+  { value: "polish-lyrics", label: "Sözleri güçlendir", hint: "Yazdığın sözleri anlamını bozmadan daha doğal ve etkili hale getirir." },
 ] as const;
 
 type Draft = {
@@ -250,11 +249,7 @@ export default function SarkiYaz() {
 
         <section className="relative mb-4 overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
           <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-red-600/20 blur-3xl" />
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-red-400">Şarkı Yaz · loş beste defteri</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Şarkı Yaz</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
-            Akor/söz defteri, AI öneri ve repertuvara kaydetme tek ekranda.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Şarkı Yaz</h1>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
@@ -301,7 +296,6 @@ export default function SarkiYaz() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-black">Şarkı defteri</h2>
-                <p className="mt-1 text-xs text-zinc-500">Akor satırı üstte, söz satırı altta.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button onClick={getSystemSuggestion} disabled={suggestionLoading} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">

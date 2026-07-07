@@ -17,7 +17,7 @@ const checks = [
   [detail, "Ekran Açık", "detail wake lock button"],
   [detail, "navigator as Navigator", "detail wake lock API"],
   [chordSheet, "Pozisyon", "simple chord position summary"],
-  [songwriter, "loş beste defteri", "songwriter notebook hero"],
+  [songwriter, "Şarkı defteri", "songwriter notebook section"],
   [songwriter, "bg-[#f4ead5]", "paper notebook shell"],
   [songwriter, "bg-[#fff7e8]", "non-drifting paper textarea"],
   [songwriter, "Akor ve söz defteri", "notebook label"],
