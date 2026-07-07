@@ -62,6 +62,71 @@ const TUNINGS: TuningPreset[] = [
       { label: "E4", frequency: 329.63 },
     ],
   },
+  {
+    id: "d-standard",
+    name: "D Standard",
+    helper: "D G C F A D",
+    strings: [
+      { label: "D2", frequency: 73.42 },
+      { label: "G2", frequency: 98.0 },
+      { label: "C3", frequency: 130.81 },
+      { label: "F3", frequency: 174.61 },
+      { label: "A3", frequency: 220.0 },
+      { label: "D4", frequency: 293.66 },
+    ],
+  },
+  {
+    id: "drop-c",
+    name: "Drop C",
+    helper: "C G C F A D",
+    strings: [
+      { label: "C2", frequency: 65.41 },
+      { label: "G2", frequency: 98.0 },
+      { label: "C3", frequency: 130.81 },
+      { label: "F3", frequency: 174.61 },
+      { label: "A3", frequency: 220.0 },
+      { label: "D4", frequency: 293.66 },
+    ],
+  },
+  {
+    id: "dadgad",
+    name: "DADGAD",
+    helper: "D A D G A D",
+    strings: [
+      { label: "D2", frequency: 73.42 },
+      { label: "A2", frequency: 110.0 },
+      { label: "D3", frequency: 146.83 },
+      { label: "G3", frequency: 196.0 },
+      { label: "A3", frequency: 220.0 },
+      { label: "D4", frequency: 293.66 },
+    ],
+  },
+  {
+    id: "open-g",
+    name: "Open G",
+    helper: "D G D G B D",
+    strings: [
+      { label: "D2", frequency: 73.42 },
+      { label: "G2", frequency: 98.0 },
+      { label: "D3", frequency: 146.83 },
+      { label: "G3", frequency: 196.0 },
+      { label: "B3", frequency: 246.94 },
+      { label: "D4", frequency: 293.66 },
+    ],
+  },
+  {
+    id: "open-d",
+    name: "Open D",
+    helper: "D A D F# A D",
+    strings: [
+      { label: "D2", frequency: 73.42 },
+      { label: "A2", frequency: 110.0 },
+      { label: "D3", frequency: 146.83 },
+      { label: "F#3", frequency: 185.0 },
+      { label: "A3", frequency: 220.0 },
+      { label: "D4", frequency: 293.66 },
+    ],
+  },
 ];
 
 function noteFromFrequency(frequency: number) {
@@ -142,6 +207,8 @@ function ringTone(cents: number, running: boolean) {
 export default function TunerPage() {
   const [presetId, setPresetId] = useState(TUNINGS[0].id);
   const [selectedString, setSelectedString] = useState(0);
+  const [autoDetect, setAutoDetect] = useState(true);
+  const [completedStrings, setCompletedStrings] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState("Mikrofon otomatik açılıyor...");
   const [detection, setDetection] = useState<Detection | null>(null);
@@ -157,6 +224,7 @@ export default function TunerPage() {
   const cents = detection?.cents ?? 0;
   const needle = Math.max(-47, Math.min(47, cents));
   const tuned = detection ? Math.abs(detection.cents) <= 5 : false;
+  const allStringsReady = preset.strings.every((string) => completedStrings.includes(`${preset.id}:${string.label}`));
 
   const stopTuner = useCallback(() => {
     if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
@@ -241,20 +309,23 @@ export default function TunerPage() {
 
       const frequency = autoCorrelate(buffer, audioContext.sampleRate);
       if (frequency && frequency >= 60 && frequency <= 420) {
-        const closest = closestString(frequency, preset);
-        const centsToString = Math.round(1200 * Math.log2(frequency / closest.frequency));
+        const target = autoDetect ? closestString(frequency, preset) : targetString;
+        const centsToString = Math.round(1200 * Math.log2(frequency / target.frequency));
         const note = noteFromFrequency(frequency);
         setDetection({
           frequency,
           note: note.note,
           octave: note.octave,
           cents: centsToString,
-          targetLabel: closest.label,
-          targetFrequency: closest.frequency,
+          targetLabel: target.label,
+          targetFrequency: target.frequency,
         });
-        const exactIndex = preset.strings.findIndex((string) => string.label === closest.label);
-        if (exactIndex >= 0) setSelectedString(exactIndex);
-        if (Math.abs(centsToString) <= 5 && "vibrate" in navigator) navigator.vibrate?.(18);
+        const exactIndex = preset.strings.findIndex((string) => string.label === target.label);
+        if (autoDetect && exactIndex >= 0) setSelectedString(exactIndex);
+        if (Math.abs(centsToString) <= 5) {
+          setCompletedStrings((current) => (current.includes(`${preset.id}:${target.label}`) ? current : [...current, `${preset.id}:${target.label}`]));
+          if ("vibrate" in navigator) navigator.vibrate?.(18);
+        }
       }
       frameRef.current = window.requestAnimationFrame(tick);
     };
@@ -263,7 +334,7 @@ export default function TunerPage() {
     return () => {
       if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
     };
-  }, [preset, running]);
+  }, [autoDetect, preset, running, targetString]);
 
   return (
     <main className="gh-page min-h-screen overflow-hidden p-4 pb-28 text-white sm:p-6 md:pb-6">
@@ -280,6 +351,22 @@ export default function TunerPage() {
 
         <section className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr]">
           <aside className="gh-card rounded-[1.75rem] p-4 sm:p-5">
+            <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl bg-zinc-950/70 p-2">
+              <button
+                type="button"
+                onClick={() => setAutoDetect(true)}
+                className={`rounded-xl px-3 py-2 text-sm font-black ${autoDetect ? "bg-emerald-500 text-zinc-950" : "text-zinc-400 hover:bg-zinc-900"}`}
+              >
+                Otomatik
+              </button>
+              <button
+                type="button"
+                onClick={() => setAutoDetect(false)}
+                className={`rounded-xl px-3 py-2 text-sm font-black ${!autoDetect ? "bg-white text-zinc-950" : "text-zinc-400 hover:bg-zinc-900"}`}
+              >
+                Manuel
+              </button>
+            </div>
             <h2 className="gh-section-title text-xl font-black">Akort modu</h2>
             <div className="mt-4 grid gap-2">
               {TUNINGS.map((item) => (
@@ -290,6 +377,7 @@ export default function TunerPage() {
                     setPresetId(item.id);
                     setSelectedString(0);
                     setDetection(null);
+                    setCompletedStrings([]);
                   }}
                   className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 ${presetId === item.id ? "border-red-400 bg-red-600 text-white shadow-lg shadow-red-950/40" : "border-white/10 bg-zinc-950/70 text-zinc-300 hover:border-red-500/50"}`}
                 >
@@ -303,6 +391,7 @@ export default function TunerPage() {
             <div className="mt-4 grid grid-cols-3 gap-2">
               {preset.strings.map((string, index) => {
                 const active = selectedString === index;
+                const completed = completedStrings.includes(`${preset.id}:${string.label}`);
                 return (
                   <button
                     key={`${preset.id}-${string.label}`}
@@ -311,14 +400,46 @@ export default function TunerPage() {
                       setSelectedString(index);
                       void playReferenceTone(string.frequency);
                     }}
-                    className={`group relative min-h-16 overflow-hidden rounded-2xl border text-lg font-black transition hover:-translate-y-0.5 ${active ? "border-emerald-300 bg-emerald-500 text-zinc-950 shadow-lg shadow-emerald-500/25" : "border-white/10 bg-zinc-950 text-zinc-300 hover:border-red-500/50 hover:bg-zinc-900"}`}
+                    className={`group relative min-h-16 overflow-hidden rounded-2xl border text-lg font-black transition hover:-translate-y-0.5 ${completed ? "border-emerald-300 bg-emerald-500 text-zinc-950 shadow-lg shadow-emerald-500/25" : active ? "border-amber-300 bg-amber-400 text-zinc-950 shadow-lg shadow-amber-500/20" : "border-white/10 bg-zinc-950 text-zinc-300 hover:border-red-500/50 hover:bg-zinc-900"}`}
                   >
-                    <span className="relative z-10 block">{string.label}</span>
+                    <span className="relative z-10 block">{completed ? "✓ " : ""}{string.label}</span>
                     <span className="relative z-10 text-[10px] opacity-70">çal</span>
                     <span className="absolute inset-x-2 bottom-2 h-1 rounded-full bg-white/20 group-active:bg-white" />
                   </button>
                 );
               })}
+            </div>
+
+            <div className="mt-6 rounded-[1.6rem] border border-white/10 bg-black/30 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-[0.16em] text-red-200">Gitar kafa</h3>
+                <span className={`rounded-full px-3 py-1 text-xs font-black ${allStringsReady ? "bg-emerald-500 text-zinc-950" : "bg-zinc-900 text-zinc-400"}`}>
+                  {allStringsReady ? "Gitar hazır" : `${completedStrings.filter((item) => item.startsWith(`${preset.id}:`)).length}/6 hazır`}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {preset.strings.map((string, index) => {
+                  const completed = completedStrings.includes(`${preset.id}:${string.label}`);
+                  const active = selectedString === index;
+                  return (
+                    <button
+                      key={`head-${preset.id}-${string.label}-${index}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedString(index);
+                        void playReferenceTone(string.frequency);
+                      }}
+                      className={`grid w-full grid-cols-[3rem_1fr_2.25rem] items-center gap-2 rounded-2xl px-3 py-2 text-left transition ${completed ? "bg-emerald-500/15 text-emerald-100" : active ? "bg-red-600/20 text-red-100" : "bg-zinc-950/70 text-zinc-400 hover:bg-zinc-900"}`}
+                    >
+                      <span className="font-black">{string.label}</span>
+                      <span className="h-0.5 rounded-full bg-gradient-to-r from-zinc-700 via-zinc-300 to-zinc-700" />
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${completed ? "bg-emerald-400 text-zinc-950" : active ? "bg-red-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>
+                        {completed ? "✓" : "●"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </aside>
 
@@ -353,6 +474,7 @@ export default function TunerPage() {
               <p className="mt-3 text-sm font-bold text-zinc-400">
                 {detection ? `${detection.frequency.toFixed(1)} Hz · hedef ${detection.targetLabel} ${detection.targetFrequency.toFixed(1)} Hz` : `${targetString.frequency.toFixed(1)} Hz hedef`}
               </p>
+              {allStringsReady && <p className="mx-auto mt-4 max-w-xs rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/30">✓ Gitar hazır!</p>}
 
               <div className="mx-auto mt-7 max-w-xl">
                 <div className="relative h-28 rounded-t-full border-x border-t border-white/10 bg-gradient-to-b from-zinc-900 to-zinc-950">

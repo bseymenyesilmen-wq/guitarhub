@@ -18,6 +18,17 @@ const required = [
   [tuner, "autoCorrelate", "pitch detection"],
   [tuner, "playReferenceTone", "reference string sound"],
   [tuner, "oscillator.frequency.value = frequency", "oscillator note frequency"],
+  [tuner, "autoDetect", "auto/manual string mode"],
+  [tuner, "Otomatik", "automatic string label"],
+  [tuner, "Manuel", "manual string label"],
+  [tuner, "completedStrings", "completed strings state"],
+  [tuner, "Gitar hazır", "all strings ready status"],
+  [tuner, "Gitar kafa", "guitar headstock visual"],
+  [tuner, "D Standard", "d standard tuning"],
+  [tuner, "Drop C", "drop c tuning"],
+  [tuner, "DADGAD", "dadgad tuning"],
+  [tuner, "Open G", "open g tuning"],
+  [tuner, "Open D", "open d tuning"],
   [tuner, "Standart", "standard tuning"],
   [tuner, "Yarım ses düşük", "half step tuning"],
   [tuner, "Drop D", "drop d tuning"],
@@ -48,4 +59,4 @@ if (missing.length || bad.length) {
   process.exit(1);
 }
 
-console.log("Animated auto-mic tuner with reference tones is wired.");
+console.log("Advanced tuner modes, presets, completion and headstock UI are wired.");
