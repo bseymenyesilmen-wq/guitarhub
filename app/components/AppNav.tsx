@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/sarki-yaz", label: "Şarkı Yaz", mobileLabel: "Yaz", icon: "✎" },
   { href: "/akor-kutuphanesi", label: "Akorlar", icon: "♬" },
   { href: "/gam-kutuphanesi", label: "Gamlar", icon: "◎" },
+  { href: "/tuner", label: "Tuner", icon: "♩" },
 ];
 
 export function AppNav() {
@@ -64,7 +65,7 @@ export function AppNav() {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black/70 px-2 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2 shadow-2xl shadow-black backdrop-blur-2xl md:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-6 gap-1 rounded-[1.4rem] border border-white/10 bg-zinc-950/70 p-1">
+        <div className="mx-auto grid max-w-xl grid-cols-7 gap-1 rounded-[1.4rem] border border-white/10 bg-zinc-950/70 p-1">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
             return (

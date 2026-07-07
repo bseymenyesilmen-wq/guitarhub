@@ -13,6 +13,7 @@ const files = {
   songwriter: read("app", "sarki-yaz", "page.tsx"),
   chords: read("app", "akor-kutuphanesi", "page.tsx"),
   scales: read("app", "gam-kutuphanesi", "page.tsx"),
+  tuner: read("app", "tuner", "page.tsx"),
 };
 
 const required = [
@@ -26,6 +27,8 @@ const required = [
   [files.songwriter, "gh-hero", "songwriter hero"],
   [files.chords, "gh-hero", "chord library hero"],
   [files.scales, "gh-hero", "scale library hero"],
+  [files.tuner, "gh-hero", "tuner hero"],
+  [files.tuner, "gh-title", "tuner title style"],
   [files.repertuar, "gh-section-title text-2xl", "repertuar selected setlist title polish"],
   [files.songwriter, "gh-section-title text-xl", "songwriter notebook title polish"],
 ];

@@ -112,6 +112,9 @@ export default function Home() {
                 <Link href="/repertuar" className="rounded-2xl border border-zinc-700 bg-zinc-900 px-6 py-4 text-center font-black text-zinc-100 hover:border-red-500 hover:bg-zinc-800">
                   Repertuvarı Aç
                 </Link>
+                <Link href="/tuner" className="rounded-2xl border border-red-500/40 bg-red-950/40 px-6 py-4 text-center font-black text-red-100 hover:border-red-400 hover:bg-red-900/60">
+                  Tuner Aç
+                </Link>
               </div>
             </div>
 
