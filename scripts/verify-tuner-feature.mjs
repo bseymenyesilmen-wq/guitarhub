@@ -23,7 +23,6 @@ const required = [
   [tuner, "Manuel", "manual string label"],
   [tuner, "completedStrings", "completed strings state"],
   [tuner, "Gitar hazır", "all strings ready status"],
-  [tuner, "Gitar kafa", "guitar headstock visual"],
   [tuner, "D Standard", "d standard tuning"],
   [tuner, "Drop C", "drop c tuning"],
   [tuner, "DADGAD", "dadgad tuning"],
@@ -43,20 +42,24 @@ const required = [
   [css, "@keyframes gh-ring-ping", "ring pulse animation"],
   [css, "@keyframes gh-led-sweep", "led sweep animation"],
   [nav, 'href: "/tuner", label: "Tuner"', "nav tuner link"],
-  [nav, "grid-cols-7", "mobile nav 7 columns"],
+  [nav, "overflow-x-auto", "mobile nav horizontal scroll"],
+  [nav, "w-[4.35rem] shrink-0", "mobile nav fixed item width"],
   [home, 'href="/tuner"', "home tuner action"],
 ];
 const forbidden = [
   "Mikrofonu Başlat",
   "Mikrofon izni verilmedi veya tarayıcı desteklemiyor.",
+  "Gitar kafa",
+  "grid-cols-7",
 ];
 
 const missing = required.filter(([content, snippet]) => !content.includes(snippet));
-const bad = forbidden.filter((snippet) => tuner.includes(snippet));
+const joined = `${tuner}\n${nav}`;
+const bad = forbidden.filter((snippet) => joined.includes(snippet));
 if (missing.length || bad.length) {
   if (missing.length) console.error(`Missing tuner snippets:\n${missing.map(([, snippet, label]) => `${label}: ${snippet}`).join("\n")}`);
-  if (bad.length) console.error(`Forbidden old tuner copy remains:\n${bad.join("\n")}`);
+  if (bad.length) console.error(`Forbidden old tuner/nav copy remains:\n${bad.join("\n")}`);
   process.exit(1);
 }
 
-console.log("Advanced tuner modes, presets, completion and headstock UI are wired.");
+console.log("Tuner cleanup and scroll-safe mobile nav are wired.");

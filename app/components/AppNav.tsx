@@ -65,22 +65,24 @@ export function AppNav() {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black/70 px-2 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2 shadow-2xl shadow-black backdrop-blur-2xl md:hidden">
-        <div className="mx-auto grid max-w-xl grid-cols-7 gap-1 rounded-[1.4rem] border border-white/10 bg-zinc-950/70 p-1">
-          {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex min-h-14 flex-col items-center justify-center rounded-2xl text-[11px] font-black transition ${
-                  active ? "scale-[1.03] bg-red-600 text-white shadow-lg shadow-red-950/50" : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <span className="text-lg leading-none">{item.icon}</span>
-                <span className="mt-1 truncate">{item.mobileLabel ?? item.label}</span>
-              </Link>
-            );
-          })}
+        <div className="mx-auto max-w-xl overflow-x-auto rounded-[1.4rem] border border-white/10 bg-zinc-950/70 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max gap-1">
+            {NAV_ITEMS.map((item) => {
+              const active = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex min-h-14 w-[4.35rem] shrink-0 flex-col items-center justify-center rounded-2xl text-[10px] font-black transition ${
+                    active ? "scale-[1.02] bg-red-600 text-white shadow-lg shadow-red-950/50" : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <span className="text-lg leading-none">{item.icon}</span>
+                  <span className="mt-1 max-w-full truncate px-1">{item.mobileLabel ?? item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </nav>
     </>

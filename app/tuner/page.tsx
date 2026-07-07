@@ -410,37 +410,6 @@ export default function TunerPage() {
               })}
             </div>
 
-            <div className="mt-6 rounded-[1.6rem] border border-white/10 bg-black/30 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-black uppercase tracking-[0.16em] text-red-200">Gitar kafa</h3>
-                <span className={`rounded-full px-3 py-1 text-xs font-black ${allStringsReady ? "bg-emerald-500 text-zinc-950" : "bg-zinc-900 text-zinc-400"}`}>
-                  {allStringsReady ? "Gitar hazır" : `${completedStrings.filter((item) => item.startsWith(`${preset.id}:`)).length}/6 hazır`}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {preset.strings.map((string, index) => {
-                  const completed = completedStrings.includes(`${preset.id}:${string.label}`);
-                  const active = selectedString === index;
-                  return (
-                    <button
-                      key={`head-${preset.id}-${string.label}-${index}`}
-                      type="button"
-                      onClick={() => {
-                        setSelectedString(index);
-                        void playReferenceTone(string.frequency);
-                      }}
-                      className={`grid w-full grid-cols-[3rem_1fr_2.25rem] items-center gap-2 rounded-2xl px-3 py-2 text-left transition ${completed ? "bg-emerald-500/15 text-emerald-100" : active ? "bg-red-600/20 text-red-100" : "bg-zinc-950/70 text-zinc-400 hover:bg-zinc-900"}`}
-                    >
-                      <span className="font-black">{string.label}</span>
-                      <span className="h-0.5 rounded-full bg-gradient-to-r from-zinc-700 via-zinc-300 to-zinc-700" />
-                      <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${completed ? "bg-emerald-400 text-zinc-950" : active ? "bg-red-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>
-                        {completed ? "✓" : "●"}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           </aside>
 
           <section className="gh-card gh-pedal relative overflow-hidden rounded-[2.2rem] p-5 sm:p-8">
