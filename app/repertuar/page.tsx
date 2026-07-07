@@ -59,6 +59,7 @@ export default function Repertuvar() {
   const [movingId, setMovingId] = useState<number | null>(null);
   const [draggedSetlistSongId, setDraggedSetlistSongId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingOwnSongId, setDeletingOwnSongId] = useState<number | null>(null);
   const [deletingSetlistId, setDeletingSetlistId] = useState<number | null>(null);
 
   const loadSetlists = useCallback(async () => {
@@ -251,6 +252,38 @@ export default function Repertuvar() {
     setMessage("Şarkı setlistten çıkarıldı.");
   }
 
+  async function deleteOwnSong(song: Song) {
+    const confirmDelete = window.confirm(`“${song.title}” bestesini silmek istiyor musun?`);
+    if (!confirmDelete) return;
+
+    setDeletingOwnSongId(song.id);
+    setMessage("");
+
+    const { error: linkError } = await supabase.from("setlist_songs").delete().eq("song_id", song.id);
+    if (linkError) {
+      setDeletingOwnSongId(null);
+      setMessage(linkError.message);
+      return;
+    }
+
+    const { error } = await supabase.from("songs").delete().eq("id", song.id);
+    setDeletingOwnSongId(null);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setOwnSongs((current) => current.filter((item) => item.id !== song.id));
+    setSetlists((current) =>
+      current.map((setlist) => ({
+        ...setlist,
+        setlist_songs: (setlist.setlist_songs ?? []).filter((item) => item.song_id !== song.id),
+      })),
+    );
+    setMessage("Beste silindi.");
+  }
+
   async function moveSetlistSong(item: LoadedSetlistSong, direction: -1 | 1) {
     if (!selectedSetlist) return;
     const ordered = sortedSetlistSongs(selectedSetlist);
@@ -385,6 +418,14 @@ export default function Repertuvar() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link href={`/sarki/${song.id}`} className="rounded-xl bg-white px-3 py-2 text-xs font-black text-zinc-950 hover:bg-red-100">Aç</Link>
                   <Link href={`/sarki-yaz?songId=${song.id}`} className="rounded-xl bg-zinc-800 px-3 py-2 text-xs font-black text-red-200 hover:bg-zinc-700">Düzenle</Link>
+                  <button
+                    type="button"
+                    onClick={() => void deleteOwnSong(song)}
+                    disabled={deletingOwnSongId === song.id}
+                    className="rounded-xl bg-red-950/80 px-3 py-2 text-xs font-black text-red-100 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deletingOwnSongId === song.id ? "Siliniyor..." : "Besteyi Sil"}
+                  </button>
                 </div>
               </div>
             ))}

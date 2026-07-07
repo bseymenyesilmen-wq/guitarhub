@@ -208,6 +208,7 @@ export default function TunerPage() {
   const [presetId, setPresetId] = useState(TUNINGS[0].id);
   const [selectedString, setSelectedString] = useState(0);
   const [autoDetect, setAutoDetect] = useState(true);
+  const [tuningPickerOpen, setTuningPickerOpen] = useState(false);
   const [completedStrings, setCompletedStrings] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState("Mikrofon otomatik açılıyor...");
@@ -344,13 +345,10 @@ export default function TunerPage() {
         <section className="gh-hero mb-6 p-5 sm:p-8">
           <p className="gh-kicker relative z-10 text-xs sm:text-sm">Neon pedal tuner</p>
           <h1 className="gh-title relative z-10 mt-3 text-4xl font-black sm:text-6xl">Tuner</h1>
-          <p className="gh-muted relative z-10 mt-4 max-w-2xl text-sm sm:text-base">
-            Sayfa açılınca mikrofon otomatik dinler. Tel butonuna basınca referans sesi gelir; gitarını ona göre eşleştir.
-          </p>
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr]">
-          <aside className="gh-card rounded-[1.75rem] p-4 sm:p-5">
+          <aside className="gh-card relative z-20 rounded-[1.75rem] p-4 sm:p-5">
             <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl bg-zinc-950/70 p-2">
               <button
                 type="button"
@@ -368,23 +366,40 @@ export default function TunerPage() {
               </button>
             </div>
             <h2 className="gh-section-title text-xl font-black">Akort modu</h2>
-            <div className="mt-4 grid gap-2">
-              {TUNINGS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    setPresetId(item.id);
-                    setSelectedString(0);
-                    setDetection(null);
-                    setCompletedStrings([]);
-                  }}
-                  className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 ${presetId === item.id ? "border-red-400 bg-red-600 text-white shadow-lg shadow-red-950/40" : "border-white/10 bg-zinc-950/70 text-zinc-300 hover:border-red-500/50"}`}
-                >
-                  <span className="block font-black">{item.name}</span>
-                  <span className="mt-1 block text-sm opacity-80">{item.helper}</span>
-                </button>
-              ))}
+            <div className="relative mt-4">
+              <button
+                type="button"
+                onClick={() => setTuningPickerOpen((open) => !open)}
+                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-red-500/30 bg-zinc-950/80 p-4 text-left shadow-lg shadow-black/20 transition hover:border-red-400"
+              >
+                <span>
+                  <span className="block font-black text-white">{preset.name}</span>
+                  <span className="mt-1 block text-sm text-zinc-400">{preset.helper}</span>
+                </span>
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-600 text-lg font-black text-white transition ${tuningPickerOpen ? "rotate-180" : ""}`}>⌄</span>
+              </button>
+
+              <div className={`absolute inset-x-0 top-[calc(100%+0.5rem)] z-30 origin-top overflow-hidden rounded-[1.35rem] border border-white/10 bg-zinc-950/95 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all duration-200 ${tuningPickerOpen ? "max-h-80 translate-y-0 opacity-100" : "pointer-events-none max-h-0 -translate-y-2 opacity-0"}`}>
+                <div className="max-h-80 overflow-y-auto p-2 [scrollbar-width:thin]">
+                  {TUNINGS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setPresetId(item.id);
+                        setSelectedString(0);
+                        setDetection(null);
+                        setCompletedStrings([]);
+                        setTuningPickerOpen(false);
+                      }}
+                      className={`mb-1 w-full rounded-2xl border p-3 text-left transition last:mb-0 ${presetId === item.id ? "border-red-400 bg-red-600 text-white" : "border-white/5 bg-white/[0.03] text-zinc-300 hover:border-red-500/50 hover:bg-white/10"}`}
+                    >
+                      <span className="block font-black">{item.name}</span>
+                      <span className="mt-1 block text-sm opacity-80">{item.helper}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <h2 className="gh-section-title mt-6 text-xl font-black">Tel sesi</h2>

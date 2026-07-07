@@ -18,6 +18,11 @@ const required = [
   "bg-gradient-to-br from-red-600/25",
   "Kendi besten",
   "Düzenle",
+  "Besteyi Sil",
+  "deleteOwnSong(song: Song)",
+  'setlist_songs").delete().eq("song_id", song.id)',
+  'songs").delete().eq("id", song.id)',
+  "deletingOwnSongId",
   "href={`/sarki-yaz?songId=${song.id}`}",
 ];
 

@@ -23,6 +23,12 @@ const required = [
   [tuner, "Manuel", "manual string label"],
   [tuner, "completedStrings", "completed strings state"],
   [tuner, "Gitar hazır", "all strings ready status"],
+  [tuner, "tuningPickerOpen", "sliding tuning picker state"],
+  [tuner, "setTuningPickerOpen((open) => !open)", "toggle tuning popup"],
+  [tuner, "max-h-80 translate-y-0 opacity-100", "open tuning popup animation"],
+  [tuner, "pointer-events-none max-h-0 -translate-y-2 opacity-0", "closed tuning popup animation"],
+  [tuner, "setTuningPickerOpen(false)", "close tuning popup after selection"],
+  [tuner, "relative z-20", "tuning popup overlay stacking"],
   [tuner, "D Standard", "d standard tuning"],
   [tuner, "Drop C", "drop c tuning"],
   [tuner, "DADGAD", "dadgad tuning"],
@@ -47,6 +53,7 @@ const required = [
   [home, 'href="/tuner"', "home tuner action"],
 ];
 const forbidden = [
+  "Sayfa açılınca mikrofon otomatik dinler. Tel butonuna basınca referans sesi gelir; gitarını ona göre eşleştir.",
   "Mikrofonu Başlat",
   "Mikrofon izni verilmedi veya tarayıcı desteklemiyor.",
   "Gitar kafa",
@@ -62,4 +69,4 @@ if (missing.length || bad.length) {
   process.exit(1);
 }
 
-console.log("Tuner cleanup and scroll-safe mobile nav are wired.");
+console.log("Tuner dropdown cleanup and scroll-safe mobile nav are wired.");
