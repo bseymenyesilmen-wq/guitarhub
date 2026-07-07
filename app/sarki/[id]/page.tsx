@@ -17,12 +17,6 @@ const PLAY_MODE_FONT_FAMILY = {
   proportional: "Arial, Helvetica, sans-serif",
   monospace: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
 } as const;
-const PLAY_THEMES = {
-  red: { label: "Kırmızı Sahne", shell: "bg-black", glow: "bg-[radial-gradient(circle_at_top,rgba(220,38,38,0.22),transparent_42%)]", paper: "bg-zinc-950/95 text-zinc-100" },
-  black: { label: "Tam Siyah", shell: "bg-black", glow: "bg-black", paper: "bg-black text-zinc-100" },
-  sepia: { label: "Sepya / Loş", shell: "bg-[#130f0a]", glow: "bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.16),transparent_44%)]", paper: "bg-[#1b140d]/95 text-amber-50" },
-} as const;
-type PlayTheme = keyof typeof PLAY_THEMES;
 type WakeLockSentinelLike = { release: () => Promise<void>; addEventListener?: (type: "release", listener: () => void) => void };
 
 function normalizeChordName(chordName: string) {
@@ -56,7 +50,6 @@ export default function SarkiDetay() {
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
   const [autoScrollLevel, setAutoScrollLevel] = useState(4);
   const [playFontSize, setPlayFontSize] = useState(1);
-  const [playTheme, setPlayTheme] = useState<PlayTheme>("red");
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [wakeLockMessage, setWakeLockMessage] = useState("");
   const playTextRef = useRef<HTMLPreElement | null>(null);
@@ -138,7 +131,6 @@ export default function SarkiDetay() {
     };
   }, [keepScreenAwake, playMode]);
 
-  const activePlayTheme = PLAY_THEMES[playTheme];
 
   const sourceText = song?.chords?.trim() || song?.lyrics?.trim() || "";
   const transposedChords = useMemo(() => transposeText(sourceText, shift), [shift, sourceText]);
@@ -243,15 +235,15 @@ export default function SarkiDetay() {
             </section>
 
             {playMode && (
-              <section onClick={() => setPlayControlsVisible((value) => !value)} className={`fixed inset-0 z-[80] flex flex-col text-white ${activePlayTheme.shell}`}>
-                <div className={`pointer-events-none absolute inset-0 ${activePlayTheme.glow}`} />
+              <section onClick={() => setPlayControlsVisible((value) => !value)} className="fixed inset-0 z-[80] flex flex-col bg-black text-white">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(220,38,38,0.18),transparent_42%)]" />
                 {playControlsVisible && (
                   <div onClick={(event) => event.stopPropagation()} className="relative z-10 m-2 rounded-[1.5rem] border border-white/10 bg-black/70 p-3 shadow-2xl shadow-black/70 backdrop-blur-xl transition sm:m-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-300">Sahne Modu · ekrana dokun gizle/göster</p>
                         <h2 className="truncate text-xl font-black sm:text-2xl">{song.title}</h2>
-                        <p className="truncate text-xs text-zinc-400">{song.artist} {song.key ? `· Ton: ${transposeText(song.key, shift)}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""} · {activePlayTheme.label}</p>
+                        <p className="truncate text-xs text-zinc-400">{song.artist} {song.key ? `· Ton: ${transposeText(song.key, shift)}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""}</p>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         <button onClick={() => setShift((value) => value - 1)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">-1</button>
@@ -261,12 +253,6 @@ export default function SarkiDetay() {
                         <button onClick={() => setPlayFontSize((value) => Math.min(1.6, Number((value + 0.1).toFixed(2))))} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">A+</button>
                         <button onClick={() => setAutoScrollEnabled((value) => !value)} className={`rounded-xl px-3 py-2 text-sm font-black ${autoScrollEnabled ? "bg-red-600 hover:bg-red-500" : "bg-white/10 hover:bg-white/15"}`}>Oto Kaydır</button>
                         <button onClick={() => setKeepScreenAwake((value) => !value)} className={`rounded-xl px-3 py-2 text-sm font-black ${keepScreenAwake ? "bg-emerald-600 hover:bg-emerald-500" : "bg-white/10 hover:bg-white/15"}`}>Ekran Açık</button>
-                        <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-black text-zinc-200">
-                          Tema
-                          <select value={playTheme} onChange={(event) => setPlayTheme(event.target.value as PlayTheme)} className="bg-transparent text-xs font-black text-white outline-none">
-                            {Object.entries(PLAY_THEMES).map(([value, theme]) => <option key={value} value={value} className="bg-zinc-950">{theme.label}</option>)}
-                          </select>
-                        </label>
                         <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-black text-zinc-200">
                           Hız {autoScrollLevel}
                           <input type="range" min="1" max="10" value={autoScrollLevel} onChange={(event) => setAutoScrollLevel(Number(event.target.value))} className="w-24 accent-red-600" />
@@ -287,7 +273,7 @@ export default function SarkiDetay() {
                     tabSize: 4,
                     whiteSpace: "pre",
                   }}
-                  className={`relative z-0 m-2 min-h-0 flex-1 overflow-auto whitespace-pre rounded-[1.5rem] p-4 leading-[1.48] shadow-inner shadow-black sm:m-4 sm:p-6 ${activePlayTheme.paper}`}
+                  className="relative z-0 m-2 min-h-0 flex-1 overflow-auto whitespace-pre rounded-[1.5rem] bg-zinc-950/95 p-4 leading-[1.48] text-zinc-100 shadow-inner shadow-black sm:m-4 sm:p-6"
                 >
                   {transposedChords || "Akor/söz yok."}
                 </pre>

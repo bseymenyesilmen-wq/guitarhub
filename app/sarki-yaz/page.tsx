@@ -354,7 +354,7 @@ export default function SarkiYaz() {
                 onChange={(event) => setDraft({ ...draft, notebook: event.target.value })}
                 rows={20}
                 spellCheck={false}
-                className="mt-2 w-full resize-y rounded-2xl border border-amber-900/10 bg-[linear-gradient(to_bottom,rgba(120,83,40,0.12)_1px,transparent_1px)] bg-[length:100%_1.75rem] p-4 font-mono text-sm leading-7 text-zinc-950 outline-none placeholder:text-zinc-500 focus:border-red-500"
+                className="mt-2 w-full resize-y rounded-2xl border border-amber-900/10 bg-[#fff7e8] p-4 font-mono text-sm leading-7 text-zinc-950 outline-none placeholder:text-zinc-500 focus:border-red-500"
                 placeholder={DEFAULT_NOTEBOOK}
               />
             </label>

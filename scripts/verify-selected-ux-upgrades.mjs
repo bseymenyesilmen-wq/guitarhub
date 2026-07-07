@@ -12,26 +12,36 @@ const songwriter = read("app", "sarki-yaz", "page.tsx");
 const repertuar = read("app", "repertuar", "page.tsx");
 
 const checks = [
-  [search, "PLAY_THEMES", "search play themes"],
   [search, "Ekran Açık", "search wake lock button"],
   [search, "navigator as Navigator", "search wake lock API"],
-  [detail, "PLAY_THEMES", "detail play themes"],
   [detail, "Ekran Açık", "detail wake lock button"],
   [detail, "navigator as Navigator", "detail wake lock API"],
-  [chordSheet, "guitarhub.favoriteChords.v1", "favorite chord storage"],
-  [chordSheet, "Çalışılacak akorlar", "practice chord strip"],
-  [chordSheet, "Kolay alternatif", "easy chord alternative"],
+  [chordSheet, "Pozisyon", "simple chord position summary"],
   [songwriter, "loş beste defteri", "songwriter notebook hero"],
-  [songwriter, "bg-[#f4ead5]", "paper notebook surface"],
+  [songwriter, "bg-[#f4ead5]", "paper notebook shell"],
+  [songwriter, "bg-[#fff7e8]", "non-drifting paper textarea"],
   [songwriter, "Akor ve söz defteri", "notebook label"],
   [repertuar, "draggable", "drag enabled"],
   [repertuar, "reorderSetlistSong", "drop reorder function"],
   [repertuar, "Basılı tutup sürükle-bırak", "drag hint"],
 ];
 
+const forbidden = [
+  [search, "PLAY_THEMES", "search play theme selector removed"],
+  [detail, "PLAY_THEMES", "detail play theme selector removed"],
+  [search, "Tema", "search theme control removed"],
+  [detail, "Tema", "detail theme control removed"],
+  [chordSheet, "guitarhub.favoriteChords.v1", "favorite chord storage removed"],
+  [chordSheet, "Çalışılacak akorlar", "practice chord strip removed"],
+  [chordSheet, "Kolay alternatif", "easy alternative card removed"],
+  [songwriter, "bg-[linear-gradient(to_bottom", "drifting ruled background removed"],
+];
+
 const missing = checks.filter(([content, snippet]) => !content.includes(snippet));
-if (missing.length) {
-  console.error(missing.map(([, snippet, label]) => `${label}: ${snippet}`).join("\n"));
+const presentForbidden = forbidden.filter(([content, snippet]) => content.includes(snippet));
+if (missing.length || presentForbidden.length) {
+  if (missing.length) console.error("Missing:\n" + missing.map(([, snippet, label]) => `${label}: ${snippet}`).join("\n"));
+  if (presentForbidden.length) console.error("Forbidden present:\n" + presentForbidden.map(([, snippet, label]) => `${label}: ${snippet}`).join("\n"));
   process.exit(1);
 }
-console.log("Selected UX upgrades are wired.");
+console.log("Selected UX removals and notebook fix are wired.");
