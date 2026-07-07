@@ -6,8 +6,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repertuar = readFileSync(join(__dirname, "..", "app", "repertuar", "page.tsx"), "utf8");
 
 const required = [
-  "<h1 className=\"text-4xl font-black\">Repertuarım</h1>",
-  "<h2 className=\"text-2xl font-black\">{selectedSetlist.name}</h2>",
+  "<h1 className=\"gh-title relative z-10 text-4xl font-black sm:text-5xl\">Repertuarım</h1>",
+  "<h2 className=\"gh-section-title text-2xl font-black\">{selectedSetlist.name}</h2>",
   "draggable",
   "reorderSetlistSong",
 ];

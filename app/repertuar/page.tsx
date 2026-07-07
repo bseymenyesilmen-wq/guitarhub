@@ -299,13 +299,12 @@ export default function Repertuar() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.16),transparent_34%),linear-gradient(180deg,#050505,#0a0a0b_45%,#09090b)] p-4 pb-28 text-white sm:p-6 md:pb-6">
+    <main className="gh-page min-h-screen overflow-hidden p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="relative mb-6 overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-600/20 blur-3xl" />
-          <h1 className="text-4xl font-black">Repertuarım</h1>
+        <section className="gh-hero mb-6 p-5 sm:p-6">
+          <h1 className="gh-title relative z-10 text-4xl font-black sm:text-5xl">Repertuarım</h1>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link href="/sarki-ara" className="inline-flex min-h-11 items-center rounded-full bg-red-600 px-5 font-bold hover:bg-red-500">
               Şarkı ara ve ekle
@@ -316,13 +315,13 @@ export default function Repertuar() {
 
         {message && <p className="mb-4 rounded-lg bg-zinc-900 p-3 text-sm text-zinc-200">{message}</p>}
 
-        <section className="mb-5 grid gap-3 md:grid-cols-3">
+        <section className="mb-6 grid gap-4 md:grid-cols-3">
           <RepertuarQuickCard title="Kendi Şarkıların" value={ownSongs.length.toString()} helper="Şarkı Yaz’dan kaydedilen bestelerin" action="Şarkı Yaz'a git" href="/sarki-yaz" accent />
           <RepertuarQuickCard title="Taslaklar" value="1" helper="Taslak cihazda otomatik saklanır" action="Taslağı aç" href="/sarki-yaz" />
           <RepertuarQuickCard title="Setlistler" value={setlists.length.toString()} helper="Konser/prova klasörlerin" action="Setlistlere bak" href="#setlistler" />
         </section>
 
-        <section className="mb-5 rounded-3xl border border-red-500/25 bg-gradient-to-br from-zinc-900 to-red-950/25 p-4">
+        <section className="gh-card mb-6 rounded-3xl bg-gradient-to-br from-zinc-900/90 to-red-950/20 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-red-300">Kendi Şarkıların</p>
@@ -352,7 +351,7 @@ export default function Repertuar() {
           </div>
         </section>
 
-        <section className="mb-5 grid gap-3 rounded-3xl border border-zinc-800 bg-zinc-900 p-4 md:grid-cols-[1fr_auto]">
+        <section className="gh-card mb-6 grid gap-3 rounded-3xl p-4 md:grid-cols-[1fr_auto]">
           <input
             className="min-h-12 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
             placeholder="Yeni Setlist adı: Konser setlist, Acılı setlist..."
@@ -375,9 +374,9 @@ export default function Repertuar() {
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-zinc-300">Repertuar yükleniyor...</div>
         ) : (
           <section id="setlistler" className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <aside className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 lg:sticky lg:top-4 lg:self-start">
+            <aside className="gh-card rounded-3xl p-4 lg:sticky lg:top-4 lg:self-start">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-xl font-black">Setlistler</h2>
+                <h2 className="gh-section-title text-xl font-black">Setlistler</h2>
                 <span className="rounded-full bg-zinc-950 px-3 py-1 text-sm font-bold text-zinc-400">{setlists.length}</span>
               </div>
               <div className="mt-4 space-y-2">
@@ -405,12 +404,12 @@ export default function Repertuar() {
               </div>
             </aside>
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+            <section className="gh-card rounded-3xl p-4">
               {selectedSetlist ? (
                 <>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-2xl font-black">{selectedSetlist.name}</h2>
+                      <h2 className="gh-section-title text-2xl font-black">{selectedSetlist.name}</h2>
                     </div>
                     <input
                       className="min-h-11 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"

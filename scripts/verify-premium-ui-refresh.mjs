@@ -12,7 +12,7 @@ const files = {
 };
 
 const checks = [
-  [files.search, "bg-[radial-gradient(circle_at_top_left", "search premium background"],
+  [files.search, "gh-page", "search premium background"],
   [files.search, "Tek varyasyon", "song cards variation badge"],
   [files.search, "Sahne Modu · ekrana dokun gizle/göster", "search play stage mode"],
   [files.search, "Kontroller için ekrana dokun", "search hidden controls hint"],
@@ -24,7 +24,7 @@ const checks = [
   [files.yoda, "Akor sor", "Yoda quick music action"],
   [files.yoda, "shadow-red-950", "Yoda glow"],
   [files.repertuar, "setlistAccent", "setlist accent colors"],
-  [files.repertuar, "bg-[radial-gradient(circle_at_top_left", "repertuar premium background"],
+  [files.repertuar, "gh-page", "repertuar premium background"],
   [files.repertuar, "rounded-[1.4rem] border p-4", "playlist setlist cards"],
 ];
 

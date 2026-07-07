@@ -581,16 +581,15 @@ export default function SarkiAra() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.18),transparent_34%),linear-gradient(180deg,#050505,#0a0a0b_42%,#09090b)] p-4 pb-28 text-white sm:p-6 md:pb-6">
+    <main className="gh-page min-h-screen overflow-hidden p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="relative mb-5 overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-600/20 blur-3xl" />
-          <h1 className="text-4xl font-black tracking-tight sm:text-5xl">Şarkı Ara</h1>
+        <section className="gh-hero mb-6 p-5 sm:p-6">
+          <h1 className="gh-title relative z-10 text-4xl font-black sm:text-5xl">Şarkı Ara</h1>
         </section>
 
-        <section className="rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/20 backdrop-blur sm:p-5">
+        <section className="gh-card rounded-[1.75rem] p-4 sm:p-5">
           <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
             <label className="rounded-2xl border border-zinc-800 bg-black/40 px-4 py-3 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20">
               <span className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500">Şarkı</span>
@@ -668,7 +667,7 @@ export default function SarkiAra() {
         {(artistResults.length > 0 || songResults.length > 0) && (
           <section className="mt-6 grid gap-4 lg:grid-cols-[320px_1fr]">
             <div className="rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/15 backdrop-blur">
-              <h2 className="text-xl font-black">Sanatçılar</h2>
+              <h2 className="gh-section-title text-xl font-black">Sanatçılar</h2>
               <div className="mt-3 space-y-2">
                 {artistResults.length ? (
                   artistResults.map((item) => (
@@ -690,8 +689,8 @@ export default function SarkiAra() {
             <div className="rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/15 backdrop-blur">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-black">Şarkılar</h2>
-                  <p className="mt-1 text-sm text-zinc-500">Şarkıya basınca söz ve akor gelir.</p>
+                  <h2 className="gh-section-title text-xl font-black">Şarkılar</h2>
+                  <p className="gh-muted mt-1 text-sm">Şarkıya basınca söz ve akor gelir.</p>
                 </div>
                 {songResults.length > 0 && <span className="rounded-full bg-red-600 px-3 py-1 text-sm font-bold">{songResults.length} sonuç</span>}
               </div>

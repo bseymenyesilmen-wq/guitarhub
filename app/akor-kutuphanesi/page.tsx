@@ -91,14 +91,14 @@ export default function AkorKutuphanesi() {
   }, [query, selectedRoot]);
 
   return (
-    <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
+    <main className="gh-page min-h-screen p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="mb-6 rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-400">Profesyonel akor sistemi</p>
-          <h1 className="mt-3 text-4xl font-black">Akor Kütüphanesi</h1>
-          <p className="mt-2 max-w-2xl text-zinc-400">
+        <section className="gh-hero mb-6 p-5 sm:p-8">
+          <p className="gh-kicker text-xs sm:text-sm">Profesyonel akor sistemi</p>
+          <h1 className="gh-title relative z-10 mt-3 text-4xl font-black sm:text-5xl">Akor Kütüphanesi</h1>
+          <p className="gh-muted relative z-10 mt-3 max-w-2xl text-sm sm:text-base">
             Önce notayı seç, sonra o notanın major, minor, 7, maj7, min7, sus, add9, slash ve diğer akorlarını tek yerde incele.
           </p>
         </section>
@@ -159,7 +159,7 @@ export default function AkorKutuphanesi() {
                     setSelectedChord(chord);
                   }
                 }}
-                className="relative rounded-3xl border border-zinc-800 bg-zinc-900 p-4 text-left hover:border-red-500/70 hover:bg-zinc-900/80"
+                className="gh-card relative rounded-3xl p-4 text-left transition hover:-translate-y-0.5 hover:border-red-500/60"
               >
                 <button
                   type="button"

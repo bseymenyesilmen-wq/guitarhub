@@ -6,7 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const page = readFileSync(join(__dirname, "..", "app", "sarki-ara", "page.tsx"), "utf8");
 
 const required = [
-  "<h1 className=\"text-4xl font-black tracking-tight sm:text-5xl\">Şarkı Ara</h1>",
+  "<h1 className=\"gh-title relative z-10 text-4xl font-black sm:text-5xl\">Şarkı Ara</h1>",
   "placeholder=\"\"",
   ">Şarkı</span>",
   ">Sanatçı</span>",

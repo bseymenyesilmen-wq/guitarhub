@@ -91,18 +91,18 @@ export default function Home() {
   const greeting = useMemo(() => getTimeGreeting(), []);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.18),transparent_35%),#09090b] p-4 pb-28 text-white sm:p-6 md:pb-6">
+    <main className="gh-page min-h-screen p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="mb-8 overflow-hidden rounded-[2rem] border border-zinc-800 bg-zinc-950/70 p-5 shadow-2xl shadow-black/30 sm:p-8">
+        <section className="gh-hero mb-8 p-5 sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">Kişisel gitar merkezi</p>
-              <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">
+              <p className="gh-kicker text-xs sm:text-sm">Kişisel gitar merkezi</p>
+              <h1 className="gh-title relative z-10 mt-3 text-4xl font-black sm:text-6xl">
                 {greeting}, {name}. Bugün ne çalıyoruz?
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
+              <p className="gh-muted relative z-10 mt-4 max-w-2xl text-base sm:text-lg">
                 Repertuarına devam et, yeni şarkı ara, bilmediğin akoru aç veya gamlara göz at. Takılırsan sağ alttaki Yoda’ya sor.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -115,11 +115,11 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-red-500/20 bg-gradient-to-br from-red-950/40 to-zinc-900 p-5">
+            <div className="gh-card rounded-3xl bg-gradient-to-br from-red-950/35 to-zinc-950/80 p-5">
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-red-300">Devam Et</p>
               {continueSong ? (
                 <div className="mt-4">
-                  <h2 className="line-clamp-2 text-3xl font-black text-white">{continueSong.title}</h2>
+                  <h2 className="gh-section-title line-clamp-2 text-3xl font-black">{continueSong.title}</h2>
                   <p className="mt-2 text-zinc-300">{continueSong.artist || "Sanatçı belirtilmemiş"}</p>
                   <p className="mt-3 text-sm text-zinc-400">
                     {continueSong.favorite ? "Favorilerinden bir şarkı seçtim." : "Son eklediğin şarkıdan devam edebilirsin."}
@@ -130,7 +130,7 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="mt-4">
-                  <h2 className="text-3xl font-black text-white">İlk şarkını ekleyelim</h2>
+                  <h2 className="gh-section-title text-3xl font-black">İlk şarkını ekleyelim</h2>
                   <p className="mt-3 text-zinc-300">Şarkı Ara’dan bir parça bulup repertuarına ekleyebilirsin.</p>
                   <Link href="/sarki-ara" className="mt-5 inline-flex rounded-2xl bg-white px-5 py-3 font-black text-zinc-950 hover:bg-red-100">
                     Şarkı Bul
@@ -152,11 +152,11 @@ export default function Home() {
             </section>
 
             <section className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
+              <div className="gh-card rounded-3xl p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Repertuar akışı</p>
-                    <h2 className="mt-1 text-2xl font-black">Son Eklenen Şarkılar</h2>
+                    <h2 className="gh-section-title mt-1 text-2xl font-black">Son Eklenen Şarkılar</h2>
                   </div>
                   <Link href="/repertuar" className="rounded-full bg-zinc-950 px-4 py-2 text-sm font-bold text-red-300 hover:bg-red-600 hover:text-white">
                     Tümünü gör
@@ -181,7 +181,7 @@ export default function Home() {
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Favoriler</p>
-                      <h2 className="mt-1 text-2xl font-black">Hızlı Aç</h2>
+                      <h2 className="gh-section-title mt-1 text-2xl font-black">Hızlı Aç</h2>
                     </div>
                     <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold text-zinc-400">{favoriteCount} favori</span>
                   </div>

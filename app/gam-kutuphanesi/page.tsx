@@ -31,19 +31,19 @@ export default function GamKutuphanesi() {
   const positionEndFret = positionStartFret === null ? null : Math.min(21, positionStartFret + (selectedPosition?.displayFrets ?? 4));
 
   return (
-    <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
+    <main className="gh-page min-h-screen p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="mb-6 rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-8">
-          <h1 className="text-4xl font-black">Gam Kütüphanesi</h1>
-          <p className="mt-2 max-w-2xl text-zinc-400">
+        <section className="gh-hero mb-6 p-5 sm:p-8">
+          <h1 className="gh-title relative z-10 text-4xl font-black sm:text-5xl">Gam Kütüphanesi</h1>
+          <p className="gh-muted relative z-10 mt-3 max-w-2xl text-sm sm:text-base">
             Root nota, gam türü, görünüm ve pozisyon seçerek gitar klavyesinde sadece seçili gam notalarını çalış.
           </p>
         </section>
 
         <section className="mb-6 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+          <div className="gh-card rounded-3xl p-4">
             <h2 className="text-lg font-black">1. Root nota</h2>
             <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">
               {NOTE_NAMES.map((note) => (
@@ -61,7 +61,7 @@ export default function GamKutuphanesi() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+          <div className="gh-card rounded-3xl p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black">2. Gam / Mod</h2>
               <label className="flex min-h-11 items-center gap-2 rounded-full bg-zinc-950 px-4 text-sm font-bold text-zinc-300">
@@ -100,11 +100,11 @@ export default function GamKutuphanesi() {
           </div>
         </section>
 
-        <section className="mb-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
+        <section className="gh-card mb-6 rounded-3xl p-4">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-black">{root} {scale.name}</h2>
-              <p className="mt-1 text-zinc-400">{scale.character}</p>
+              <h2 className="gh-section-title text-2xl font-black">{root} {scale.name}</h2>
+              <p className="gh-muted mt-1 text-sm">{scale.character}</p>
             </div>
             <span className="rounded-2xl bg-zinc-950 px-4 py-2 text-sm font-bold text-red-300">
               {scale.genres.join(" · ")}

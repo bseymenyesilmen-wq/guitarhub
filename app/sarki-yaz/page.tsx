@@ -243,18 +243,17 @@ export default function SarkiYaz() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(245,158,11,0.09),transparent_30%),#09090b] p-3 pb-24 text-white sm:p-5 md:pb-5">
+    <main className="gh-page min-h-screen overflow-hidden p-3 pb-24 text-white sm:p-5 md:pb-5">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="relative mb-4 overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
-          <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-red-600/20 blur-3xl" />
-          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Şarkı Yaz</h1>
+        <section className="gh-hero mb-5 p-5 sm:p-6">
+          <h1 className="gh-title relative z-10 text-4xl font-black sm:text-5xl">Şarkı Yaz</h1>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
-          <aside className="rounded-[1.75rem] border border-white/10 bg-zinc-950/70 p-4 shadow-xl shadow-black/20 backdrop-blur">
-            <h2 className="text-lg font-black">Kısa bilgi</h2>
+          <aside className="gh-card rounded-[1.75rem] p-4">
+            <h2 className="gh-section-title text-lg font-black">Kısa bilgi</h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
               <label className="block sm:col-span-3 lg:col-span-1">
                 <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Başlık</span>
@@ -292,10 +291,10 @@ export default function SarkiYaz() {
             </div>
           </aside>
 
-          <section className="rounded-[1.75rem] border border-amber-500/20 bg-gradient-to-br from-[#17120b] to-zinc-950 p-4 shadow-2xl shadow-black/30">
+          <section className="rounded-[1.75rem] border border-amber-500/20 bg-gradient-to-br from-[#1c1409] to-zinc-950 p-4 shadow-2xl shadow-black/30">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-black">Şarkı defteri</h2>
+                <h2 className="gh-section-title text-xl font-black">Şarkı defteri</h2>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button onClick={getSystemSuggestion} disabled={suggestionLoading} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">
