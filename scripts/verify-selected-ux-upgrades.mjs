@@ -23,7 +23,6 @@ const checks = [
   [songwriter, "Akor ve söz defteri", "notebook label"],
   [repertuar, "draggable", "drag enabled"],
   [repertuar, "reorderSetlistSong", "drop reorder function"],
-  [repertuar, "Basılı tutup sürükle-bırak", "drag hint"],
 ];
 
 const forbidden = [

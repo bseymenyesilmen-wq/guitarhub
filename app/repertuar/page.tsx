@@ -305,11 +305,7 @@ export default function Repertuar() {
 
         <section className="relative mb-6 overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
           <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-600/20 blur-3xl" />
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">Setlist klasörleri</p>
-          <h1 className="mt-3 text-4xl font-black">Repertuarım</h1>
-          <p className="mt-2 max-w-2xl text-zinc-400">
-            Konser setlist, Acılı setlist veya prova klasörleri oluştur. Şarkı Ara ekranından parçaları istediğin setliste at.
-          </p>
+          <h1 className="text-4xl font-black">Repertuarım</h1>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link href="/sarki-ara" className="inline-flex min-h-11 items-center rounded-full bg-red-600 px-5 font-bold hover:bg-red-500">
               Şarkı ara ve ekle
@@ -330,7 +326,6 @@ export default function Repertuar() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-red-300">Kendi Şarkıların</p>
-              <h2 className="mt-1 text-2xl font-black">Şarkı Yaz’dan kaydedilenler</h2>
             </div>
             <Link href="/sarki-yaz" className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-zinc-950 hover:bg-red-100">
               Yeni şarkı yaz
@@ -415,9 +410,7 @@ export default function Repertuar() {
                 <>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Setlist içi</p>
-                      <h2 className="mt-1 text-2xl font-black">{selectedSetlist.name}</h2>
-                      <p className="mt-1 text-sm text-zinc-500">{setlistSongs.length} şarkı · Basılı tutup sürükle-bırak ile sırala</p>
+                      <h2 className="text-2xl font-black">{selectedSetlist.name}</h2>
                     </div>
                     <input
                       className="min-h-11 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
