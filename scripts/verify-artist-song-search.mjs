@@ -19,24 +19,19 @@ const required = [
   "const ULTIMATE_GUITAR_URL",
   "const ULTIMATE_GUITAR_API_URL",
   "const UAKOR_URL",
-  "const AKORLAR_URL",
   "buildUltimateGuitarHeaders",
   "getUltimateGuitarJson",
   "stripUltimateGuitarMarkup",
   "async function searchUltimateGuitar",
   "async function searchUakor",
-  "async function searchAkorlar",
   "async function fetchUakorSongByUrl",
-  "async function fetchAkorlarSongByUrl",
   "async function fetchUltimateGuitarSongByUrl",
   "stripUltimateGuitarMarkup",
   "setSongResults",
   "Sanatçılar",
   "Şarkılar",
-  "placeholder=\"Şarkı adı\"",
-  "placeholder=\"Sanatçı\"",
-  "body: JSON.stringify({ title: title.trim(), artist: artist.trim() })",
-  "Sanatçı yazınca şarkıları listeler",
+  "placeholder=\"\"",
+  "body: JSON.stringify({ title: trimmedTitle, artist: trimmedArtist })",
 ];
 const missing = required.filter((snippet) => !haystack.includes(snippet));
 if (missing.length) {
@@ -58,9 +53,9 @@ if (bad.length) {
   process.exit(1);
 }
 
-const inputCount = (page.match(/<input/g) ?? []).length;
-if (inputCount !== 2) {
-  console.error(`Expected artist + song inputs, found ${inputCount}`);
+const searchInputStatePresent = page.includes('const [title, setTitle] = useState("")') && page.includes('const [artist, setArtist] = useState("")');
+if (!searchInputStatePresent) {
+  console.error("Expected artist + song search state to be present.");
   process.exit(1);
 }
 

@@ -13,7 +13,6 @@ const files = {
 
 const checks = [
   [files.search, "bg-[radial-gradient(circle_at_top_left", "search premium background"],
-  [files.search, "Senden Daha Güzel", "search modern placeholder"],
   [files.search, "Tek varyasyon", "song cards variation badge"],
   [files.search, "Sahne Modu · ekrana dokun gizle/göster", "search play stage mode"],
   [files.search, "Kontroller için ekrana dokun", "search hidden controls hint"],

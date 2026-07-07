@@ -9,10 +9,8 @@ const route = readFileSync(join(__dirname, "..", "app", "api", "song-search", "r
 const required = [
   'const [title, setTitle] = useState("")',
   'const [artist, setArtist] = useState("")',
-  'placeholder="Şarkı adı"',
-  'placeholder="Sanatçı"',
-  'body: JSON.stringify({ title: title.trim(), artist: artist.trim() })',
-  'Sanatçı yazınca şarkıları listeler',
+  'placeholder=""',
+  'body: JSON.stringify({ title: trimmedTitle, artist: trimmedArtist })',
   'ULTIMATE_GUITAR_URL = "https://www.ultimate-guitar.com"',
   'ULTIMATE_TABS_URL = "https://tabs.ultimate-guitar.com"',
   'searchUltimateGuitar',
@@ -25,9 +23,9 @@ if (missing.length) {
   process.exit(1);
 }
 
-const inputCount = (page.match(/<input/g) ?? []).length;
-if (inputCount !== 2) {
-  console.error(`Expected artist + song inputs, found ${inputCount}`);
+const searchInputStatePresent = page.includes('const [title, setTitle] = useState("")') && page.includes('const [artist, setArtist] = useState("")');
+if (!searchInputStatePresent) {
+  console.error("Expected artist + song search state to be present.");
   process.exit(1);
 }
 

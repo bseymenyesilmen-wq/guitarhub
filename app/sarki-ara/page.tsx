@@ -587,11 +587,7 @@ export default function SarkiAra() {
 
         <section className="relative mb-5 overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
           <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-600/20 blur-3xl" />
-          <p className="text-sm font-black uppercase tracking-[0.28em] text-red-300">Akor ve söz arama</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Şarkı Ara</h1>
-          <p className="mt-3 max-w-2xl text-zinc-400">
-            Şarkı, sanatçı veya ikisini birlikte ara. Bulunan akor/söz seçenekleri sadece Varyasyon 1, 2, 3 olarak görünür.
-          </p>
+          <h1 className="text-4xl font-black tracking-tight sm:text-5xl">Şarkı Ara</h1>
         </section>
 
         <section className="rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/20 backdrop-blur sm:p-5">
@@ -600,7 +596,7 @@ export default function SarkiAra() {
               <span className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500">Şarkı</span>
               <input
                 type="text"
-                placeholder="Senden Daha Güzel"
+                placeholder=""
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 onKeyDown={(event) => {
@@ -613,7 +609,7 @@ export default function SarkiAra() {
               <span className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500">Sanatçı</span>
               <input
                 type="text"
-                placeholder="Duman"
+                placeholder=""
                 value={artist}
                 onChange={(event) => setArtist(event.target.value)}
                 onKeyDown={(event) => {
@@ -630,7 +626,6 @@ export default function SarkiAra() {
               {loading ? "Aranıyor..." : "Ara"}
             </button>
           </div>
-          <p className="mt-3 text-sm text-zinc-500">Örnek: Duman + Senden Daha Güzel. Son aramalar aşağıda chip olarak kalır.</p>
 
           {recentSearches.length > 0 && !result && (
             <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
