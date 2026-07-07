@@ -440,7 +440,7 @@ function usageScore(position: ChordPosition) {
 function sortByUsage(positions: ChordPosition[]) {
   return [...positions]
     .map((position, index) => ({
-      position: { ...position, hint: "" },
+      position: { ...position, name: position.name.replace(/^All-Guitar-Chords\s+/i, ""), hint: "" },
       index,
       score: usageScore(position),
     }))

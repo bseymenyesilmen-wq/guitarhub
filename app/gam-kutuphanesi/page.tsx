@@ -36,10 +36,9 @@ export default function GamKutuphanesi() {
         <AppNav />
 
         <section className="mb-6 rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-400">Gerçek gitar fretboard</p>
-          <h1 className="mt-3 text-4xl font-black">Gam Kütüphanesi</h1>
+          <h1 className="text-4xl font-black">Gam Kütüphanesi</h1>
           <p className="mt-2 max-w-2xl text-zinc-400">
-            All-Guitar-Chords mantığıyla root nota, gam, görünüm tipi ve pozisyon seç. Pentatonic gibi gamlarda 1. Pozisyon, 2. Pozisyon diye kutuları çalış.
+            Root nota, gam türü, görünüm ve pozisyon seçerek gitar klavyesinde sadece seçili gam notalarını çalış.
           </p>
         </section>
 
@@ -157,7 +156,6 @@ export default function GamKutuphanesi() {
           </div>
 
           <Fretboard root={root} scaleId={scaleId} showIntervals={showIntervals} startFret={0} displayFrets={displayFrets} viewMode={viewMode} positionStartFret={positionStartFret} positionEndFret={positionEndFret} />
-          <p className="mt-3 text-sm text-zinc-500">All-Guitar-Chords tarzı gerçek gitar klavyesi: 0-21 perde sabit kalır. Pozisyon seçince sadece o pozisyondaki gam notaları görünür.</p>
         </section>
       </div>
     </main>

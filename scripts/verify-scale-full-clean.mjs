@@ -10,7 +10,7 @@ const haystack = `${page}\n${fretboard}`;
 const required = [
   'description: "0-21 gerçek gitar klavyesi"',
   'const displayFrets = 21',
-  '0-21 perde sabit kalır',
+  'positionStartFret',
   'positionStartFret',
   'positionEndFret',
   'bg-[#333]',

@@ -15,7 +15,7 @@ const required = [
   "viewMode",
   "Vertical",
   "Diagonal",
-  "1. Pozisyon",
+  "label: `${index + 1}. Pozisyon`",
   "overflow-hidden",
   "minmax(0, 1fr)",
   "text-white",

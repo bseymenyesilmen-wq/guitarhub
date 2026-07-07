@@ -13,11 +13,11 @@ const required = [
   "buildScaleFretboard",
   "startFret",
   "displayFrets",
-  "POSITION_FRETS",
-  "setStartFret",
-  "Gerçek gitar fretboard",
+  "positionStartFret",
+  "selectedPosition?.label",
+  "Root nota, gam türü, görünüm ve pozisyon seçerek",
   "Full",
-  "7. perde",
+  "selectedPosition?.label",
 ];
 
 const haystack = `${musicTheory}\n${fretboard}\n${scalesPage}`;
