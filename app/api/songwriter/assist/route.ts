@@ -81,13 +81,43 @@ function extractLyricLines(notebook: string) {
     .filter((line) => line && !line.startsWith("[") && !CHORD_LINE_PATTERN.test(line));
 }
 
+function normalizeLyricLine(line: string) {
+  return line
+    .toLocaleLowerCase("tr-TR")
+    .replace(/[^a-zçğıöşü0-9\s]/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function lineTokens(line: string) {
+  return normalizeLyricLine(line).split(" ").filter((word) => word.length > 2);
+}
+
+function sharedTokenRatio(a: string, b: string) {
+  const first = new Set(lineTokens(a));
+  const second = new Set(lineTokens(b));
+  if (!first.size || !second.size) return 0;
+  const shared = [...first].filter((word) => second.has(word)).length;
+  return shared / Math.min(first.size, second.size);
+}
+
 function detectRhymeHint(notebook: string) {
   const lyricLines = extractLyricLines(notebook).slice(-4);
   const endings = lyricLines
-    .map((line) => line.toLocaleLowerCase("tr-TR").replace(/[^a-zçğıöşü0-9\s]/gi, "").trim().split(/\s+/).pop() ?? "")
+    .map((line) => normalizeLyricLine(line).split(/\s+/).pop() ?? "")
     .filter(Boolean)
     .map((word) => word.slice(-4));
   return endings.length ? endings.join(" / ") : "yok";
+}
+
+function suggestedLyricsNeedRewrite(suggestedLyrics: string, notebook: string) {
+  const existingLines = extractLyricLines(notebook).map(normalizeLyricLine).filter(Boolean);
+  const suggestedLines = suggestedLyrics.split(/\r?\n/).map(normalizeLyricLine).filter(Boolean);
+  if (!suggestedLines.length) return true;
+
+  const repeatsInsideSuggestion = suggestedLines.some((line, index) => suggestedLines.slice(index + 1).some((other) => sharedTokenRatio(line, other) >= 0.65));
+  const copiesExistingLine = suggestedLines.some((line) => existingLines.some((existing) => line === existing || sharedTokenRatio(line, existing) >= 0.72));
+  return repeatsInsideSuggestion || copiesExistingLine;
 }
 
 function fallbackSuggestion(notebook: string, sectionName: string, suggestionType?: string, moodPreset?: string): SongwriterSuggestion {
@@ -121,18 +151,27 @@ function fallbackSuggestion(notebook: string, sectionName: string, suggestionTyp
   };
 }
 
+function sanitizeSuggestion(suggestion: SongwriterSuggestion, notebook: string, sectionName: string, suggestionType?: string, moodPreset?: string): SongwriterSuggestion {
+  if (!suggestedLyricsNeedRewrite(suggestion.suggestedLyrics, notebook)) return suggestion;
+  const safe = fallbackSuggestion(notebook, sectionName, suggestionType, moodPreset);
+  return {
+    ...safe,
+    idea: `${safe.idea} Yeni satırlar mevcut sözden kopyalanmadan, sadece duygu ve kafiye uyumuyla üretildi.`,
+  };
+}
+
 function parseSuggestion(raw: string | null, notebook: string, sectionName: string, suggestionType?: string, moodPreset?: string): SongwriterSuggestion {
   if (!raw) return fallbackSuggestion(notebook, sectionName, suggestionType, moodPreset);
   const cleaned = raw.replace(/^```json/i, "").replace(/^```/, "").replace(/```$/, "").trim();
   try {
     const parsed = JSON.parse(cleaned) as Partial<SongwriterSuggestion>;
     if (parsed.suggestedChords && parsed.suggestedLyrics) {
-      return {
+      return sanitizeSuggestion({
         mood: String(parsed.mood ?? "öneri"),
         idea: String(parsed.idea ?? "Bu bölüme uygun bir devam önerisi."),
         suggestedChords: String(parsed.suggestedChords),
         suggestedLyrics: String(parsed.suggestedLyrics),
-      };
+      }, notebook, sectionName, suggestionType, moodPreset);
     }
   } catch {
     // Fallback below.
@@ -168,6 +207,9 @@ Kurallar:
 - Bu duyguya göre söz ve akor öner: hüzünlü/mutlu/romantik/öfkeli/umutlu/karanlık/arabesk/rock/pop/lo-fi olabilir.
 - Son satırların kafiye ucuna yaklaş; tam aynı kelimeyi tekrar etmek zorunda değilsin ama uyak hissi korunsun.
 - Sözlerin imgesini ve kelime dünyasını koru; başka bir şarkı gibi değil aynı şarkının devamı gibi yaz.
+- Kullanıcının yazdığı satırı, cümleyi veya özgün kelime grubunu kopyalama; aynı sözleri yeniden söyleme.
+- Önerilen iki satır kendi içinde de birbirini tekrar etmesin; aynı fiil, aynı imge veya aynı cümle kalıbını arka arkaya kullanma.
+- Mevcut sözden sadece duygu, tema, ritim ve kafiye ipucu al; yeni söz özgün olsun ama şarkının havasına uysun.
 - Aynı kelimeleri birebir kopyalama; yeni ama bağlı bir satır üret.
 - Var olan akorlara uyumlu 3-4 akorlu bir satır öner.
 - suggestedChords tek satır olsun, akorlar boşluklu dizilsin.
