@@ -57,6 +57,7 @@ export default function Repertuar() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [movingId, setMovingId] = useState<number | null>(null);
+  const [draggedSetlistSongId, setDraggedSetlistSongId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadSetlists = useCallback(async () => {
@@ -261,6 +262,42 @@ export default function Repertuar() {
     );
   }
 
+  async function reorderSetlistSong(draggedId: number | null, targetId: number) {
+    if (!selectedSetlist || !draggedId || draggedId === targetId) return;
+    const ordered = sortedSetlistSongs(selectedSetlist);
+    const draggedIndex = ordered.findIndex((item) => item.id === draggedId);
+    const targetIndex = ordered.findIndex((item) => item.id === targetId);
+    if (draggedIndex < 0 || targetIndex < 0) return;
+    const nextOrdered = [...ordered];
+    const [dragged] = nextOrdered.splice(draggedIndex, 1);
+    nextOrdered.splice(targetIndex, 0, dragged);
+    const normalized = nextOrdered.map((item, index) => ({ ...item, position: index + 1 }));
+
+    setMovingId(draggedId);
+    setMessage("");
+
+    if (storageMode === "local") {
+      const nextSetlists = readLocalSetlists().map((setlist) =>
+        setlist.id === selectedSetlist.id ? { ...setlist, setlist_songs: normalized } : setlist,
+      );
+      writeLocalSetlists(nextSetlists);
+      setSetlists(nextSetlists);
+      setMovingId(null);
+      return;
+    }
+
+    const updates = await Promise.all(normalized.map((item) => supabase.from("setlist_songs").update({ position: item.position }).eq("id", item.id)));
+    setMovingId(null);
+    const failed = updates.find((item) => item.error);
+    if (failed?.error) {
+      setMessage(failed.error.message);
+      return;
+    }
+    setSetlists((current) =>
+      current.map((setlist) => (setlist.id === selectedSetlist.id ? { ...setlist, setlist_songs: normalized } : setlist)),
+    );
+  }
+
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.16),transparent_34%),linear-gradient(180deg,#050505,#0a0a0b_45%,#09090b)] p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
@@ -380,7 +417,7 @@ export default function Repertuar() {
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Setlist içi</p>
                       <h2 className="mt-1 text-2xl font-black">{selectedSetlist.name}</h2>
-                      <p className="mt-1 text-sm text-zinc-500">{setlistSongs.length} şarkı</p>
+                      <p className="mt-1 text-sm text-zinc-500">{setlistSongs.length} şarkı · Basılı tutup sürükle-bırak ile sırala</p>
                     </div>
                     <input
                       className="min-h-11 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
@@ -395,7 +432,15 @@ export default function Repertuar() {
                       const song = item.songs;
                       if (!song) return null;
                       return (
-                        <div key={item.id} className="grid gap-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 md:grid-cols-[auto_1fr_auto] md:items-center">
+                        <div
+                          key={item.id}
+                          draggable
+                          onDragStart={() => setDraggedSetlistSongId(item.id)}
+                          onDragOver={(event) => event.preventDefault()}
+                          onDrop={() => { void reorderSetlistSong(draggedSetlistSongId, item.id); setDraggedSetlistSongId(null); }}
+                          onDragEnd={() => setDraggedSetlistSongId(null)}
+                          className={`grid cursor-grab gap-3 rounded-2xl border bg-zinc-950 p-4 transition active:cursor-grabbing md:grid-cols-[auto_1fr_auto] md:items-center ${draggedSetlistSongId === item.id ? "border-red-500 opacity-70" : "border-zinc-800 hover:border-red-500/40"}`}
+                        >
                           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 font-black text-red-300">{index + 1}</span>
                           {storageMode === "local" ? (
                             <details className="min-w-0 rounded-xl p-1">

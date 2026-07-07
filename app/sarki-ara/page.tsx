@@ -19,6 +19,13 @@ const PLAY_MODE_FONT_FAMILY = {
   proportional: "Arial, Helvetica, sans-serif",
   monospace: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
 } as const;
+const PLAY_THEMES = {
+  red: { label: "Kırmızı Sahne", shell: "bg-black", glow: "bg-[radial-gradient(circle_at_top,rgba(220,38,38,0.22),transparent_42%)]", paper: "bg-zinc-950/95 text-zinc-100" },
+  black: { label: "Tam Siyah", shell: "bg-black", glow: "bg-black", paper: "bg-black text-zinc-100" },
+  sepia: { label: "Sepya / Loş", shell: "bg-[#130f0a]", glow: "bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.16),transparent_44%)]", paper: "bg-[#1b140d]/95 text-amber-50" },
+} as const;
+type PlayTheme = keyof typeof PLAY_THEMES;
+type WakeLockSentinelLike = { release: () => Promise<void>; addEventListener?: (type: "release", listener: () => void) => void };
 
 type SearchHistoryItem = {
   title: string;
@@ -150,7 +157,11 @@ export default function SarkiAra() {
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
   const [autoScrollLevel, setAutoScrollLevel] = useState(4);
   const [playFontSize, setPlayFontSize] = useState(1);
+  const [playTheme, setPlayTheme] = useState<PlayTheme>("red");
+  const [keepScreenAwake, setKeepScreenAwake] = useState(false);
+  const [wakeLockMessage, setWakeLockMessage] = useState("");
   const playTextRef = useRef<HTMLPreElement | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -176,6 +187,8 @@ export default function SarkiAra() {
     return transposeCapo(result.capo, transposeSteps);
   }, [result, transposeSteps]);
 
+  const activePlayTheme = PLAY_THEMES[playTheme];
+
   useEffect(() => {
     if (!playMode || !autoScrollEnabled) return;
     const timer = window.setInterval(() => {
@@ -184,6 +197,41 @@ export default function SarkiAra() {
     }, AUTO_SCROLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [autoScrollEnabled, autoScrollLevel, playMode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function syncWakeLock() {
+      if (!playMode || !keepScreenAwake) {
+        await wakeLockRef.current?.release().catch(() => undefined);
+        wakeLockRef.current = null;
+        return;
+      }
+      const wakeLockApi = (navigator as Navigator & { wakeLock?: { request: (type: "screen") => Promise<WakeLockSentinelLike> } }).wakeLock;
+      if (!wakeLockApi) {
+        setWakeLockMessage("Bu tarayıcı ekran açık tutmayı desteklemiyor.");
+        return;
+      }
+      try {
+        const lock = await wakeLockApi.request("screen");
+        if (cancelled) {
+          await lock.release().catch(() => undefined);
+          return;
+        }
+        wakeLockRef.current = lock;
+        setWakeLockMessage("Ekran açık tutuluyor");
+        lock.addEventListener?.("release", () => setWakeLockMessage("Ekran kilidi bırakıldı"));
+      } catch {
+        setWakeLockMessage("Ekranı açık tutma izni alınamadı.");
+        setKeepScreenAwake(false);
+      }
+    }
+    void syncWakeLock();
+    return () => {
+      cancelled = true;
+      void wakeLockRef.current?.release().catch(() => undefined);
+      wakeLockRef.current = null;
+    };
+  }, [keepScreenAwake, playMode]);
 
 
   function resetSongView() {
@@ -809,15 +857,15 @@ export default function SarkiAra() {
         )}
 
         {result && playMode && (
-          <section onClick={() => setPlayControlsVisible((value) => !value)} className="fixed inset-0 z-[80] flex flex-col bg-black text-white">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(220,38,38,0.18),transparent_42%)]" />
+          <section onClick={() => setPlayControlsVisible((value) => !value)} className={`fixed inset-0 z-[80] flex flex-col text-white ${activePlayTheme.shell}`}>
+            <div className={`pointer-events-none absolute inset-0 ${activePlayTheme.glow}`} />
             {playControlsVisible && (
               <div onClick={(event) => event.stopPropagation()} className="relative z-10 m-2 rounded-[1.5rem] border border-white/10 bg-black/70 p-3 shadow-2xl shadow-black/70 backdrop-blur-xl transition sm:m-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-300">Sahne Modu · ekrana dokun gizle/göster</p>
                     <h2 className="truncate text-xl font-black sm:text-2xl">{result.title}</h2>
-                    <p className="truncate text-xs text-zinc-400">{result.artist} {transposedKey ? `· Ton: ${transposedKey}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""}</p>
+                    <p className="truncate text-xs text-zinc-400">{result.artist} {transposedKey ? `· Ton: ${transposedKey}` : ""} {transposedCapo ? `· Capo: ${transposedCapo}` : ""} · {activePlayTheme.label}</p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <button onClick={() => setTransposeSteps((value) => value - 1)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">-1</button>
@@ -826,12 +874,20 @@ export default function SarkiAra() {
                     <button onClick={() => setPlayFontSize((value) => Math.max(0.75, Number((value - 0.1).toFixed(2))))} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">A-</button>
                     <button onClick={() => setPlayFontSize((value) => Math.min(1.6, Number((value + 0.1).toFixed(2))))} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">A+</button>
                     <button onClick={() => setAutoScrollEnabled((value) => !value)} className={`rounded-xl px-3 py-2 text-sm font-black ${autoScrollEnabled ? "bg-red-600 hover:bg-red-500" : "bg-white/10 hover:bg-white/15"}`}>Oto Kaydır</button>
+                    <button onClick={() => setKeepScreenAwake((value) => !value)} className={`rounded-xl px-3 py-2 text-sm font-black ${keepScreenAwake ? "bg-emerald-600 hover:bg-emerald-500" : "bg-white/10 hover:bg-white/15"}`}>Ekran Açık</button>
+                    <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-black text-zinc-200">
+                      Tema
+                      <select value={playTheme} onChange={(event) => setPlayTheme(event.target.value as PlayTheme)} className="bg-transparent text-xs font-black text-white outline-none">
+                        {Object.entries(PLAY_THEMES).map(([value, theme]) => <option key={value} value={value} className="bg-zinc-950">{theme.label}</option>)}
+                      </select>
+                    </label>
                     <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-black text-zinc-200">
                       Hız {autoScrollLevel}
                       <input type="range" min="1" max="10" value={autoScrollLevel} onChange={(event) => setAutoScrollLevel(Number(event.target.value))} className="w-24 accent-red-600" />
                     </label>
                     <button onClick={() => setPlayControlsVisible(false)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-black hover:bg-white/15">Gizle</button>
-                    <button onClick={() => { setAutoScrollEnabled(false); setPlayMode(false); }} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
+                    {wakeLockMessage && <span className="rounded-xl bg-white/5 px-3 py-2 text-xs font-black text-zinc-300">{wakeLockMessage}</span>}
+                    <button onClick={() => { setKeepScreenAwake(false); setAutoScrollEnabled(false); setPlayMode(false); }} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100">Çık</button>
                   </div>
                 </div>
               </div>
@@ -845,7 +901,7 @@ export default function SarkiAra() {
                 tabSize: 4,
                 whiteSpace: "pre",
               }}
-              className="relative z-0 m-2 min-h-0 flex-1 overflow-auto whitespace-pre rounded-[1.5rem] bg-zinc-950/95 p-4 leading-[1.48] text-zinc-100 shadow-inner shadow-black sm:m-4 sm:p-6"
+              className={`relative z-0 m-2 min-h-0 flex-1 overflow-auto whitespace-pre rounded-[1.5rem] p-4 leading-[1.48] shadow-inner shadow-black sm:m-4 sm:p-6 ${activePlayTheme.paper}`}
             >
               {transposedChords || "Akor/söz yok."}
             </pre>

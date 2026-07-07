@@ -244,12 +244,13 @@ export default function SarkiYaz() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.16),transparent_34%),#09090b] p-3 pb-24 text-white sm:p-5 md:pb-5">
+    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(245,158,11,0.09),transparent_30%),#09090b] p-3 pb-24 text-white sm:p-5 md:pb-5">
       <div className="mx-auto max-w-6xl">
         <AppNav />
 
-        <section className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-950/75 p-4 shadow-xl shadow-black/25">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-red-400">Şarkı Yaz · kompakt beste defteri</p>
+        <section className="relative mb-4 overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
+          <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-red-600/20 blur-3xl" />
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-red-400">Şarkı Yaz · loş beste defteri</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Şarkı Yaz</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
             Akor/söz defteri, AI öneri ve repertuvara kaydetme tek ekranda.
@@ -257,7 +258,7 @@ export default function SarkiYaz() {
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
-          <aside className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
+          <aside className="rounded-[1.75rem] border border-white/10 bg-zinc-950/70 p-4 shadow-xl shadow-black/20 backdrop-blur">
             <h2 className="text-lg font-black">Kısa bilgi</h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
               <label className="block sm:col-span-3 lg:col-span-1">
@@ -296,7 +297,7 @@ export default function SarkiYaz() {
             </div>
           </aside>
 
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
+          <section className="rounded-[1.75rem] border border-amber-500/20 bg-gradient-to-br from-[#17120b] to-zinc-950 p-4 shadow-2xl shadow-black/30">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-black">Şarkı defteri</h2>
@@ -346,14 +347,14 @@ export default function SarkiYaz() {
               </div>
             </div>
 
-            <label className="mt-4 block">
-              <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Akor ve sözleri tek alana yaz</span>
+            <label className="mt-4 block rounded-[1.5rem] border border-amber-500/20 bg-[#f4ead5] p-3 shadow-inner shadow-black/30">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-zinc-700">Akor ve söz defteri</span>
               <textarea
                 value={draft.notebook}
                 onChange={(event) => setDraft({ ...draft, notebook: event.target.value })}
-                rows={18}
+                rows={20}
                 spellCheck={false}
-                className="mt-2 w-full rounded-2xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-7 text-zinc-100 outline-none focus:border-red-500"
+                className="mt-2 w-full resize-y rounded-2xl border border-amber-900/10 bg-[linear-gradient(to_bottom,rgba(120,83,40,0.12)_1px,transparent_1px)] bg-[length:100%_1.75rem] p-4 font-mono text-sm leading-7 text-zinc-950 outline-none placeholder:text-zinc-500 focus:border-red-500"
                 placeholder={DEFAULT_NOTEBOOK}
               />
             </label>
