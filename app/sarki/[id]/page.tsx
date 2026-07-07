@@ -178,7 +178,7 @@ export default function SarkiDetay() {
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
                 <Link href="/repertuar" className="text-sm font-semibold text-red-400 hover:text-red-300">
-                  Repertuara dön
+                  Repertuvara dön
                 </Link>
                 <h1 className="mt-3 text-4xl font-black">{song.title}</h1>
                 <p className="mt-2 text-zinc-400">

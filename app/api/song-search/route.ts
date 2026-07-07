@@ -967,7 +967,7 @@ async function fetchRepertuarimSongByUrl(songUrl: string, fallbackArtist = ""): 
       chords: fullPreContent,
       lyrics: fullPreContent,
       source: songUrl,
-      provider: "Repertuarım",
+      provider: "Repertuvarım",
       recommendations: await buildFastDetailRecommendations(artist, scrapedTitle, [], "repertuarim"),
     },
   };

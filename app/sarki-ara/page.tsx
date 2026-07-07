@@ -792,7 +792,7 @@ export default function SarkiAra() {
                     disabled={saving}
                     className="min-h-11 rounded-lg bg-red-600 px-5 py-3 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {saving ? "Ekleniyor..." : "Repertuara Ekle"}
+                    {saving ? "Ekleniyor..." : "Repertuvara Ekle"}
                   </button>
                 </div>
               </div>

@@ -82,7 +82,7 @@ export default function SarkiYaz() {
   const [autoSaveReady, setAutoSaveReady] = useState(false);
   const [suggestion, setSuggestion] = useState<SystemSuggestion | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
-  const [savingToRepertuar, setSavingToRepertuar] = useState(false);
+  const [savingToRepertuvar, setSavingToRepertuvar] = useState(false);
   const moodPresetLabel = MOOD_OPTIONS.find((mood) => mood.value === draft.moodPreset)?.label ?? "Hüzünlü";
 
   useEffect(() => {
@@ -183,8 +183,8 @@ export default function SarkiYaz() {
     }));
   }
 
-  async function saveToRepertuar() {
-    setSavingToRepertuar(true);
+  async function saveToRepertuvar() {
+    setSavingToRepertuvar(true);
     setSavedMessage("");
 
     const {
@@ -231,7 +231,7 @@ export default function SarkiYaz() {
         .select("id")
         .single();
 
-    setSavingToRepertuar(false);
+    setSavingToRepertuvar(false);
 
     if (error || !created) {
       setSavedMessage(error?.message ?? "Repertuvara kaydedilemedi.");
@@ -300,8 +300,8 @@ export default function SarkiYaz() {
                 <button onClick={getSystemSuggestion} disabled={suggestionLoading} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">
                   {suggestionLoading ? "Düşünüyor..." : SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.label ?? "Öneri al"}
                 </button>
-                <button onClick={saveToRepertuar} disabled={savingToRepertuar} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100 disabled:opacity-60">
-                  {savingToRepertuar ? "Kaydediliyor..." : editingSongId ? "Repertuvarda Güncelle" : "Repertuvara Kaydet"}
+                <button onClick={saveToRepertuvar} disabled={savingToRepertuvar} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-zinc-950 hover:bg-red-100 disabled:opacity-60">
+                  {savingToRepertuvar ? "Kaydediliyor..." : editingSongId ? "Repertuvarda Güncelle" : "Repertuvara Kaydet"}
                 </button>
               </div>
             </div>
