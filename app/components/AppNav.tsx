@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/akor-kutuphanesi", label: "Akorlar", icon: "♬" },
   { href: "/gam-kutuphanesi", label: "Gamlar", icon: "◎" },
   { href: "/tuner", label: "Tuner", icon: "♩" },
+  { href: "/looper", label: "Looper", icon: "●" },
 ];
 
 export function AppNav() {
