@@ -112,10 +112,10 @@ export default function GamKutuphanesi() {
             </span>
           </div>
 
-          <div className="mb-4 grid min-w-0 gap-3 rounded-[1.4rem] border border-zinc-800 bg-zinc-950 p-3 lg:grid-cols-[0.75fr_1.25fr]">
-            <div>
-              <h3 className="font-black">3. Görünüm</h3>
-              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mb-4 grid min-w-0 overflow-hidden gap-3 rounded-[1.4rem] border border-zinc-800 bg-zinc-950 p-3 lg:grid-cols-[0.75fr_1.25fr]">
+            <div className="min-w-0 overflow-hidden">
+              <h3 className="font-black">Görünüm</h3>
+              <div className="mt-2 flex w-full max-w-full gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {VIEW_MODES.map((mode) => (
                   <button
                     key={mode.id}
@@ -123,7 +123,7 @@ export default function GamKutuphanesi() {
                       setViewMode(mode.id);
                       setPositionIndex(0);
                     }}
-                    className={`min-h-14 w-32 shrink-0 rounded-2xl px-4 py-3 text-left ${viewMode === mode.id ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+                    className={`min-h-14 w-28 shrink-0 rounded-2xl px-4 py-3 text-left sm:w-32 ${viewMode === mode.id ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
                   >
                     <span className="block text-sm font-black">{mode.label}</span>
                     <span className="mt-1 hidden text-[10px] text-zinc-300 sm:block">{mode.description}</span>
@@ -132,14 +132,14 @@ export default function GamKutuphanesi() {
               </div>
             </div>
 
-            <div>
+            <div className="min-w-0 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-black">4. Pozisyon çalış</h3>
+                <h3 className="font-black">Pozisyon çalış</h3>
                 <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-zinc-400">
                   {viewMode === "full" ? "Genel harita" : selectedPosition?.label}
                 </span>
               </div>
-              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="mt-2 flex w-full max-w-full gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {positions.map((position) => (
                   <button
                     key={`${viewMode}-${position.index}-${position.startFret}`}
@@ -147,7 +147,7 @@ export default function GamKutuphanesi() {
                       setViewMode("vertical");
                       setPositionIndex(position.index);
                     }}
-                    className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-black ${positionIndex === position.index && viewMode !== "full" ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+                    className={`min-h-10 shrink-0 rounded-full px-3 text-xs font-black sm:min-h-11 sm:px-4 sm:text-sm ${positionIndex === position.index && viewMode !== "full" ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
                   >
                     {position.label}
                   </button>
