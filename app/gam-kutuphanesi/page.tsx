@@ -115,7 +115,7 @@ export default function GamKutuphanesi() {
           <div className="mb-4 grid min-w-0 gap-3 rounded-[1.4rem] border border-zinc-800 bg-zinc-950 p-3 lg:grid-cols-[0.75fr_1.25fr]">
             <div>
               <h3 className="font-black">3. Görünüm</h3>
-              <div className="mt-2 grid grid-cols-3 gap-2">
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {VIEW_MODES.map((mode) => (
                   <button
                     key={mode.id}
@@ -123,7 +123,7 @@ export default function GamKutuphanesi() {
                       setViewMode(mode.id);
                       setPositionIndex(0);
                     }}
-                    className={`rounded-2xl px-3 py-3 text-left ${viewMode === mode.id ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+                    className={`min-h-14 w-32 shrink-0 rounded-2xl px-4 py-3 text-left ${viewMode === mode.id ? "bg-red-600" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
                   >
                     <span className="block text-sm font-black">{mode.label}</span>
                     <span className="mt-1 hidden text-[10px] text-zinc-300 sm:block">{mode.description}</span>
@@ -139,7 +139,7 @@ export default function GamKutuphanesi() {
                   {viewMode === "full" ? "Genel harita" : selectedPosition?.label}
                 </span>
               </div>
-              <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {positions.map((position) => (
                   <button
                     key={`${viewMode}-${position.index}-${position.startFret}`}

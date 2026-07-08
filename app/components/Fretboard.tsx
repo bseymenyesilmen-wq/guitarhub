@@ -69,7 +69,8 @@ export function Fretboard({ root, scaleId, showIntervals = false, startFret = 0,
   const frets = Array.from({ length: displayFrets + 1 }, (_, index) => startFret + index);
 
   const noteFor = (stringNumber: number, fret: number) => notes.find((note) => note.stringNumber === stringNumber && note.fret === fret);
-  const boardMinWidth = Math.max(340, 44 + frets.length * 42);
+  const fretCellWidth = frets.length > 12 ? 42 : 34;
+  const boardMinWidth = Math.max(318, 42 + frets.length * fretCellWidth);
 
   return (
     <div data-agc-fretboard="horizontal" className="min-w-0 rounded-2xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl shadow-black/30 sm:p-3">
