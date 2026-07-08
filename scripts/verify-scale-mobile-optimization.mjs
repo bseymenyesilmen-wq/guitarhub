@@ -16,6 +16,8 @@ const required = [
   [scalePage, "max-h-[360px]", "scale list is shorter on mobile"],
   [scalePage, "[&::-webkit-scrollbar]:hidden", "mobile category scrollbar hidden"],
   [scalePage, "grid min-w-0 overflow-hidden gap-3", "control shell clips overflowing mobile pills"],
+  [scalePage, "<h2 className=\"text-base font-black sm:text-lg\">Root nota</h2>", "root heading has no step number"],
+  [scalePage, "<h2 className=\"text-base font-black sm:text-lg\">Gam / Mod</h2>", "scale heading has no step number"],
   [scalePage, "<h3 className=\"font-black\">Görünüm</h3>", "view heading has no step number"],
   [scalePage, "<h3 className=\"font-black\">Pozisyon çalış</h3>", "position heading has no step number"],
   [scalePage, "min-w-0 overflow-hidden", "control columns can shrink and clip overflow"],
@@ -29,7 +31,7 @@ const required = [
 ];
 
 const missing = required.filter(([content, snippet]) => !content.includes(snippet));
-const forbidden = ["3. Görünüm", "4. Pozisyon çalış"];
+const forbidden = ["1. Root nota", "2. Gam / Mod", "3. Görünüm", "4. Pozisyon çalış"];
 const bad = forbidden.filter((snippet) => scalePage.includes(snippet));
 if (missing.length || bad.length) {
   if (missing.length) console.error(`Missing scale mobile optimization snippets:\n${missing.map(([, snippet, label]) => `${label}: ${snippet}`).join("\n")}`);

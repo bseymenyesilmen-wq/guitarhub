@@ -45,7 +45,7 @@ export default function GamKutuphanesi() {
 
         <section className="mb-4 grid min-w-0 gap-3 lg:mb-6 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="gh-card min-w-0 rounded-[1.7rem] p-3 sm:rounded-3xl sm:p-4">
-            <h2 className="text-base font-black sm:text-lg">1. Root nota</h2>
+            <h2 className="text-base font-black sm:text-lg">Root nota</h2>
             <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">
               {NOTE_NAMES.map((note) => (
                 <button
@@ -64,7 +64,7 @@ export default function GamKutuphanesi() {
 
           <div className="gh-card min-w-0 rounded-[1.7rem] p-3 sm:rounded-3xl sm:p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-base font-black sm:text-lg">2. Gam / Mod</h2>
+              <h2 className="text-base font-black sm:text-lg">Gam / Mod</h2>
               <label className="flex min-h-10 items-center gap-2 rounded-full bg-zinc-950 px-3 text-xs font-bold text-zinc-300 sm:min-h-11 sm:px-4 sm:text-sm">
                 <input type="checkbox" checked={showIntervals} onChange={(event) => setShowIntervals(event.target.checked)} />
                 Interval göster
