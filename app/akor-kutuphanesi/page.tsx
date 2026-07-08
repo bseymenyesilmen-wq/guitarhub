@@ -103,29 +103,31 @@ export default function AkorKutuphanesi() {
           </p>
         </section>
 
-        <div className="sticky top-0 z-20 mb-6 space-y-3 bg-zinc-950/95 py-3 backdrop-blur">
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="A, Am, Bb, Ebmaj7, F#m, C5..."
-            className="min-h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-900 p-4 outline-none focus:border-red-500"
-          />
+        <div className="sticky top-0 z-20 mb-6 rounded-[2rem] border border-white/10 bg-zinc-950/70 p-3 shadow-2xl shadow-black/30 backdrop-blur-2xl sm:p-4">
+          <div className="rounded-[1.7rem] border border-red-500/15 bg-gradient-to-br from-white/[0.06] to-red-950/10 p-2 shadow-inner shadow-black/30">
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="A, Am, Bb, Ebmaj7, F#m, C5..."
+              className="min-h-14 w-full rounded-[1.45rem] border border-white/10 bg-black/35 p-4 text-base font-semibold text-white outline-none transition placeholder:text-zinc-500 focus:border-red-400 focus:bg-black/50"
+            />
 
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {NOTE_FILTERS.map((item) => (
-              <button
-                key={item.value}
-                onClick={() => setSelectedRoot(item.value)}
-                className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-bold ${selectedRoot === item.value ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
-              >
-                <span className="block leading-none">{item.label}</span>
-                {item.flatLabel && <span className="mt-1 block text-[10px] leading-none text-zinc-400">{item.flatLabel}</span>}
-              </button>
-            ))}
+            <div className="mt-3 flex gap-2 overflow-x-auto rounded-[1.35rem] bg-black/25 p-1.5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {NOTE_FILTERS.map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => setSelectedRoot(item.value)}
+                  className={`min-h-12 shrink-0 rounded-[1.1rem] px-4 py-2 text-sm font-black shadow-lg shadow-black/10 transition hover:-translate-y-0.5 ${selectedRoot === item.value ? "bg-red-600 text-white shadow-red-950/50" : "bg-white/[0.06] text-zinc-300 hover:bg-white/10 hover:text-white"}`}
+                >
+                  <span className="block leading-none">{item.label}</span>
+                  {item.flatLabel && <span className="mt-1 block text-[10px] leading-none text-zinc-400">{item.flatLabel}</span>}
+                </button>
+              ))}
+            </div>
           </div>
 
           {favoriteChordItems.length > 0 && (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-3">
+            <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-3">
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Çalışılacak akorlar</p>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {favoriteChordItems.map((chord) => (
