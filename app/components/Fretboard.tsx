@@ -69,9 +69,10 @@ export function Fretboard({ root, scaleId, showIntervals = false, startFret = 0,
   const frets = Array.from({ length: displayFrets + 1 }, (_, index) => startFret + index);
 
   const noteFor = (stringNumber: number, fret: number) => notes.find((note) => note.stringNumber === stringNumber && note.fret === fret);
+  const boardMinWidth = Math.max(340, 44 + frets.length * 42);
 
   return (
-    <div data-agc-fretboard="horizontal" className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-2xl shadow-black/30">
+    <div data-agc-fretboard="horizontal" className="min-w-0 rounded-2xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl shadow-black/30 sm:p-3">
       <div className="mb-3 flex flex-wrap gap-1.5 text-[11px] text-zinc-400 sm:text-xs">
         {scaleNotes.map((item) => (
           <span key={`${item.interval}-${item.note}`} className={`rounded-full px-2.5 py-1 font-bold ${item.note === root ? "bg-[#ff8300] text-black" : "bg-zinc-900 text-zinc-100"}`}>
@@ -80,30 +81,32 @@ export function Fretboard({ root, scaleId, showIntervals = false, startFret = 0,
         ))}
       </div>
 
-      <div className="overflow-hidden rounded bg-[#333] p-2">
-        <div className="ml-8 grid text-center text-[10px] font-medium text-zinc-200 sm:ml-9" style={{ gridTemplateColumns: `repeat(${frets.length}, minmax(0, 1fr))` }}>
-          {frets.map((fret) => <span key={fret}>{fret}</span>)}
-        </div>
+      <div className="overflow-x-auto rounded bg-[#333] p-2 [scrollbar-width:thin]">
+        <div style={{ minWidth: boardMinWidth }}>
+          <div className="ml-8 grid text-center text-[10px] font-medium text-zinc-200 sm:ml-9" style={{ gridTemplateColumns: `repeat(${frets.length}, minmax(0, 1fr))` }}>
+            {frets.map((fret) => <span key={fret}>{fret}</span>)}
+          </div>
 
-        {stringLabels.map((label, visualIndex) => {
-          const stringNumber = 1 + visualIndex;
-          return (
-            <div key={`${label}-${visualIndex}`} className="grid items-center" style={{ gridTemplateColumns: `32px repeat(${frets.length}, minmax(0, 1fr))` }}>
-              <span className="text-xs font-medium text-zinc-100">{label}</span>
-              {frets.map((fret) => {
-                const note = noteFor(stringNumber, fret);
-                const show = note ? shouldShowScaleNote(viewMode, stringNumber, fret, note.inScale, positionStartFret, positionEndFret) : false;
-                return (
-                  <div key={`${stringNumber}-${fret}`} className="relative flex h-8 items-center justify-center border-l border-[#9b8f79] bg-[#333] first:border-l-4 first:border-zinc-300 sm:h-9">
-                    <span className="absolute left-0 right-0 top-1/2 z-10 h-[2px] -translate-y-1/2 bg-gradient-to-b from-[#787878] to-[#bbaf9b] shadow-sm" />
-                    <FretMarker fret={fret} />
-                    {show && note ? <NoteDot marker={showIntervals ? note.interval ?? note.note : note.note} isRoot={note.isRoot} /> : null}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+          {stringLabels.map((label, visualIndex) => {
+            const stringNumber = 1 + visualIndex;
+            return (
+              <div key={`${label}-${visualIndex}`} className="grid items-center" style={{ gridTemplateColumns: `32px repeat(${frets.length}, minmax(0, 1fr))` }}>
+                <span className="text-xs font-medium text-zinc-100">{label}</span>
+                {frets.map((fret) => {
+                  const note = noteFor(stringNumber, fret);
+                  const show = note ? shouldShowScaleNote(viewMode, stringNumber, fret, note.inScale, positionStartFret, positionEndFret) : false;
+                  return (
+                    <div key={`${stringNumber}-${fret}`} className="relative flex h-8 items-center justify-center border-l border-[#9b8f79] bg-[#333] first:border-l-4 first:border-zinc-300 sm:h-9">
+                      <span className="absolute left-0 right-0 top-1/2 z-10 h-[2px] -translate-y-1/2 bg-gradient-to-b from-[#787878] to-[#bbaf9b] shadow-sm" />
+                      <FretMarker fret={fret} />
+                      {show && note ? <NoteDot marker={showIntervals ? note.interval ?? note.note : note.note} isRoot={note.isRoot} /> : null}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
