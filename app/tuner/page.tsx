@@ -19,6 +19,8 @@ type Detection = {
   targetFrequency: number;
 };
 
+type MicStatus = "opening" | "ready" | "suspended" | "blocked";
+
 const A4 = 440;
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
@@ -212,6 +214,7 @@ export default function TunerPage() {
   const [completedStrings, setCompletedStrings] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState("Mikrofon otomatik açılıyor...");
+  const [micStatus, setMicStatus] = useState<MicStatus>("opening");
   const [detection, setDetection] = useState<Detection | null>(null);
   const [inputLevel, setInputLevel] = useState(0);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -236,6 +239,7 @@ export default function TunerPage() {
     void audioContextRef.current?.close();
     audioContextRef.current = null;
     setRunning(false);
+    setMicStatus("opening");
     setInputLevel(0);
   }, []);
 
@@ -243,11 +247,15 @@ export default function TunerPage() {
     if (running || audioContextRef.current) return;
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("media-devices-missing");
+      setMicStatus("opening");
       setMessage("Mikrofon dinleniyor...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
       const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtor) throw new Error("web-audio-missing");
-      const audioContext = new AudioCtor();
+      const audioContext = new AudioCtor({ latencyHint: "interactive" });
+      if (audioContext.state === "suspended") {
+        await audioContext.resume().catch(() => undefined);
+      }
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 4096;
@@ -256,8 +264,15 @@ export default function TunerPage() {
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
       setRunning(true);
-      setMessage("Dinleniyor · teli çal");
+      if (audioContext.state === "suspended") {
+        setMicStatus("suspended");
+        setMessage("Mikrofon izni var · sesi başlatmak için ekrana bir kez dokun");
+      } else {
+        setMicStatus("ready");
+        setMessage("Dinleniyor · teli çal");
+      }
     } catch {
+      setMicStatus("blocked");
       setMessage("Mikrofon açılamadı. Tarayıcı izinlerinden GuitarHub mikrofonunu aç veya HTTPS üzerinden dene.");
       setRunning(false);
     }
@@ -287,8 +302,21 @@ export default function TunerPage() {
     const timer = window.setTimeout(() => {
       void startTuner();
     }, 0);
+    const resumeOnGesture = () => {
+      const context = audioContextRef.current;
+      if (context?.state === "suspended") {
+        void context.resume().then(() => {
+          setMicStatus("ready");
+          setMessage("Dinleniyor · teli çal");
+        }).catch(() => undefined);
+      }
+    };
+    window.addEventListener("pointerdown", resumeOnGesture, { passive: true });
+    window.addEventListener("touchstart", resumeOnGesture, { passive: true });
     return () => {
       window.clearTimeout(timer);
+      window.removeEventListener("pointerdown", resumeOnGesture);
+      window.removeEventListener("touchstart", resumeOnGesture);
       stopTuner();
       void toneContextRef.current?.close();
       toneContextRef.current = null;
@@ -306,7 +334,12 @@ export default function TunerPage() {
       analyser.getFloatTimeDomainData(buffer);
       let level = 0;
       for (const sample of buffer) level += sample * sample;
-      setInputLevel(Math.min(1, Math.sqrt(level / buffer.length) * 8));
+      const normalizedLevel = Math.min(1, Math.sqrt(level / buffer.length) * 28);
+      setInputLevel(normalizedLevel);
+      if (audioContext.state === "running" && micStatus === "suspended") {
+        setMicStatus("ready");
+        setMessage("Dinleniyor · teli çal");
+      }
 
       const frequency = autoCorrelate(buffer, audioContext.sampleRate);
       if (frequency && frequency >= 60 && frequency <= 420) {
@@ -335,7 +368,7 @@ export default function TunerPage() {
     return () => {
       if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
     };
-  }, [autoDetect, preset, running, targetString]);
+  }, [autoDetect, micStatus, preset, running, targetString]);
 
   return (
     <main className="gh-page min-h-screen overflow-hidden p-4 pb-28 text-white sm:p-6 md:pb-6">
@@ -434,8 +467,8 @@ export default function TunerPage() {
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-red-300">GuitarHub Tune</p>
                 <h2 className="gh-section-title mt-1 text-3xl font-black">{targetString.label}</h2>
               </div>
-              <div className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${running ? "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-400/30" : "bg-red-950/70 text-red-100 ring-1 ring-red-500/30"}`}>
-                {running ? "Mic açık" : "Mic bekliyor"}
+              <div className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${micStatus === "ready" ? "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-400/30" : micStatus === "suspended" ? "bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/30" : "bg-red-950/70 text-red-100 ring-1 ring-red-500/30"}`}>
+                {micStatus === "ready" ? "Mic hazır" : micStatus === "suspended" ? "Dokun · sesi aç" : micStatus === "blocked" ? "Mic engelli" : "Mic açılıyor"}
               </div>
             </div>
 
@@ -480,7 +513,7 @@ export default function TunerPage() {
               <div className="mt-6 rounded-2xl bg-zinc-900 p-3">
                 <div className="mb-2 flex items-center justify-between text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
                   <span>Giriş seviyesi</span>
-                  <span>{Math.round(inputLevel * 100)}%</span>
+                  <span>{micStatus === "ready" && inputLevel < 0.02 ? "Sinyal yok" : `${Math.round(inputLevel * 100)}%`}</span>
                 </div>
                 <div className="h-3 overflow-hidden rounded-full bg-zinc-950">
                   <div className="h-full rounded-full bg-gradient-to-r from-red-600 via-amber-400 to-emerald-500 transition-all" style={{ width: `${Math.round(inputLevel * 100)}%` }} />

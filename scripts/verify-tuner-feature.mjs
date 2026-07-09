@@ -13,7 +13,12 @@ const home = read("app", "page.tsx");
 const required = [
   [tuner, "export default function TunerPage", "tuner route component"],
   [tuner, "navigator.mediaDevices.getUserMedia", "microphone capture"],
+  [tuner, "type MicStatus = \"opening\" | \"ready\" | \"suspended\" | \"blocked\"", "explicit microphone status"],
   [tuner, "void startTuner();", "auto microphone start"],
+  [tuner, "window.addEventListener(\"pointerdown\", resumeOnGesture", "mobile gesture resume"],
+  [tuner, "Dokun · sesi aç", "suspended audio context UI"],
+  [tuner, "Mic hazır", "ready microphone UI"],
+  [tuner, "Sinyal yok", "no signal indicator"],
   [tuner, "createAnalyser", "web audio analyser"],
   [tuner, "autoCorrelate", "pitch detection"],
   [tuner, "playReferenceTone", "reference string sound"],

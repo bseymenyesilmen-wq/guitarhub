@@ -9,6 +9,7 @@ type SavedLoop = { id: string; name: string; bpm: number; duration: number; laye
 type SpeechRecognitionEventLike = Event & { results: ArrayLike<ArrayLike<{ transcript: string }>> };
 type SpeechRecognitionLike = EventTarget & { lang: string; continuous: boolean; interimResults: boolean; start: () => void; stop: () => void; onresult: ((event: SpeechRecognitionEventLike) => void) | null; onend: (() => void) | null; onerror: (() => void) | null };
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+type MicStatus = "off" | "opening" | "ready" | "recording" | "blocked";
 
 declare global {
   interface Window {
@@ -82,11 +83,14 @@ export default function LooperPage() {
   const [voiceOn, setVoiceOn] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(true);
   const [stageMode, setStageMode] = useState(false);
-  const [micReady, setMicReady] = useState(false);
+  const [micStatus, setMicStatus] = useState<MicStatus>("off");
+  const [inputLevel, setInputLevel] = useState(0);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
+  const inputAnalyserRef = useRef<AnalyserNode | null>(null);
+  const inputFrameRef = useRef<number | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordStartedAtRef = useRef(0);
   const sourcesRef = useRef<AudioBufferSourceNode[]>([]);
@@ -119,6 +123,7 @@ export default function LooperPage() {
       stopAllPlayback();
       stopRecording(false);
       streamRef.current?.getTracks().forEach((track) => track.stop());
+      if (inputFrameRef.current) window.cancelAnimationFrame(inputFrameRef.current);
       if (progressTimerRef.current) window.clearInterval(progressTimerRef.current);
       if (metronomeTimerRef.current) window.clearInterval(metronomeTimerRef.current);
       if (scheduledOverdubTimerRef.current) window.clearTimeout(scheduledOverdubTimerRef.current);
@@ -153,10 +158,40 @@ export default function LooperPage() {
 
   async function ensureMic() {
     if (streamRef.current) return streamRef.current;
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    streamRef.current = stream;
-    setMicReady(true);
-    return stream;
+    try {
+      setMicStatus("opening");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+      const ctx = getAudioContext();
+      if (ctx.state === "suspended") await ctx.resume().catch(() => undefined);
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      source.connect(analyser);
+      inputAnalyserRef.current = analyser;
+      streamRef.current = stream;
+      setMicStatus("ready");
+      startInputMeter();
+      return stream;
+    } catch (error) {
+      setMicStatus("blocked");
+      setMessage("Mikrofon açılamadı. HTTPS/Netlify üzerinden aç ve mikrofon izni ver.");
+      throw error;
+    }
+  }
+
+  function startInputMeter() {
+    if (inputFrameRef.current) window.cancelAnimationFrame(inputFrameRef.current);
+    const buffer = new Float32Array(inputAnalyserRef.current?.fftSize ?? 1024);
+    const tickInput = () => {
+      const analyser = inputAnalyserRef.current;
+      if (!analyser) return;
+      analyser.getFloatTimeDomainData(buffer);
+      let level = 0;
+      for (const sample of buffer) level += sample * sample;
+      setInputLevel(Math.min(1, Math.sqrt(level / buffer.length) * 24));
+      inputFrameRef.current = window.requestAnimationFrame(tickInput);
+    };
+    inputFrameRef.current = window.requestAnimationFrame(tickInput);
   }
 
   function tick(accent = false) {
@@ -254,6 +289,7 @@ export default function LooperPage() {
     chunksRef.current = [];
     const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : undefined });
     recorderRef.current = recorder;
+    setMicStatus("recording");
     recordStartedAtRef.current = performance.now();
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) chunksRef.current.push(event.data);
@@ -283,6 +319,7 @@ export default function LooperPage() {
       };
       recorder.stop();
       recorderRef.current = null;
+      setMicStatus(streamRef.current ? "ready" : "off");
     });
   }
 
@@ -397,6 +434,7 @@ export default function LooperPage() {
     setRedoStack([]);
     setLoopDuration(0);
     setStatus("empty");
+    setInputLevel(0);
     setMessage("Loop temizlendi.");
   }
 
@@ -564,7 +602,11 @@ export default function LooperPage() {
           <div className="gh-card rounded-[1.7rem] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-xl font-black">Katmanlar</h2>
-              <span className={`rounded-full px-3 py-1 text-xs font-black ${micReady ? "bg-emerald-600/20 text-emerald-200" : "bg-zinc-900 text-zinc-400"}`}>{micReady ? "Mic hazır" : "Mic bekliyor"}</span>
+              <span className={`rounded-full px-3 py-1 text-xs font-black ${micStatus === "ready" || micStatus === "recording" ? "bg-emerald-600/20 text-emerald-200" : micStatus === "opening" ? "bg-amber-600/20 text-amber-200" : micStatus === "blocked" ? "bg-red-600/20 text-red-200" : "bg-zinc-900 text-zinc-400"}`}>{micStatus === "recording" ? "Mic kayıt alıyor" : micStatus === "ready" ? "Mic hazır" : micStatus === "opening" ? "Mic hazırlanıyor" : micStatus === "blocked" ? "Mic engelli" : "Mic kapalı"}</span>
+            </div>
+            <div className="mt-3 rounded-2xl bg-black/30 p-3">
+              <div className="mb-2 flex items-center justify-between text-xs font-black uppercase tracking-[0.16em] text-zinc-500"><span>Mic giriş seviyesi</span><span>{micStatus === "off" ? "Record ile açılır" : inputLevel < 0.02 ? "Sinyal yok" : `${Math.round(inputLevel * 100)}%`}</span></div>
+              <div className="h-3 overflow-hidden rounded-full bg-zinc-950"><div className="h-full rounded-full bg-gradient-to-r from-red-600 via-amber-400 to-emerald-500 transition-all" style={{ width: `${Math.round(inputLevel * 100)}%` }} /></div>
             </div>
             <div className="mt-3 grid gap-3">
               {layers.length === 0 && <div className="rounded-2xl border border-dashed border-zinc-800 p-5 text-center text-sm font-bold text-zinc-500">İlk ritmi kaydedince Layer 1 burada görünecek.</div>}
