@@ -22,6 +22,7 @@ const STORAGE_KEY = "guitarhub.savedLoops";
 const DB_NAME = "guitarhub-looper";
 const DB_STORE = "loops";
 const COUNT_IN_OPTIONS = [1, 2, 4];
+const PLAYBACK_GAIN_BOOST = 2.2;
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -135,7 +136,7 @@ export default function LooperPage() {
   useEffect(() => {
     layers.forEach((layer) => {
       const gain = layerGainRefs.current.get(layer.id);
-      if (gain) gain.gain.value = layer.muted || (hasSolo && !layer.solo) ? 0 : layer.volume;
+      if (gain) gain.gain.value = layer.muted || (hasSolo && !layer.solo) ? 0 : Math.min(4, layer.volume * PLAYBACK_GAIN_BOOST);
     });
   }, [layers, hasSolo]);
 
@@ -258,7 +259,7 @@ export default function LooperPage() {
       source.buffer = buffer;
       source.loop = true;
       source.loopEnd = loopDuration;
-      gain.gain.value = layer.muted || (soloActive && !layer.solo) ? 0 : layer.volume;
+      gain.gain.value = layer.muted || (soloActive && !layer.solo) ? 0 : Math.min(4, layer.volume * PLAYBACK_GAIN_BOOST);
       source.connect(gain).connect(ctx.destination);
       source.start(ctx.currentTime + startAt);
       sourcesRef.current.push(source);
@@ -309,7 +310,7 @@ export default function LooperPage() {
           name: `${namePrefix} ${layers.length + 1}`,
           blob,
           url: URL.createObjectURL(blob),
-          volume: 1,
+          volume: 1.6,
           muted: false,
           solo: false,
           createdAt: Date.now(),
@@ -620,8 +621,8 @@ export default function LooperPage() {
                       <button onClick={() => deleteLayer(layer.id)} className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-black text-red-200">Delete</button>
                     </div>
                   </div>
-                  <label className="mt-3 block text-xs font-bold text-zinc-400">Volume
-                    <input type="range" min={0} max={1} step={0.01} value={layer.volume} onChange={(event) => updateLayer(layer.id, { volume: Number(event.target.value) })} className="mt-2 w-full accent-red-600" />
+                  <label className="mt-3 block text-xs font-bold text-zinc-400">Volume · {Math.round(layer.volume * 100)}%
+                    <input type="range" min={0} max={3} step={0.01} value={layer.volume} onChange={(event) => updateLayer(layer.id, { volume: Number(event.target.value) })} className="mt-2 w-full accent-red-600" />
                   </label>
                 </div>
               ))}

@@ -244,7 +244,7 @@ export default function TunerPage() {
   }, []);
 
   const startTuner = useCallback(async () => {
-    if (running || audioContextRef.current) return;
+    if (streamRef.current || audioContextRef.current) return;
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("media-devices-missing");
       setMicStatus("opening");
@@ -276,7 +276,7 @@ export default function TunerPage() {
       setMessage("Mikrofon açılamadı. Tarayıcı izinlerinden GuitarHub mikrofonunu aç veya HTTPS üzerinden dene.");
       setRunning(false);
     }
-  }, [running]);
+  }, []);
 
   const playReferenceTone = useCallback(async (frequency: number) => {
     const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;

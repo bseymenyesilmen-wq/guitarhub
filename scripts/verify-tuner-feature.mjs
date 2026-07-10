@@ -14,6 +14,7 @@ const required = [
   [tuner, "export default function TunerPage", "tuner route component"],
   [tuner, "navigator.mediaDevices.getUserMedia", "microphone capture"],
   [tuner, "type MicStatus = \"opening\" | \"ready\" | \"suspended\" | \"blocked\"", "explicit microphone status"],
+  [tuner, "if (streamRef.current || audioContextRef.current) return;", "tuner does not restart after running state changes"],
   [tuner, "void startTuner();", "auto microphone start"],
   [tuner, "window.addEventListener(\"pointerdown\", resumeOnGesture", "mobile gesture resume"],
   [tuner, "Dokun · sesi aç", "suspended audio context UI"],
