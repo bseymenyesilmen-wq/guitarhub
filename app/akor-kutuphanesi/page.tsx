@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
 import { ChordDiagram } from "@/app/components/ChordDiagram";
 import { CHORD_LIBRARY, NOTE_NAMES, type ChordDefinition } from "@/lib/music-theory";
-
-const FAVORITE_CHORDS_KEY = "guitarhub.favoriteChords";
 
 const FLAT_NOTE_MAP: Record<string, string> = {
   Db: "C#",
@@ -40,40 +38,11 @@ function chordFlatName(chord: ChordDefinition) {
   return `${flatRoot}${chord.name.slice(chord.root.length)}`;
 }
 
-function loadFavoriteChords() {
-  if (typeof window === "undefined") return [] as string[];
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(FAVORITE_CHORDS_KEY) ?? "[]");
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
-  } catch {
-    return [];
-  }
-}
 
 export default function AkorKutuphanesi() {
   const [query, setQuery] = useState("");
   const [selectedRoot, setSelectedRoot] = useState("Tümü");
   const [selectedChord, setSelectedChord] = useState<ChordDefinition | null>(null);
-  const [favoriteChords, setFavoriteChords] = useState<string[]>([]);
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => setFavoriteChords(loadFavoriteChords()));
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
-
-  const favoriteChordItems = useMemo(
-    () => favoriteChords.map((name) => CHORD_LIBRARY.find((chord) => chord.name === name)).filter((chord): chord is ChordDefinition => Boolean(chord)),
-    [favoriteChords],
-  );
-
-  function toggleFavorite(chordName: string) {
-    setFavoriteChords((current) => {
-      const next = current.includes(chordName) ? current.filter((item) => item !== chordName) : [...current, chordName];
-      window.localStorage.setItem(FAVORITE_CHORDS_KEY, JSON.stringify(next));
-      return next;
-    });
-  }
-
   const chords = useMemo(() => {
     const normalized = normalizeChordSearch(query);
     return CHORD_LIBRARY.filter((chord) => {
@@ -126,29 +95,12 @@ export default function AkorKutuphanesi() {
             </div>
           </div>
 
-          {favoriteChordItems.length > 0 && (
-            <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-3">
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Çalışılacak akorlar</p>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {favoriteChordItems.map((chord) => (
-                  <button
-                    key={chord.name}
-                    onClick={() => setSelectedChord(chord)}
-                    className="shrink-0 rounded-full bg-red-600/15 px-4 py-2 text-sm font-black text-red-200 hover:bg-red-600 hover:text-white"
-                  >
-                    ★ {chordFlatName(chord) ? `${chord.name} / ${chordFlatName(chord)}` : chord.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {chords.map((chord) => {
             const mainPosition = chord.positions.find((position) => position.difficulty === "beginner") ?? chord.positions[0];
             const flatName = chordFlatName(chord);
-            const isFavorite = favoriteChords.includes(chord.name);
             return (
               <article
                 key={chord.name}
@@ -163,25 +115,13 @@ export default function AkorKutuphanesi() {
                 }}
                 className="gh-card relative rounded-3xl p-4 text-left transition hover:-translate-y-0.5 hover:border-red-500/60"
               >
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleFavorite(chord.name);
-                  }}
-                  className={`absolute right-3 top-3 min-h-10 min-w-10 rounded-full text-lg font-black ${isFavorite ? "bg-red-600 text-white" : "bg-zinc-950 text-zinc-500 hover:text-red-300"}`}
-                  aria-label={isFavorite ? `${chord.name} çalışılacaklardan çıkar` : `${chord.name} çalışılacaklara ekle`}
-                >
-                  {isFavorite ? "★" : "☆"}
-                </button>
-
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-3xl font-black text-white">{chord.name}</h2>
                     {flatName && <p className="text-sm font-bold text-red-300">{flatName}</p>}
                     <p className="text-sm text-zinc-400">{chord.family} · {chord.formula.join(" ")}</p>
                   </div>
-                  <span className="mr-10 rounded-2xl bg-red-600 px-3 py-2 text-sm font-bold">
+                  <span className="rounded-2xl bg-red-600 px-3 py-2 text-sm font-bold">
                     {chord.notes.join(" · ")}
                   </span>
                 </div>

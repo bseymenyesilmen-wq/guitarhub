@@ -91,7 +91,7 @@ function writeRecentSearches(searches: SearchHistoryItem[]) {
   window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches.slice(0, 8)));
 }
 
-function resultToForm(result: SongSearchResult, favorite: boolean, chords: string): SongForm {
+function resultToForm(result: SongSearchResult, chords: string): SongForm {
   return {
     title: result.title,
     artist: result.artist,
@@ -102,7 +102,7 @@ function resultToForm(result: SongSearchResult, favorite: boolean, chords: strin
     difficulty: "",
     capo: result.capo,
     notes: "",
-    favorite,
+    favorite: false,
   };
 }
 
@@ -147,7 +147,6 @@ export default function SarkiAra() {
   const [artistResults, setArtistResults] = useState<SongArtistResult[]>([]);
   const [songResults, setSongResults] = useState<SongSearchListItem[]>([]);
   const [providerChoices, setProviderChoices] = useState<SongSearchListItem[] | null>(null);
-  const [favorite, setFavorite] = useState(false);
   const [result, setResult] = useState<SongSearchResult | null>(null);
   const [editedChords, setEditedChords] = useState("");
   const [transposeSteps, setTransposeSteps] = useState(0);
@@ -513,7 +512,7 @@ export default function SarkiAra() {
       return;
     }
 
-    const form = resultToForm({ ...result, key: transposedKey, capo: transposedCapo }, favorite, transposedChords);
+    const form = resultToForm({ ...result, key: transposedKey, capo: transposedCapo }, transposedChords);
 
     if (!form.title.trim() || !form.artist.trim()) {
       setMessage("Şarkı adı ve sanatçı zorunludur.");
@@ -784,12 +783,6 @@ export default function SarkiAra() {
                   </button>
                   <button onClick={() => setTransposeSteps((value) => value + 1)} className="min-h-11 rounded-lg bg-zinc-800 px-4 py-3 font-bold hover:bg-zinc-700">
                     +1
-                  </button>
-                  <button
-                    onClick={() => setFavorite((value) => !value)}
-                    className={`min-h-11 rounded-lg px-4 py-3 font-bold ${favorite ? "bg-red-600 hover:bg-red-500" : "bg-zinc-800 hover:bg-zinc-700"}`}
-                  >
-                    {favorite ? "Favoride" : "Favorilere Ekle"}
                   </button>
                   <button
                     onClick={() => { setPlayControlsVisible(true); setPlayMode(true); }}

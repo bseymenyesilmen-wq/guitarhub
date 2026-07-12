@@ -40,7 +40,6 @@ export default function SarkiDetay() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [song, setSong] = useState<Song | null>(null);
-  const [userId, setUserId] = useState("");
   const [shift, setShift] = useState(0);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -65,8 +64,6 @@ export default function SarkiDetay() {
         router.push("/giris");
         return;
       }
-
-      setUserId(session.user.id);
 
       const { data, error } = await supabase
         .from("songs")
@@ -148,23 +145,6 @@ export default function SarkiDetay() {
     setMessage(`${chordName} için akor örneği henüz kütüphanede yok.`);
   }
 
-  async function toggleFavorite() {
-    if (!song) return;
-
-    const { error } = await supabase
-      .from("songs")
-      .update({ favorite: !song.favorite })
-      .eq("id", song.id)
-      .eq("user_id", userId);
-
-    if (error) {
-      setMessage(error.message);
-      return;
-    }
-
-    setSong({ ...song, favorite: !song.favorite });
-  }
-
   return (
     <main className="min-h-screen bg-zinc-950 p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-5xl">
@@ -195,9 +175,6 @@ export default function SarkiDetay() {
                 </button>
                 <button onClick={() => setShift((value) => value + 1)} className="min-h-11 rounded-lg bg-zinc-800 px-4 py-3 font-bold hover:bg-zinc-700">
                   +1
-                </button>
-                <button onClick={toggleFavorite} className="min-h-11 rounded-lg bg-red-600 px-4 py-3 font-bold hover:bg-red-500">
-                  {song.favorite ? "Favoride" : "Favorile"}
                 </button>
                 <button onClick={() => { setPlayControlsVisible(true); setPlayMode(true); }} className="min-h-11 rounded-lg bg-white px-4 py-3 font-bold text-zinc-950 hover:bg-red-100">
                   Çalma Modu

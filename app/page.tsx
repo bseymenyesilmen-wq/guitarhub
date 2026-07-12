@@ -13,7 +13,7 @@ function firstName(value: string) {
 }
 
 function pickContinueSong(songs: Song[]) {
-  return songs.find((song) => Boolean(song.favorite)) ?? songs[0] ?? null;
+  return songs[0] ?? null;
 }
 
 function StatCard({ label, value, helper, actionLabel = "Aç", href, onClick }: { label: string; value: string; helper: string; actionLabel?: string; href?: string; onClick?: () => void }) {
@@ -36,20 +36,18 @@ function StatCard({ label, value, helper, actionLabel = "Aç", href, onClick }: 
   return <button type="button" onClick={onClick} className={cardClassName}>{content}</button>;
 }
 
-function SongRow({ song, actionLabel = "Aç" }: { song: Song; actionLabel?: string }) {
+function SongRow({ song, onRemove }: { song: Song; onRemove: (song: Song) => void }) {
   return (
-    <Link
-      href={`/sarki/${song.id}`}
-      className="group flex items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 transition hover:border-red-500/60 hover:bg-zinc-900"
-    >
-      <span className="min-w-0">
+    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 transition hover:border-red-500/60 hover:bg-zinc-900">
+      <Link href={`/sarki/${song.id}`} className="min-w-0 flex-1">
         <strong className="line-clamp-1 text-white group-hover:text-red-100">{song.title}</strong>
         <span className="mt-1 block line-clamp-1 text-sm text-zinc-400">{song.artist || "Sanatçı belirtilmemiş"}</span>
-      </span>
-      <span className="shrink-0 rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-red-300 group-hover:bg-red-600 group-hover:text-white">
-        {song.favorite ? "Favori" : actionLabel}
-      </span>
-    </Link>
+      </Link>
+      <div className="flex shrink-0 items-center gap-2">
+        <Link href={`/sarki/${song.id}`} className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-red-300 hover:bg-red-600 hover:text-white">Aç</Link>
+        <button type="button" onClick={() => onRemove(song)} className="rounded-full bg-red-950/70 px-3 py-1 text-xs font-black text-red-100 hover:bg-red-700">Kaldır</button>
+      </div>
+    </div>
   );
 }
 
@@ -85,10 +83,17 @@ export default function Home() {
     loadDashboard();
   }, [router]);
 
-  const favoriteSongs = songs.filter((song) => Boolean(song.favorite));
-  const favoriteCount = favoriteSongs.length;
   const continueSong = pickContinueSong(songs);
   const greeting = useMemo(() => getTimeGreeting(), []);
+
+  async function removeSong(song: Song) {
+    const ok = window.confirm(`“${song.title}” repertuvardan kaldırılsın mı?`);
+    if (!ok) return;
+    await supabase.from("setlist_songs").delete().eq("song_id", song.id);
+    const { error } = await supabase.from("songs").delete().eq("id", song.id);
+    if (error) return;
+    setSongs((current) => current.filter((item) => item.id !== song.id));
+  }
 
   return (
     <main className="gh-page min-h-screen p-4 pb-28 text-white sm:p-6 md:pb-6">
@@ -125,7 +130,7 @@ export default function Home() {
                   <h2 className="gh-section-title line-clamp-2 text-3xl font-black">{continueSong.title}</h2>
                   <p className="mt-2 text-zinc-300">{continueSong.artist || "Sanatçı belirtilmemiş"}</p>
                   <p className="mt-3 text-sm text-zinc-400">
-                    {continueSong.favorite ? "Favorilerinden bir şarkı seçtim." : "Son eklediğin şarkıdan devam edebilirsin."}
+                    Son eklediğin şarkıdan devam edebilirsin.
                   </p>
                   <Link href={`/sarki/${continueSong.id}`} className="mt-5 inline-flex rounded-2xl bg-white px-5 py-3 font-black text-zinc-950 hover:bg-red-100">
                     Şarkıyı Aç
@@ -150,7 +155,7 @@ export default function Home() {
           <>
             <section className="hidden gap-4 lg:grid lg:grid-cols-3">
               <StatCard label="Repertuvar" value={songs.length.toString()} helper="Kaydettiğin toplam şarkı" actionLabel="Repertuvara git" href="/repertuar" />
-              <StatCard label="Favoriler" value={favoriteCount.toString()} helper="Sık döndüğün parçalar" actionLabel="Favorileri göster" href="#favoriler" />
+              <StatCard label="Tuner" value="Hazır" helper="Gitarını hızlıca akort et" actionLabel="Tuner aç" href="/tuner" />
               <StatCard label="Son Eklenen" value={songs[0]?.title ?? "Henüz yok"} helper="En yeni repertuvar kaydı" actionLabel={songs[0] ? "Şarkıyı aç" : "Şarkı ara"} href={songs[0] ? `/sarki/${songs[0].id}` : "/sarki-ara"} />
             </section>
 
@@ -168,7 +173,7 @@ export default function Home() {
 
                 <div className="space-y-3">
                   {songs.slice(0, 5).map((song) => (
-                    <SongRow key={song.id} song={song} />
+                    <SongRow key={song.id} song={song} onRemove={removeSong} />
                   ))}
 
                   {songs.length === 0 && (
@@ -180,24 +185,19 @@ export default function Home() {
               </div>
 
               <div className="grid gap-6">
-                <div id="favoriler" className="scroll-mt-24 rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
+                <div className="scroll-mt-24 rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Favoriler</p>
-                      <h2 className="gh-section-title mt-1 text-2xl font-black">Hızlı Aç</h2>
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Pratik</p>
+                      <h2 className="gh-section-title mt-1 text-2xl font-black">Bugün Çalış</h2>
                     </div>
-                    <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold text-zinc-400">{favoriteCount} favori</span>
                   </div>
-
-                  <div className="space-y-3">
-                    {favoriteSongs.slice(0, 3).map((song) => (
-                      <SongRow key={song.id} song={song} actionLabel="Aç" />
-                    ))}
-
-                    {favoriteSongs.length === 0 && <p className="rounded-2xl bg-zinc-950 p-4 text-sm text-zinc-400">Favori şarkı işaretlediğinde burada hızlıca açabileceksin.</p>}
+                  <div className="grid gap-3">
+                    <Link href="/tuner" className="rounded-2xl bg-zinc-950 p-4 font-black text-white hover:bg-zinc-800">Tuner ile akort et</Link>
+                    <Link href="/akor-kutuphanesi" className="rounded-2xl bg-zinc-950 p-4 font-black text-white hover:bg-zinc-800">Akor bak</Link>
+                    <Link href="/gam-kutuphanesi" className="rounded-2xl bg-zinc-950 p-4 font-black text-white hover:bg-zinc-800">Gam çalış</Link>
                   </div>
                 </div>
-
               </div>
             </section>
           </>
