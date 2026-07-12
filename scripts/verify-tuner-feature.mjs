@@ -4,11 +4,13 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const read = (...parts) => readFileSync(join(__dirname, "..", ...parts), "utf8");
+const readBytes = (...parts) => readFileSync(join(__dirname, "..", ...parts));
 
 const tuner = read("app", "tuner", "page.tsx");
 const css = read("app", "globals.css");
 const nav = read("app", "components", "AppNav.tsx");
 const home = read("app", "page.tsx");
+const sampleFiles = ["E2", "A2", "D3", "G3", "B3", "E4", "Eb2", "Ab2", "Db3", "Gb3", "Bb3", "Eb4", "D2", "G2", "C3", "F3", "A3", "D4", "C2"].map((note) => [note, readBytes("public", "audio", "guitar", `${note}.mp3`)]);
 
 const required = [
   [tuner, "export default function TunerPage", "tuner route component"],
@@ -23,7 +25,14 @@ const required = [
   [tuner, "createAnalyser", "web audio analyser"],
   [tuner, "autoCorrelate", "pitch detection"],
   [tuner, "playReferenceTone", "reference string sound"],
-  [tuner, "oscillator.frequency.value = frequency", "oscillator note frequency"],
+  [tuner, "GUITAR_SAMPLE_ROOT = \"/audio/guitar\"", "local guitar sample root"],
+  [tuner, "sampleCacheRef", "decoded guitar sample cache"],
+  [tuner, "sampleFileName(label)", "per-string sample selection"],
+  [tuner, "fetch(sampleUrl)", "sample-based guitar playback"],
+  [tuner, "decodeAudioData", "real guitar mp3 decoding"],
+  [tuner, "master.gain.exponentialRampToValueAtTime(2.6", "louder reference sample"],
+  [tuner, "source.stop(now + Math.min(5.6, buffer.duration))", "long ringing sample playback"],
+  [tuner, "Math.round(sampleRate / frequency)", "fallback frequency-tuned plucked string delay"],
   [tuner, "autoDetect", "auto/manual string mode"],
   [tuner, "Otomatik", "automatic string label"],
   [tuner, "Manuel", "manual string label"],
@@ -69,9 +78,14 @@ const forbidden = [
 const missing = required.filter(([content, snippet]) => !content.includes(snippet));
 const joined = `${tuner}\n${nav}`;
 const bad = forbidden.filter((snippet) => joined.includes(snippet));
-if (missing.length || bad.length) {
+const emptySamples = sampleFiles.filter(([, bytes]) => bytes.length < 1000).map(([note]) => note);
+const referenceFunction = tuner.slice(tuner.indexOf("const playReferenceTone"), tuner.indexOf("\n\n  useEffect(() => {", tuner.indexOf("const playReferenceTone")));
+const referenceMicBreakers = ["stopTuner(", "setRunning(false)", "analyserRef.current = null", "streamRef.current?.getTracks()"].filter((snippet) => referenceFunction.includes(snippet));
+if (missing.length || bad.length || emptySamples.length || referenceMicBreakers.length) {
   if (missing.length) console.error(`Missing tuner snippets:\n${missing.map(([, snippet, label]) => `${label}: ${snippet}`).join("\n")}`);
   if (bad.length) console.error(`Forbidden old tuner/nav copy remains:\n${bad.join("\n")}`);
+  if (emptySamples.length) console.error(`Missing or empty guitar samples:\n${emptySamples.join("\n")}`);
+  if (referenceMicBreakers.length) console.error(`Reference tone must not stop the tuner mic:\n${referenceMicBreakers.join("\n")}`);
   process.exit(1);
 }
 

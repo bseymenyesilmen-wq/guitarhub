@@ -23,6 +23,15 @@ type MicStatus = "opening" | "ready" | "suspended" | "blocked";
 
 const A4 = 440;
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const GUITAR_SAMPLE_ROOT = "/audio/guitar";
+const GUITAR_SAMPLE_NOTES: Record<string, string> = {
+  "F#3": "Gb3",
+};
+
+function sampleFileName(label: string) {
+  const note = GUITAR_SAMPLE_NOTES[label] ?? label;
+  return `${GUITAR_SAMPLE_ROOT}/${note.replace("#", "s")}.mp3`;
+}
 
 const TUNINGS: TuningPreset[] = [
   {
@@ -219,6 +228,7 @@ export default function TunerPage() {
   const [inputLevel, setInputLevel] = useState(0);
   const audioContextRef = useRef<AudioContext | null>(null);
   const toneContextRef = useRef<AudioContext | null>(null);
+  const sampleCacheRef = useRef<Map<string, AudioBuffer>>(new Map());
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const frameRef = useRef<number | null>(null);
@@ -278,24 +288,71 @@ export default function TunerPage() {
     }
   }, []);
 
-  const playReferenceTone = useCallback(async (frequency: number) => {
+  const playReferenceTone = useCallback(async (frequency: number, label: string) => {
     const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtor) return;
-    const context = toneContextRef.current ?? new AudioCtor();
+    const context = toneContextRef.current ?? new AudioCtor({ latencyHint: "interactive" });
     toneContextRef.current = context;
     if (context.state === "suspended") await context.resume();
 
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = "sine";
-    oscillator.frequency.value = frequency;
-    gain.gain.setValueAtTime(0.0001, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.28, context.currentTime + 0.035);
-    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 1.15);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start();
-    oscillator.stop(context.currentTime + 1.2);
+    const now = context.currentTime;
+    const master = context.createGain();
+    const body = context.createBiquadFilter();
+    const compressor = context.createDynamicsCompressor();
+    body.type = "lowpass";
+    body.frequency.value = 7600;
+    body.Q.value = 0.85;
+    compressor.threshold.value = -9;
+    compressor.knee.value = 20;
+    compressor.ratio.value = 8;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.25;
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(2.6, now + 0.018);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 5.4);
+    master.connect(body).connect(compressor).connect(context.destination);
+
+    try {
+      const sampleUrl = sampleFileName(label);
+      let buffer = sampleCacheRef.current.get(sampleUrl);
+      if (!buffer) {
+        const response = await fetch(sampleUrl);
+        if (!response.ok) throw new Error("sample-missing");
+        const arrayBuffer = await response.arrayBuffer();
+        buffer = await context.decodeAudioData(arrayBuffer.slice(0));
+        sampleCacheRef.current.set(sampleUrl, buffer);
+      }
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = 1;
+      source.connect(master);
+      source.start(now);
+      source.stop(now + Math.min(5.6, buffer.duration));
+      return;
+    } catch {
+      // If a sample fails to load, keep a physical-model fallback instead of going silent.
+    }
+
+    const sustainSeconds = 5.0;
+    const sampleRate = context.sampleRate;
+    const sampleCount = Math.floor(sampleRate * sustainSeconds);
+    const delaySamples = Math.max(2, Math.round(sampleRate / frequency));
+    const stringBuffer = context.createBuffer(1, sampleCount, sampleRate);
+    const stringData = stringBuffer.getChannelData(0);
+    for (let i = 0; i < delaySamples && i < sampleCount; i += 1) {
+      const pickShape = Math.sin((Math.PI * i) / delaySamples);
+      stringData[i] = (Math.random() * 2 - 1) * pickShape;
+    }
+    for (let i = delaySamples; i < sampleCount; i += 1) {
+      const lowpassAverage = 0.5 * (stringData[i - delaySamples] + stringData[Math.max(0, i - delaySamples - 1)]);
+      const damping = 0.99935 - Math.min(0.011, frequency / 42000);
+      stringData[i] = lowpassAverage * damping;
+    }
+    const stringSource = context.createBufferSource();
+    stringSource.buffer = stringBuffer;
+    stringSource.connect(master);
+    stringSource.start(now);
+    stringSource.stop(now + sustainSeconds);
   }, []);
 
   useEffect(() => {
@@ -446,7 +503,7 @@ export default function TunerPage() {
                     type="button"
                     onClick={() => {
                       setSelectedString(index);
-                      void playReferenceTone(string.frequency);
+                      void playReferenceTone(string.frequency, string.label);
                     }}
                     className={`group relative min-h-16 overflow-hidden rounded-2xl border text-lg font-black transition hover:-translate-y-0.5 ${completed ? "border-emerald-300 bg-emerald-500 text-zinc-950 shadow-lg shadow-emerald-500/25" : active ? "border-amber-300 bg-amber-400 text-zinc-950 shadow-lg shadow-amber-500/20" : "border-white/10 bg-zinc-950 text-zinc-300 hover:border-red-500/50 hover:bg-zinc-900"}`}
                   >
