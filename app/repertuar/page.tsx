@@ -33,16 +33,6 @@ function setlistAccent(index: number) {
   return ["from-red-600/25", "from-purple-600/25", "from-sky-600/20", "from-amber-500/20"][index % 4];
 }
 
-function RepertuvarQuickCard({ title, value, helper, action, href, accent = false }: { title: string; value: string; helper: string; action: string; href: string; accent?: boolean }) {
-  return (
-    <Link href={href} className={`rounded-[1.6rem] border p-4 shadow-xl shadow-black/15 transition hover:-translate-y-0.5 hover:border-red-400/70 ${accent ? "border-red-500/30 bg-gradient-to-br from-red-600/25 to-zinc-950" : "border-white/10 bg-zinc-900/80"}`}>
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">{title}</p>
-      <p className="mt-2 text-3xl font-black text-white">{value}</p>
-      <p className="mt-1 text-sm text-zinc-400">{helper}</p>
-      <span className="mt-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-black text-zinc-950">{action}</span>
-    </Link>
-  );
-}
 
 export default function Repertuvar() {
   const router = useRouter();
@@ -261,12 +251,11 @@ export default function Repertuvar() {
 
     const { error: linkError } = await supabase.from("setlist_songs").delete().eq("song_id", song.id);
     if (linkError) {
-      setDeletingOwnSongId(null);
-      setMessage(linkError.message);
-      return;
+      // Some Supabase policies may block link cleanup; do not block deleting the user's own song.
+      setMessage("Setlist bağlantısı temizlenemedi, beste silme deneniyor...");
     }
 
-    const { error } = await supabase.from("songs").delete().eq("id", song.id);
+    const { error } = await supabase.from("songs").delete().eq("id", song.id).eq("user_id", userId);
     setDeletingOwnSongId(null);
 
     if (error) {
@@ -389,16 +378,10 @@ export default function Repertuvar() {
 
         {message && <p className="mb-4 rounded-lg bg-zinc-900 p-3 text-sm text-zinc-200">{message}</p>}
 
-        <section className="mb-6 grid gap-4 md:grid-cols-3">
-          <RepertuvarQuickCard title="Kendi Şarkıların" value={ownSongs.length.toString()} helper="Şarkı Yaz’dan kaydedilen bestelerin" action="Şarkı Yaz'a git" href="/sarki-yaz" accent />
-          <RepertuvarQuickCard title="Taslaklar" value="1" helper="Taslak cihazda otomatik saklanır" action="Taslağı aç" href="/sarki-yaz" />
-          <RepertuvarQuickCard title="Setlistler" value={setlists.length.toString()} helper="Konser/prova klasörlerin" action="Setlistlere bak" href="#setlistler" />
-        </section>
-
         <section className="gh-card mb-6 rounded-3xl bg-gradient-to-br from-zinc-900/90 to-red-950/20 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-red-300">Kendi Şarkıların</p>
+              <h2 className="gh-section-title text-xl font-black">Bestelerim</h2>
             </div>
             <Link href="/sarki-yaz" className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-zinc-950 hover:bg-red-100">
               Yeni şarkı yaz
@@ -458,7 +441,7 @@ export default function Repertuvar() {
           <section id="setlistler" className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
             <aside className="gh-card rounded-3xl p-4 lg:sticky lg:top-4 lg:self-start">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="gh-section-title text-xl font-black">Setlistler</h2>
+                <h2 className="gh-section-title text-xl font-black">Listeler</h2>
                 <span className="rounded-full bg-zinc-950 px-3 py-1 text-sm font-bold text-zinc-400">{setlists.length}</span>
               </div>
               <div className="mt-4 space-y-2">

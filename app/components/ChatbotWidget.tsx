@@ -127,10 +127,6 @@ export function ChatbotWidget() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">GuitarHub Yardımcı</p>
                 <h2 className="mt-1 text-lg font-black text-white">Yoda · Müzik Asistanı</h2>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-black text-red-100">
-                  <button type="button" onClick={() => void sendMessage("Akor soracağım")} className="rounded-full bg-white/10 px-3 py-2 hover:bg-white/15">Akor sor</button>
-                  <button type="button" onClick={() => void sendMessage("Söz yazmama yardım et")} className="rounded-full bg-white/10 px-3 py-2 hover:bg-white/15">Söz yaz</button>
-                </div>
               </div>
               <button onClick={() => setOpen(false)} className="min-h-10 min-w-10 rounded-full bg-zinc-800 text-xl font-black text-white hover:bg-zinc-700">
                 ×

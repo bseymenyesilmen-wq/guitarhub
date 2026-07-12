@@ -125,6 +125,12 @@ function variationLabel(index: number) {
   return `Varyasyon ${index + 1}`;
 }
 
+function coverStyle(cover: string | undefined, title: string, artist: string) {
+  if (cover) return { backgroundImage: `url(${cover})` };
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dc2626"/><stop offset="1" stop-color="#18181b"/></linearGradient></defs><rect width="160" height="160" rx="28" fill="url(#g)"/><text x="18" y="68" fill="white" font-family="Arial" font-size="17" font-weight="800">${artist.slice(0, 18).replace(/[&<>]/g, "")}</text><text x="18" y="94" fill="#fecaca" font-family="Arial" font-size="14" font-weight="700">${title.slice(0, 20).replace(/[&<>]/g, "")}</text><text x="18" y="130" fill="#fff" font-family="Arial" font-size="30">♪</text></svg>`;
+  return { backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")` };
+}
+
 function isMonospaceProvider(sourceProvider = "") {
   return sourceProvider === "Ultimate Guitar" || sourceProvider === "ultimate-guitar";
 }
@@ -703,7 +709,7 @@ export default function SarkiAra() {
                   >
                     <span
                       className="h-16 w-16 shrink-0 rounded-2xl bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center shadow-lg shadow-black/30 ring-1 ring-white/5"
-                      style={song.cover ? { backgroundImage: `url(${song.cover})` } : undefined}
+                      style={coverStyle(song.cover, song.title, song.artist)}
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-base font-black text-white">{song.title}</span>
@@ -740,7 +746,7 @@ export default function SarkiAra() {
                 >
                   <span
                     className="h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center"
-                    style={variant.cover ? { backgroundImage: `url(${variant.cover})` } : undefined}
+                    style={coverStyle(variant.cover, variant.title, variant.artist)}
                   />
                   <span className="min-w-0">
                     <span className="block truncate font-black">{variationLabel(index)}</span>
@@ -756,6 +762,10 @@ export default function SarkiAra() {
           <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
               <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+                <div className="flex w-full items-center gap-2">
+                  <button type="button" onClick={resetSongView} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full bg-zinc-800 text-xl font-black text-white hover:bg-zinc-700" aria-label="Şarkı aramaya dön">←</button>
+                  <span className="text-sm font-black text-zinc-400">Şarkı araya dön</span>
+                </div>
                 <div>
                   <h2 className="text-2xl font-black">{result.title}</h2>
                   <p className="mt-1 text-zinc-400">
@@ -825,7 +835,7 @@ export default function SarkiAra() {
                       >
                         <span
                           className="h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center"
-                          style={recommendation.cover ? { backgroundImage: `url(${recommendation.cover})` } : undefined}
+                          style={coverStyle(recommendation.cover, recommendation.title, recommendation.artist)}
                         />
                         <span className="min-w-0">
                           <span className="block truncate font-black">{recommendation.title}</span>

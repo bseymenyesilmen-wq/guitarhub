@@ -162,11 +162,11 @@ function autoCorrelate(buffer: Float32Array, sampleRate: number) {
   let rms = 0;
   for (const sample of buffer) rms += sample * sample;
   rms = Math.sqrt(rms / buffer.length);
-  if (rms < 0.012) return null;
+  if (rms < 0.0045) return null;
 
   let start = 0;
   let end = buffer.length - 1;
-  const threshold = 0.2;
+  const threshold = 0.08;
   for (let i = 0; i < buffer.length / 2; i += 1) {
     if (Math.abs(buffer[i]) < threshold) {
       start = i;
@@ -229,6 +229,7 @@ export default function TunerPage() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const toneContextRef = useRef<AudioContext | null>(null);
   const sampleCacheRef = useRef<Map<string, AudioBuffer>>(new Map());
+  const lastDetectionRef = useRef<{ detection: Detection; at: number } | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const frameRef = useRef<number | null>(null);
@@ -391,7 +392,7 @@ export default function TunerPage() {
       analyser.getFloatTimeDomainData(buffer);
       let level = 0;
       for (const sample of buffer) level += sample * sample;
-      const normalizedLevel = Math.min(1, Math.sqrt(level / buffer.length) * 28);
+      const normalizedLevel = Math.min(1, Math.sqrt(level / buffer.length) * 85);
       setInputLevel(normalizedLevel);
       if (audioContext.state === "running" && micStatus === "suspended") {
         setMicStatus("ready");
@@ -399,24 +400,29 @@ export default function TunerPage() {
       }
 
       const frequency = autoCorrelate(buffer, audioContext.sampleRate);
-      if (frequency && frequency >= 60 && frequency <= 420) {
+      const now = performance.now();
+      if (frequency && frequency >= 50 && frequency <= 460) {
         const target = autoDetect ? closestString(frequency, preset) : targetString;
         const centsToString = Math.round(1200 * Math.log2(frequency / target.frequency));
         const note = noteFromFrequency(frequency);
-        setDetection({
+        const nextDetection = {
           frequency,
           note: note.note,
           octave: note.octave,
           cents: centsToString,
           targetLabel: target.label,
           targetFrequency: target.frequency,
-        });
+        };
+        lastDetectionRef.current = { detection: nextDetection, at: now };
+        setDetection(nextDetection);
         const exactIndex = preset.strings.findIndex((string) => string.label === target.label);
         if (autoDetect && exactIndex >= 0) setSelectedString(exactIndex);
         if (Math.abs(centsToString) <= 5) {
           setCompletedStrings((current) => (current.includes(`${preset.id}:${target.label}`) ? current : [...current, `${preset.id}:${target.label}`]));
           if ("vibrate" in navigator) navigator.vibrate?.(18);
         }
+      } else if (lastDetectionRef.current && now - lastDetectionRef.current.at < 1350) {
+        setDetection(lastDetectionRef.current.detection);
       }
       frameRef.current = window.requestAnimationFrame(tick);
     };
@@ -478,6 +484,7 @@ export default function TunerPage() {
                       onClick={() => {
                         setPresetId(item.id);
                         setSelectedString(0);
+                        lastDetectionRef.current = null;
                         setDetection(null);
                         setCompletedStrings([]);
                         setTuningPickerOpen(false);
@@ -536,7 +543,7 @@ export default function TunerPage() {
                     {detection ? `${detection.note}${detection.octave}` : targetString.label}
                   </div>
                   <div className={`mt-2 rounded-full px-3 py-1 text-sm font-black ${tuned ? "bg-emerald-500 text-zinc-950" : "bg-zinc-900 text-zinc-300"}`}>
-                    {detection ? `${cents > 0 ? "+" : ""}${cents} cent` : message}
+                    {detection ? `${cents > 0 ? "+" : ""}${cents}` : message}
                   </div>
                 </div>
               </div>
@@ -570,7 +577,7 @@ export default function TunerPage() {
               <div className="mt-6 rounded-2xl bg-zinc-900 p-3">
                 <div className="mb-2 flex items-center justify-between text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
                   <span>Giriş seviyesi</span>
-                  <span>{micStatus === "ready" && inputLevel < 0.02 ? "Sinyal yok" : `${Math.round(inputLevel * 100)}%`}</span>
+                  <span>{micStatus === "ready" && inputLevel < 0.01 ? "Sinyal yok" : `${Math.round(inputLevel * 100)}%`}</span>
                 </div>
                 <div className="h-3 overflow-hidden rounded-full bg-zinc-950">
                   <div className="h-full rounded-full bg-gradient-to-r from-red-600 via-amber-400 to-emerald-500 transition-all" style={{ width: `${Math.round(inputLevel * 100)}%` }} />

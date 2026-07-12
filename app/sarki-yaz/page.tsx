@@ -78,8 +78,7 @@ export default function SarkiYaz() {
   const [draft, setDraft] = useState<Draft>(() => loadDraft());
   const [editingSongId, setEditingSongId] = useState<number | null>(null);
   const [savedMessage, setSavedMessage] = useState("");
-  const [autoSaveMessage, setAutoSaveMessage] = useState("");
-  const [autoSaveReady, setAutoSaveReady] = useState(false);
+  const [draftMessage, setDraftMessage] = useState("");
   const [suggestion, setSuggestion] = useState<SystemSuggestion | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [savingToRepertuvar, setSavingToRepertuvar] = useState(false);
@@ -89,12 +88,10 @@ export default function SarkiYaz() {
     async function loadExistingSongDraft() {
       const songId = new URLSearchParams(window.location.search).get("songId");
       if (!songId) {
-        setAutoSaveReady(true);
         return;
       }
       const parsedSongId = Number(songId);
       if (!Number.isFinite(parsedSongId)) {
-        setAutoSaveReady(true);
         return;
       }
 
@@ -116,7 +113,6 @@ export default function SarkiYaz() {
 
       if (error || !data) {
         setSavedMessage(error?.message ?? "Şarkı bulunamadı.");
-        setAutoSaveReady(true);
         return;
       }
 
@@ -129,7 +125,6 @@ export default function SarkiYaz() {
         sectionName: String(data.notes ?? "").match(/Bölüm:\s*([^\n]+)/)?.[1] ?? "Verse",
         notebook: String(data.chords ?? data.lyrics ?? ""),
       });
-      setAutoSaveReady(true);
     }
 
     const timer = window.setTimeout(() => {
@@ -138,14 +133,21 @@ export default function SarkiYaz() {
     return () => window.clearTimeout(timer);
   }, [router]);
 
-  useEffect(() => {
-    if (!autoSaveReady) return;
-    const timer = window.setTimeout(() => {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-      setAutoSaveMessage("Otomatik kaydedildi");
-    }, 500);
-    return () => window.clearTimeout(timer);
-  }, [autoSaveReady, draft]);
+  function updateNotebook(value: string) {
+    setDraft((current) => ({ ...current, notebook: value }));
+    setDraftMessage("");
+  }
+
+  function clearNotebookIfDefault() {
+    if (draft.notebook === DEFAULT_NOTEBOOK) {
+      setDraft((current) => ({ ...current, notebook: "" }));
+    }
+  }
+
+  function saveDraftManually() {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    setDraftMessage("Taslak bu cihazda kaydedildi");
+  }
 
   async function getSystemSuggestion() {
     setSuggestionLoading(true);
@@ -238,7 +240,7 @@ export default function SarkiYaz() {
       return;
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    window.localStorage.removeItem(STORAGE_KEY);
     router.push(`/sarki/${created.id}`);
   }
 
@@ -297,6 +299,7 @@ export default function SarkiYaz() {
                 <h2 className="gh-section-title text-xl font-black">Şarkı defteri</h2>
               </div>
               <div className="flex flex-wrap gap-2">
+                <button onClick={saveDraftManually} className="rounded-xl bg-zinc-800 px-3 py-2 text-sm font-black text-zinc-100 hover:bg-zinc-700">Taslağı Kaydet</button>
                 <button onClick={getSystemSuggestion} disabled={suggestionLoading} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white hover:bg-red-500 disabled:opacity-60">
                   {suggestionLoading ? "Düşünüyor..." : SUGGESTION_TYPES.find((type) => type.value === draft.suggestionType)?.label ?? "Öneri al"}
                 </button>
@@ -307,7 +310,7 @@ export default function SarkiYaz() {
             </div>
 
             {savedMessage && <p className="mt-3 rounded-2xl bg-green-950/50 p-3 text-sm font-bold text-green-200">{savedMessage}</p>}
-            {autoSaveMessage && <p className="mt-3 text-xs font-bold text-zinc-500">{autoSaveMessage}</p>}
+            {draftMessage && <p className="mt-3 text-xs font-bold text-zinc-500">{draftMessage}</p>}
 
             {suggestion && (
               <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 p-4">
@@ -344,11 +347,13 @@ export default function SarkiYaz() {
               <span className="text-xs font-black uppercase tracking-[0.16em] text-zinc-700">Akor ve söz defteri</span>
               <textarea
                 value={draft.notebook}
-                onChange={(event) => setDraft({ ...draft, notebook: event.target.value })}
+                onFocus={clearNotebookIfDefault}
+                onClick={clearNotebookIfDefault}
+                onChange={(event) => updateNotebook(event.target.value)}
                 rows={20}
                 spellCheck={false}
                 className="mt-2 w-full resize-y rounded-2xl border border-amber-900/10 bg-[#fff7e8] p-4 font-mono text-sm leading-7 text-zinc-950 outline-none placeholder:text-zinc-500 focus:border-red-500"
-                placeholder={DEFAULT_NOTEBOOK}
+                placeholder="Akorları ve sözlerini buraya yaz"
               />
             </label>
           </section>

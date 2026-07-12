@@ -191,12 +191,12 @@ export function buildFallbackReply(message: string) {
   }
 
   if (normalized.includes("ton") || normalized.includes("hangi gam") || normalized.includes("gamdan")) {
-    return "Bir şarkının tonunu anlamak için bitiş akoruna, en çok döndüğü akora ve melodinin durakladığı sese bak. Gamları incelemek için [Gam Kütüphanesi](/gam-kutuphanesi) bölümünü kullanabilirsin.";
+    return "Kanka şarkının gamını bulmak için genelde ton merkezine, bitiş akoruna, melodinin en çok dinlendiği notaya ve akor dizisine bakılır. Şarkı adını/sanatçıyı yazarsan Yoda yorumlar; gerekiyorsa güncel müzik bilgisinden de yararlanmaya çalışır. Pratik görmek istersen [Gam Kütüphanesi](/gam-kutuphanesi) yanında dursun ama cevabı sadece oraya yollamak değil.";
   }
 
   const route = findRelevantRoute(message);
   if (route) {
-    return `Tabii kanka. Bunun için **${route.label}** bölümünü kullanabilirsin: [${route.label}](${route.href}).`;
+    return `Kanka bu konuda direkt yardımcı olayım: ne yapmak istediğini yazarsan adım adım anlatırım. İstersen ilgili sayfayı da açabilirsin: [${route.label}](${route.href}).`;
   }
 
   return "Tabii kanka, GuitarHub içinde yardımcı olurum. Şarkı arama, repertuar, akorlar, gamlar, gitar çalışma önerileri ve site kullanımı hakkında soru sorabilirsin.";
@@ -216,6 +216,8 @@ Görevin:
   - Ana sayfa: [Ana Sayfa](/)
 - Kullanıcı “nereden şarkı arayabilirim?” gibi bir şey sorarsa direkt ilgili linki ver.
 - Kullanıcı gitar/müzik sorarsa öğretici ama kısa cevap ver.
+- Kullanıcı belirli bir şarkının tonu/gamı/akorları/sanatçısı hakkında sorarsa sadece site linki verme; bildiğin kadarıyla doğrudan analiz et, emin değilsen belirsizliği söyle ve kullanıcıdan şarkı/sanatçı veya akor dizisi iste.
+- Güncel/özel şarkı bilgisi gerekiyorsa internetten bakabiliyormuş gibi davranma; mevcut backend/Hermes erişimi bilgi getirebiliyorsa kullan, getiremiyorsa açıkça "emin değilim" de ve nasıl bulunacağını anlat.
 - Kullanıcı müzik, şarkı veya GuitarHub dışı alakasız bir konu sorarsa şu cevabı ver: "${OUT_OF_SCOPE_REPLY}"
 
 Kesin güvenlik kuralı:

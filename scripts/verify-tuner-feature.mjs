@@ -22,6 +22,11 @@ const required = [
   [tuner, "Dokun · sesi aç", "suspended audio context UI"],
   [tuner, "Mic hazır", "ready microphone UI"],
   [tuner, "Sinyal yok", "no signal indicator"],
+  [tuner, "lastDetectionRef", "holds first plucked note briefly"],
+  [tuner, "rms < 0.0045", "more sensitive tuner input threshold"],
+  [tuner, "const threshold = 0.08", "lower autocorrelation trim threshold"],
+  [tuner, "Math.sqrt(level / buffer.length) * 85", "more sensitive input meter"],
+  [tuner, "now - lastDetectionRef.current.at < 1350", "stable display during string decay"],
   [tuner, "createAnalyser", "web audio analyser"],
   [tuner, "autoCorrelate", "pitch detection"],
   [tuner, "playReferenceTone", "reference string sound"],
@@ -73,6 +78,7 @@ const forbidden = [
   "Mikrofon izni verilmedi veya tarayıcı desteklemiyor.",
   "Gitar kafa",
   "grid-cols-7",
+  "${cents} cent",
 ];
 
 const missing = required.filter(([content, snippet]) => !content.includes(snippet));
