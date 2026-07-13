@@ -885,12 +885,13 @@ async function fastFallbackRecommendations(existing: SongSearchListItem[], artis
   );
 }
 
-function emergencyFallbackRecommendations(artist: string, title: string) {
+async function emergencyFallbackRecommendations(artist: string, title: string) {
   const base = isLikelyForeignSong(artist, title) ? FALLBACK_FOREIGN_RECOMMENDATIONS : FALLBACK_TURKISH_RECOMMENDATIONS;
-  return withFallbackCovers(
+  return await withInternetOrFallbackCovers(
     base
       .filter((song) => normalizeText(song.title) !== normalizeText(title) || normalizeText(song.artist) !== normalizeText(artist))
       .slice(0, 6),
+    { allowItunes: true, timeoutMs: DETAIL_COVER_TIMEOUT_MS },
   );
 }
 
@@ -901,7 +902,7 @@ async function buildFastDetailRecommendations(artist: string, title: string, exi
   const quickFallback = await fastFallbackRecommendations([...existing, ...quickCandidates], artist, title);
   if (quickFallback.length >= 3) return quickFallback;
   const fullRecommendations = await withTimeout(fullRecommendationsPromise, quickFallback, DETAIL_RECOMMENDATION_TIMEOUT_MS);
-  return fullRecommendations.length ? fullRecommendations : emergencyFallbackRecommendations(artist, title);
+  return fullRecommendations.length ? fullRecommendations : await emergencyFallbackRecommendations(artist, title);
 }
 
 async function getUakorJson<T>(url: string) {
