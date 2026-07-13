@@ -136,3 +136,158 @@ textarea {
   0%, 38% { transform: translateX(-120%); }
   58%, 100% { transform: translateX(120%); }
 }
+
+
+.gh-welcome-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 0;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(239, 68, 68, 0.32), transparent 32%),
+    radial-gradient(circle at 78% 72%, rgba(127, 29, 29, 0.24), transparent 34%),
+    linear-gradient(145deg, rgba(3, 3, 4, 0.98), rgba(10, 10, 12, 0.96));
+  color: white;
+  cursor: pointer;
+  animation: gh-welcome-bg 3.9s ease forwards;
+}
+
+.gh-welcome-splash--closing {
+  pointer-events: none;
+  animation: gh-welcome-fade 620ms ease forwards;
+}
+
+.gh-welcome-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(34px);
+  opacity: 0.72;
+  pointer-events: none;
+  animation: gh-welcome-orb 3.4s ease-in-out infinite alternate;
+}
+
+.gh-welcome-orb-one {
+  width: min(58vw, 360px);
+  height: min(58vw, 360px);
+  top: 9%;
+  left: -8%;
+  background: rgba(239, 68, 68, 0.28);
+}
+
+.gh-welcome-orb-two {
+  width: min(62vw, 420px);
+  height: min(62vw, 420px);
+  right: -14%;
+  bottom: 3%;
+  background: rgba(185, 28, 28, 0.24);
+  animation-delay: 420ms;
+}
+
+.gh-welcome-card {
+  position: relative;
+  width: min(88vw, 620px);
+  overflow: hidden;
+  border-radius: 2rem;
+  border: 1px solid rgba(248, 113, 113, 0.32);
+  background:
+    linear-gradient(135deg, rgba(39, 39, 42, 0.88), rgba(9, 9, 11, 0.82)),
+    radial-gradient(circle at 50% 0%, rgba(248, 113, 113, 0.2), transparent 50%);
+  padding: clamp(2rem, 8vw, 4.5rem) clamp(1.35rem, 5vw, 3.25rem);
+  box-shadow: 0 34px 120px rgba(0, 0, 0, 0.48), 0 0 80px rgba(220, 38, 38, 0.18);
+  backdrop-filter: blur(22px);
+  animation: gh-welcome-card 720ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.gh-welcome-kicker {
+  display: block;
+  margin-bottom: 1rem;
+  color: #fca5a5;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  animation: gh-welcome-kicker 680ms ease 120ms both;
+}
+
+.gh-welcome-title,
+.gh-welcome-credit {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.28em;
+  text-align: center;
+}
+
+.gh-welcome-title {
+  font-size: clamp(2.35rem, 11vw, 5rem);
+  font-weight: 1000;
+  letter-spacing: -0.075em;
+  line-height: 0.92;
+  text-shadow: 0 16px 42px rgba(0, 0, 0, 0.55), 0 0 36px rgba(239, 68, 68, 0.22);
+}
+
+.gh-welcome-credit {
+  margin-top: 1.1rem;
+  color: #fecaca;
+  font-size: clamp(1.05rem, 4.5vw, 1.65rem);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+}
+
+.gh-welcome-title span,
+.gh-welcome-credit span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(32px) scale(0.92) rotate(-2deg);
+  animation: gh-welcome-word 760ms cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+.gh-welcome-line {
+  display: block;
+  width: 0;
+  height: 3px;
+  margin: 1.5rem auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #ef4444, #fff, #ef4444, transparent);
+  box-shadow: 0 0 28px rgba(239, 68, 68, 0.5);
+  animation: gh-welcome-line 1.45s ease 950ms forwards;
+}
+
+@keyframes gh-welcome-card {
+  from { opacity: 0; transform: translateY(34px) scale(0.92); filter: blur(8px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes gh-welcome-word {
+  0% { opacity: 0; transform: translateY(32px) scale(0.92) rotate(-2deg); filter: blur(8px); }
+  72% { opacity: 1; transform: translateY(-4px) scale(1.035) rotate(0deg); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); filter: blur(0); }
+}
+
+@keyframes gh-welcome-line {
+  from { width: 0; opacity: 0; }
+  to { width: min(72%, 380px); opacity: 1; }
+}
+
+@keyframes gh-welcome-kicker {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gh-welcome-orb {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(24px, -18px, 0) scale(1.08); }
+}
+
+@keyframes gh-welcome-bg {
+  0% { filter: saturate(0.75) brightness(0.85); }
+  45% { filter: saturate(1.28) brightness(1.05); }
+  100% { filter: saturate(1) brightness(1); }
+}
+
+@keyframes gh-welcome-fade {
+  to { opacity: 0; transform: scale(1.035); filter: blur(8px); }
+}
