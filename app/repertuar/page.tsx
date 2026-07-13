@@ -419,7 +419,7 @@ export default function Repertuvar() {
         <section className="gh-card mb-6 grid gap-3 rounded-3xl p-4 md:grid-cols-[1fr_auto]">
           <input
             className="min-h-12 rounded-xl border border-zinc-800 bg-zinc-950 p-3 outline-none focus:border-red-500"
-            placeholder="Yeni Setlist adı: Konser setlist, Acılı setlist..."
+            placeholder="Setlist adı"
             value={newSetlistName}
             onChange={(event) => setNewSetlistName(event.target.value)}
             onKeyDown={(event) => {
@@ -431,7 +431,7 @@ export default function Repertuvar() {
             disabled={saving}
             className="min-h-12 rounded-xl bg-red-600 px-5 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? "Oluşturuluyor..." : "Yeni Setlist"}
+            {saving ? "Oluşturuluyor..." : "Yeni setlist oluştur"}
           </button>
         </section>
 
@@ -472,7 +472,7 @@ export default function Repertuvar() {
 
                 {setlists.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-zinc-700 p-5 text-sm text-zinc-400">
-                    Henüz setlist yok. Mesela “Konser setlist” diye bir klasör oluştur.
+                    Henüz setlist yok. Yeni setlist oluşturup şarkılarını buraya ekleyebilirsin.
                   </div>
                 )}
               </div>
@@ -579,7 +579,7 @@ export default function Repertuvar() {
                 </>
               ) : (
                 <div className="rounded-lg border border-dashed border-zinc-700 p-8 text-center text-zinc-400">
-                  İlk setlistini oluşturunca şarkılarını burada klasör gibi göreceksin.
+                  Yeni setlist oluşturunca şarkılarını burada göreceksin.
                 </div>
               )}
             </section>
