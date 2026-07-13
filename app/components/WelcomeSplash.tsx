@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-const SPLASH_SESSION_KEY = "guitarhub.welcomeSplash.seen.v1";
 const titleWords = ["GuitarHub’a", "Hoşgeldin", "Adamım!"];
 const creditWords = ["Babayaga", "Tarafından", "Yaratıldı."];
 
@@ -11,8 +10,6 @@ export function WelcomeSplash() {
   const [closing, setClosing] = useState(false);
 
   useEffect(() => {
-    if (window.sessionStorage.getItem(SPLASH_SESSION_KEY) === "1") return;
-    window.sessionStorage.setItem(SPLASH_SESSION_KEY, "1");
     const showTimer = window.setTimeout(() => setVisible(true), 0);
     const closeTimer = window.setTimeout(() => setClosing(true), 3300);
     return () => {

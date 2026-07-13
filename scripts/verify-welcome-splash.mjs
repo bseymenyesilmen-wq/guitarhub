@@ -17,7 +17,7 @@ const required = [
   [splash, "Babayaga", "creator name"],
   [splash, "Tarafından", "title-case tarafından"],
   [splash, "Yaratıldı.", "title-case yaratıldı"],
-  [splash, "sessionStorage", "shows once per session"],
+  [splash, "window.setTimeout(() => setVisible(true), 0)", "shows on every page load"],
   [splash, "gh-welcome-splash", "splash class"],
   [css, ".gh-welcome-splash", "splash CSS"],
   [css, "@keyframes gh-welcome-word", "word animation"],
@@ -25,8 +25,14 @@ const required = [
   [css, "gh-welcome-splash--closing", "closing animation"],
 ];
 const missing = required.filter(([content, snippet]) => !content.includes(snippet));
-if (missing.length) {
-  console.error(`Missing welcome splash snippets:\n${missing.map(([, snippet, label]) => `${label}: ${snippet}`).join("\n")}`);
+const forbidden = [
+  [splash, "sessionStorage", "session-only gate"],
+  [splash, "SPLASH_SESSION_KEY", "session-only key"],
+];
+const bad = forbidden.filter(([content, snippet]) => content.includes(snippet));
+if (missing.length || bad.length) {
+  if (missing.length) console.error(`Missing welcome splash snippets:\n${missing.map(([, snippet, label]) => `${label}: ${snippet}`).join("\n")}`);
+  if (bad.length) console.error(`Forbidden welcome splash snippets remain:\n${bad.map(([, snippet, label]) => `${label}: ${snippet}`).join("\n")}`);
   process.exit(1);
 }
-console.log("Animated welcome splash is wired.");
+console.log("Animated welcome splash is wired on every page load.");
