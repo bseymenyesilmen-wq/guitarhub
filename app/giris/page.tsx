@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { GhButton } from "@/app/components/ui/GhButton";
+import { GhCard } from "@/app/components/ui/GhCard";
+import { GhInput } from "@/app/components/ui/GhInput";
 import { supabase } from "@/lib/supabase";
 
 export default function Giris() {
@@ -16,7 +19,7 @@ export default function Giris() {
     setMessage("");
 
     if (!email.trim() || !password.trim()) {
-      setMessage("E-posta ve sifre zorunludur.");
+      setMessage("E-posta ve şifre zorunludur.");
       return;
     }
 
@@ -33,48 +36,40 @@ export default function Giris() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-950 p-6 text-white">
-      <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-8">
-        <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-red-400">GuitarHub</p>
-        <h1 className="text-3xl font-black">Giris yap</h1>
-        <p className="mt-2 text-sm text-zinc-400">Repertuvarına ve şarkı arama paneline devam et.</p>
+    <main className="gh-page flex min-h-screen items-center justify-center p-4 text-white sm:p-6">
+      <GhCard glow className="w-full max-w-md p-5 sm:p-7">
+        <p className="gh-kicker text-xs">GuitarHub</p>
+        <h1 className="mt-2 text-3xl font-black text-white">Giriş Yap</h1>
+        <p className="mt-2 text-sm leading-6 text-zinc-400">Kaldığın şarkıdan devam etmek için hesabına gir.</p>
 
         <div className="mt-6 space-y-4">
-          <input
+          <GhInput
+            label="E-posta"
             type="email"
-            placeholder="E-posta"
+            placeholder=""
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-4 outline-none focus:border-red-500"
           />
-          <input
+          <GhInput
+            label="Şifre"
             type="password"
-            placeholder="Sifre"
+            placeholder=""
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-4 outline-none focus:border-red-500"
           />
         </div>
 
-        {message && <p className="mt-4 rounded-lg bg-red-950 p-3 text-sm text-red-200">{message}</p>}
+        {message && <p className="mt-4 rounded-2xl bg-red-950/70 p-3 text-sm font-bold text-red-100 ring-1 ring-red-500/20">{message}</p>}
 
-        <button
-          onClick={girisYap}
-          disabled={loading}
-          className="mt-6 w-full rounded-lg bg-red-600 p-4 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? "Giris yapiliyor..." : "Giris Yap"}
-        </button>
+        <GhButton onClick={girisYap} disabled={loading} fullWidth className="mt-6">
+          {loading ? "Giriş Yapılıyor..." : "Giriş Yap"}
+        </GhButton>
 
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <Link href="/kayit" className="font-semibold text-zinc-300 hover:text-white">
-            Kayit ol
-          </Link>
-          <Link href="/sifre-sifirla" className="font-semibold text-red-400 hover:text-red-300">
-            Sifremi unuttum
-          </Link>
+        <div className="mt-5 flex items-center justify-between gap-3 text-sm">
+          <Link href="/kayit" className="font-bold text-zinc-300 hover:text-white">Kayıt Ol</Link>
+          <Link href="/sifre-sifirla" className="font-bold text-red-300 hover:text-red-200">Şifremi Unuttum</Link>
         </div>
-      </div>
+      </GhCard>
     </main>
   );
 }

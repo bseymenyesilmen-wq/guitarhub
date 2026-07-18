@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppNav } from "@/app/components/AppNav";
 import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
 import { ChordTextViewer } from "@/app/components/ChordTextViewer";
+import { SongNotesPanel } from "@/app/components/SongNotesPanel";
 import { buildSongPayload, transposeCapo, transposeText } from "@/lib/music";
 import { CHORD_LIBRARY, type ChordDefinition } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
@@ -159,6 +160,7 @@ export default function SarkiAra() {
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [wakeLockMessage, setWakeLockMessage] = useState("");
   const playTextRef = useRef<HTMLPreElement | null>(null);
+  const providerChoicesRef = useRef<HTMLElement | null>(null);
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -346,6 +348,7 @@ export default function SarkiAra() {
     setMessage("");
     if (song.variants?.length) {
       setProviderChoices(song.variants);
+      window.setTimeout(() => providerChoicesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
       return;
     }
     if (song.source.startsWith("search:")) {
@@ -726,7 +729,7 @@ export default function SarkiAra() {
         )}
 
         {providerChoices && (
-          <section className="mt-4 rounded-3xl border border-red-900/60 bg-zinc-900 p-4">
+          <section ref={providerChoicesRef} className="mt-4 scroll-mt-24 rounded-3xl border border-red-900/60 bg-zinc-900 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Varyasyon seç</p>
@@ -811,6 +814,10 @@ export default function SarkiAra() {
                     <pre className="mt-3 whitespace-pre-wrap text-sm leading-7">{result.lyrics}</pre>
                   </details>
                 )}
+              </div>
+
+              <div className="mt-4">
+                <SongNotesPanel song={{ artist: result.artist, title: result.title }} />
               </div>
             </div>
 

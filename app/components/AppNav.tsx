@@ -55,7 +55,7 @@ export function AppNav() {
         </button>
       </nav>
 
-      <div className="mb-6 flex items-center justify-between rounded-[1.5rem] border border-white/10 bg-zinc-950/70 p-2 pl-4 shadow-lg shadow-black/20 backdrop-blur-xl md:hidden">
+      <div className="mb-6 flex min-w-0 items-center justify-between rounded-[1.5rem] border border-white/10 bg-zinc-950/70 p-2 pl-4 shadow-lg shadow-black/20 backdrop-blur-xl md:hidden">
         <Link href="/" className="text-xl font-black tracking-tight text-white">
           GuitarHub
         </Link>
@@ -65,7 +65,7 @@ export function AppNav() {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black/70 px-2 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2 shadow-2xl shadow-black backdrop-blur-2xl md:hidden">
-        <div className="mx-auto max-w-xl overflow-x-auto rounded-[1.4rem] border border-white/10 bg-zinc-950/70 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mx-auto max-w-[calc(100vw-1rem)] overflow-x-auto overscroll-x-contain rounded-[1.4rem] border border-white/10 bg-zinc-950/70 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-w-max gap-1">
             {NAV_ITEMS.map((item) => {
               const active = pathname === item.href;

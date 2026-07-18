@@ -35,7 +35,7 @@ const required = [
   [tuner, "sampleFileName(label)", "per-string sample selection"],
   [tuner, "fetch(sampleUrl)", "sample-based guitar playback"],
   [tuner, "decodeAudioData", "real guitar mp3 decoding"],
-  [tuner, "master.gain.exponentialRampToValueAtTime(2.6", "louder reference sample"],
+  [tuner, "master.gain.exponentialRampToValueAtTime(4.2", "much louder reference sample"],
   [tuner, "source.stop(now + Math.min(5.6, buffer.duration))", "long ringing sample playback"],
   [tuner, "Math.round(sampleRate / frequency)", "fallback frequency-tuned plucked string delay"],
   [tuner, "autoDetect", "auto/manual string mode"],
@@ -57,8 +57,7 @@ const required = [
   [tuner, "Standart", "standard tuning"],
   [tuner, "Yarım ses düşük", "half step tuning"],
   [tuner, "Drop D", "drop d tuning"],
-  [tuner, "Gevşet · kalınlaştır", "flat/sharp guidance"],
-  [tuner, "Sık · incelt", "tighten guidance"],
+  [tuner, "return cents < 0 ? \"Sık\" : \"Gevşet\"", "simple tighten/loosen guidance"],
   [tuner, "gh-pedal", "animated pedal design"],
   [tuner, "gh-neon-ring", "neon tuner ring"],
   [tuner, "gh-led-sweep", "animated led sweep"],
@@ -79,6 +78,10 @@ const forbidden = [
   "Gitar kafa",
   "grid-cols-7",
   "${cents} cent",
+  "Gevşet · kalınlaştır",
+  "Sık · incelt",
+  "Kalınlaştır",
+  "İncelt",
 ];
 
 const missing = required.filter(([content, snippet]) => !content.includes(snippet));

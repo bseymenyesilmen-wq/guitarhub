@@ -13,6 +13,10 @@ const required = [
   "aria-label=\"Şarkı aramaya dön\"",
   "Şarkı araya dön",
   "onClick={resetSongView}",
+  "providerChoicesRef",
+  "scrollIntoView({ behavior: \"smooth\", block: \"start\" })",
+  "ref={providerChoicesRef}",
+  "scroll-mt-24",
 ];
 const missing = required.filter((snippet) => !page.includes(snippet));
 if (missing.length) {

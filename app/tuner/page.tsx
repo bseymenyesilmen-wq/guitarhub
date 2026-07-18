@@ -204,7 +204,7 @@ function autoCorrelate(buffer: Float32Array, sampleRate: number) {
 
 function directionLabel(cents: number) {
   if (Math.abs(cents) <= 5) return "Tamam";
-  return cents < 0 ? "Sık · incelt" : "Gevşet · kalınlaştır";
+  return cents < 0 ? "Sık" : "Gevşet";
 }
 
 function ringTone(cents: number, running: boolean) {
@@ -303,13 +303,13 @@ export default function TunerPage() {
     body.type = "lowpass";
     body.frequency.value = 7600;
     body.Q.value = 0.85;
-    compressor.threshold.value = -9;
-    compressor.knee.value = 20;
-    compressor.ratio.value = 8;
+    compressor.threshold.value = -6;
+    compressor.knee.value = 18;
+    compressor.ratio.value = 10;
     compressor.attack.value = 0.003;
     compressor.release.value = 0.25;
     master.gain.setValueAtTime(0.0001, now);
-    master.gain.exponentialRampToValueAtTime(2.6, now + 0.018);
+    master.gain.exponentialRampToValueAtTime(4.2, now + 0.018);
     master.gain.exponentialRampToValueAtTime(0.0001, now + 5.4);
     master.connect(body).connect(compressor).connect(context.destination);
 
@@ -567,10 +567,9 @@ export default function TunerPage() {
                     style={{ transform: `translateX(-50%) rotate(${needle}deg)` }}
                   />
                 </div>
-                <div className="grid grid-cols-3 overflow-hidden rounded-b-2xl border border-white/10 text-sm font-black">
-                  <div className="bg-red-950/50 p-3 text-red-100">Kalınlaştır</div>
-                  <div className={`${tuned ? "bg-emerald-600 text-white" : "bg-zinc-900 text-zinc-300"} p-3`}>Tamam</div>
-                  <div className="bg-red-950/50 p-3 text-red-100">İncelt</div>
+                <div className="grid grid-cols-2 overflow-hidden rounded-b-2xl border border-white/10 text-sm font-black">
+                  <div className="bg-red-950/50 p-3 text-red-100">Gevşet</div>
+                  <div className="bg-red-950/50 p-3 text-red-100">Sık</div>
                 </div>
               </div>
 

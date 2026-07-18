@@ -58,7 +58,7 @@ export function ChatbotWidget() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Selam, ben Yoda. Müzik hakkında her şeyi sorabilirsin: şarkı, akor, gam, gitar, beste, prodüksiyon, mix mastering, repertuvar ve GuitarHub kullanımı. Müzik dışı konulara girmem kanka.",
+      content: "Selam, ben Yoda. Müzik, gitar, akor, gam, beste, prodüksiyon, GuitarHub kullanımı veya genel konular fark etmez; ne lazımsa sor kanka.",
     },
   ]);
 
@@ -119,9 +119,9 @@ export function ChatbotWidget() {
   }
 
   return (
-    <div className="fixed bottom-24 right-4 z-50 md:bottom-6 md:right-6">
+    <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.6rem)] right-3 z-50 sm:right-4 md:bottom-6 md:right-6">
       {open && (
-        <section className="mb-3 flex h-[540px] w-[calc(100vw-2rem)] max-w-[410px] flex-col overflow-hidden rounded-[2rem] border border-red-500/20 bg-zinc-950/95 shadow-2xl shadow-red-950/20 ring-1 ring-white/10 backdrop-blur-xl">
+        <section className="mb-3 flex h-[min(540px,calc(100dvh-8.5rem))] w-[calc(100vw-1.5rem)] max-w-[410px] flex-col overflow-hidden rounded-[1.55rem] border border-red-500/20 bg-zinc-950/95 shadow-2xl shadow-red-950/20 ring-1 ring-white/10 backdrop-blur-xl sm:w-[calc(100vw-2rem)] sm:rounded-[2rem]">
           <header className="border-b border-white/10 bg-gradient-to-br from-red-950/50 to-zinc-950 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { GhButton } from "@/app/components/ui/GhButton";
+import { GhCard } from "@/app/components/ui/GhCard";
+import { GhInput } from "@/app/components/ui/GhInput";
 import { supabase } from "@/lib/supabase";
 
 export default function SifreSifirla() {
@@ -13,7 +16,7 @@ export default function SifreSifirla() {
     setMessage("");
 
     if (!email.trim()) {
-      setMessage("E-posta adresini yazmalisin.");
+      setMessage("E-posta adresini yazmalısın.");
       return;
     }
 
@@ -23,37 +26,36 @@ export default function SifreSifirla() {
     });
     setLoading(false);
 
-    setMessage(error ? error.message : "Sifre sifirlama baglantisi e-postana gonderildi.");
+    setMessage(error ? error.message : "Şifre sıfırlama bağlantısı e-postana gönderildi.");
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-950 p-6 text-white">
-      <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-8">
-        <h1 className="text-3xl font-black">Sifre sifirla</h1>
-        <p className="mt-2 text-sm text-zinc-400">Supabase Auth uzerinden guvenli sifre sifirlama e-postasi gonderilir.</p>
+    <main className="gh-page flex min-h-screen items-center justify-center p-4 text-white sm:p-6">
+      <GhCard glow className="w-full max-w-md p-5 sm:p-7">
+        <p className="gh-kicker text-xs">Güvenli Erişim</p>
+        <h1 className="mt-2 text-3xl font-black text-white">Şifre Sıfırla</h1>
+        <p className="mt-2 text-sm leading-6 text-zinc-400">E-postana güvenli bir sıfırlama bağlantısı gönderelim.</p>
 
-        <input
-          type="email"
-          placeholder="E-posta"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          className="mt-6 w-full rounded-lg border border-zinc-800 bg-zinc-950 p-4 outline-none focus:border-red-500"
-        />
+        <div className="mt-6">
+          <GhInput
+            type="email"
+            label="E-posta"
+            placeholder=""
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </div>
 
-        {message && <p className="mt-4 rounded-lg bg-zinc-950 p-3 text-sm text-zinc-200">{message}</p>}
+        {message && <p className="mt-4 rounded-2xl bg-zinc-900 p-3 text-sm font-bold text-zinc-100 ring-1 ring-white/10">{message}</p>}
 
-        <button
-          onClick={sendReset}
-          disabled={loading}
-          className="mt-6 w-full rounded-lg bg-red-600 p-4 font-bold hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? "Gonderiliyor..." : "Baglanti Gonder"}
-        </button>
+        <GhButton onClick={sendReset} disabled={loading} fullWidth className="mt-6">
+          {loading ? "Gönderiliyor..." : "Bağlantı Gönder"}
+        </GhButton>
 
-        <Link href="/giris" className="mt-4 block text-center text-sm font-semibold text-zinc-300 hover:text-white">
-          Girise don
+        <Link href="/giris" className="mt-5 block text-center text-sm font-bold text-zinc-300 hover:text-white">
+          Girişe Dön
         </Link>
-      </div>
+      </GhCard>
     </main>
   );
 }

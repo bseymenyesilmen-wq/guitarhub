@@ -36,6 +36,12 @@ function shouldShowScaleNote(viewMode: ScaleViewMode, stringNumber: number, fret
   return fret >= range.start && fret <= range.end;
 }
 
+function isInsideSelectedPosition(viewMode: ScaleViewMode, stringNumber: number, fret: number, positionStartFret: number | null, positionEndFret: number | null) {
+  if (viewMode === "full" || positionStartFret === null || positionEndFret === null) return false;
+  const range = getStringFretRange(viewMode, stringNumber, positionStartFret, positionEndFret);
+  return fret >= range.start && fret <= range.end;
+}
+
 function NoteDot({ marker, isRoot }: { marker: string; isRoot: boolean }) {
   return (
     <span
@@ -96,8 +102,9 @@ export function Fretboard({ root, scaleId, showIntervals = false, startFret = 0,
                 {frets.map((fret) => {
                   const note = noteFor(stringNumber, fret);
                   const show = note ? shouldShowScaleNote(viewMode, stringNumber, fret, note.inScale, positionStartFret, positionEndFret) : false;
+                  const selected = isInsideSelectedPosition(viewMode, stringNumber, fret, positionStartFret, positionEndFret);
                   return (
-                    <div key={`${stringNumber}-${fret}`} className="relative flex h-8 items-center justify-center border-l border-[#9b8f79] bg-[#333] first:border-l-4 first:border-zinc-300 sm:h-9">
+                    <div key={`${stringNumber}-${fret}`} className={`relative flex h-8 items-center justify-center border-l border-[#9b8f79] bg-[#333] first:border-l-4 first:border-zinc-300 sm:h-9 ${selected ? "shadow-[inset_0_0_18px_rgba(239,68,68,0.32)] ring-1 ring-inset ring-red-500/25" : ""}`}>
                       <span className="absolute left-0 right-0 top-1/2 z-10 h-[2px] -translate-y-1/2 bg-gradient-to-b from-[#787878] to-[#bbaf9b] shadow-sm" />
                       <FretMarker fret={fret} />
                       {show && note ? <NoteDot marker={showIntervals ? note.interval ?? note.note : note.note} isRoot={note.isRoot} /> : null}

@@ -27,9 +27,9 @@ export default function GamKutuphanesi() {
   const positions = useMemo(() => getScalePositions(root, scaleId, viewMode), [root, scaleId, viewMode]);
   const selectedPosition = positions[Math.min(positionIndex, positions.length - 1)] ?? positions[0];
   const positionStartFret = viewMode === "full" ? null : selectedPosition?.startFret ?? null;
-  const displayFrets = viewMode === "full" ? 21 : viewMode === "diagonal" ? 8 : selectedPosition?.displayFrets ?? 4;
-  const fretboardStartFret = viewMode === "full" ? 0 : positionStartFret ?? 0;
-  const positionEndFret = positionStartFret === null ? null : Math.min(21, positionStartFret + displayFrets);
+  const displayFrets = 21;
+  const fretboardStartFret = 0;
+  const positionEndFret = positionStartFret === null ? null : Math.min(21, positionStartFret + (selectedPosition?.displayFrets ?? 4));
 
   return (
     <main className="gh-page min-h-screen overflow-x-hidden p-3 pb-32 text-white sm:p-6 md:pb-6">

@@ -16,10 +16,13 @@ const required = [
   "Vertical",
   "Diagonal",
   "label: `${index + 1}. Pozisyon`",
-  "overflow-hidden",
   "minmax(0, 1fr)",
   "text-white",
   "diagonalWindow",
+  "isInsideSelectedPosition",
+  "ring-1 ring-inset ring-red-500/25",
+  "const displayFrets = 21",
+  "const fretboardStartFret = 0",
 ];
 
 const missing = required.filter((snippet) => !haystack.includes(snippet));
@@ -28,9 +31,4 @@ if (missing.length) {
   process.exit(1);
 }
 
-if (fretboard.includes("overflow-x-auto") || fretboard.includes("min-w-[980px]")) {
-  console.error("Fretboard still uses horizontal scrolling/min-width layout.");
-  process.exit(1);
-}
-
-console.log("Scale vertical/diagonal compact position modes are present.");
+console.log("Scale position modes now highlight inside the full 0-21 fretboard.");

@@ -10,9 +10,9 @@ const required = [
   [scalePage, "overflow-x-hidden p-3 pb-32", "page prevents horizontal body overflow on mobile"],
   [scalePage, "mx-auto w-full max-w-6xl", "page uses full mobile width"],
   [scalePage, "min-w-0 gap-3", "grid children can shrink on mobile"],
-  [scalePage, "viewMode === \"full\" ? 21 : viewMode === \"diagonal\" ? 8", "non-full views use compact fret windows"],
-  [scalePage, "fretboardStartFret", "fretboard starts at selected position"],
-  [scalePage, "startFret={fretboardStartFret}", "fretboard receives compact start fret"],
+  [scalePage, "const displayFrets = 21", "all scale views keep full 0-21 fretboard"],
+  [scalePage, "const fretboardStartFret = 0", "fretboard always starts from open position"],
+  [scalePage, "startFret={fretboardStartFret}", "fretboard receives full-board start fret"],
   [scalePage, "max-h-[360px]", "scale list is shorter on mobile"],
   [scalePage, "[&::-webkit-scrollbar]:hidden", "mobile category scrollbar hidden"],
   [scalePage, "grid min-w-0 overflow-hidden gap-3", "control shell clips overflowing mobile pills"],
@@ -23,7 +23,7 @@ const required = [
   [scalePage, "min-w-0 overflow-hidden", "control columns can shrink and clip overflow"],
   [scalePage, "w-full max-w-full gap-2 overflow-x-auto", "scroll rows stay inside card width"],
   [scalePage, "min-h-14 w-28 shrink-0 rounded-2xl", "view mode buttons have compact mobile pill width"],
-  [fretboard, "const fretCellWidth = frets.length > 12 ? 42 : 34;", "compact fret windows use narrower cells"],
+  [fretboard, "const fretCellWidth = frets.length > 12 ? 42 : 34;", "full board uses controlled fret cell width"],
   [fretboard, "const boardMinWidth = Math.max(318, 42 + frets.length * fretCellWidth);", "fretboard has controlled inner width"],
   [fretboard, "min-w-0 rounded-2xl", "fretboard shell can shrink"],
   [fretboard, "overflow-x-auto", "full fretboard scrolls internally"],
@@ -39,4 +39,4 @@ if (missing.length || bad.length) {
   process.exit(1);
 }
 
-console.log("Scale library is optimized for mobile width and fretboard scrolling.");
+console.log("Scale library keeps a full 0-21 fretboard while staying mobile-scroll safe.");

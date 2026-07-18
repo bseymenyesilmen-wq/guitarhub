@@ -16,26 +16,6 @@ function pickContinueSong(songs: Song[]) {
   return songs[0] ?? null;
 }
 
-function StatCard({ label, value, helper, actionLabel = "Aç", href, onClick }: { label: string; value: string; helper: string; actionLabel?: string; href?: string; onClick?: () => void }) {
-  const content = (
-    <>
-      <p className="text-sm font-semibold text-zinc-400 group-hover:text-red-200">{label}</p>
-      <p className="mt-3 line-clamp-1 text-2xl font-black text-white">{value}</p>
-      <p className="mt-2 text-xs text-zinc-500 group-hover:text-zinc-300">{helper}</p>
-      <span className="mt-4 inline-flex rounded-full bg-zinc-950 px-3 py-1 text-xs font-black text-red-300 opacity-80 group-hover:bg-red-600 group-hover:text-white">
-        {actionLabel}
-      </span>
-    </>
-  );
-  const cardClassName = "group block w-full rounded-3xl border border-zinc-800 bg-zinc-900/80 p-5 text-left shadow-lg shadow-black/10 transition active:scale-[0.99] hover:border-red-500/60 hover:bg-zinc-900";
-
-  if (href) {
-    return <Link href={href} className={cardClassName}>{content}</Link>;
-  }
-
-  return <button type="button" onClick={onClick} className={cardClassName}>{content}</button>;
-}
-
 function SongRow({ song, onRemove }: { song: Song; onRemove: (song: Song) => void }) {
   return (
     <div className="group flex items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 transition hover:border-red-500/60 hover:bg-zinc-900">
@@ -153,12 +133,6 @@ export default function Home() {
           <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-300">Panel yükleniyor...</div>
         ) : (
           <>
-            <section className="hidden gap-4 lg:grid lg:grid-cols-3">
-              <StatCard label="Repertuvar" value={songs.length.toString()} helper="Kaydettiğin toplam şarkı" actionLabel="Repertuvara git" href="/repertuar" />
-              <StatCard label="Tuner" value="Hazır" helper="Gitarını hızlıca akort et" actionLabel="Tuner aç" href="/tuner" />
-              <StatCard label="Son Eklenen" value={songs[0]?.title ?? "Henüz yok"} helper="En yeni repertuvar kaydı" actionLabel={songs[0] ? "Şarkıyı aç" : "Şarkı ara"} href={songs[0] ? `/sarki/${songs[0].id}` : "/sarki-ara"} />
-            </section>
-
             <section className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[1.2fr_0.8fr]">
               <div className="gh-card rounded-3xl p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppNav } from "@/app/components/AppNav";
 import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
 import { ChordTextViewer } from "@/app/components/ChordTextViewer";
+import { SongNotesPanel } from "@/app/components/SongNotesPanel";
 import { extractChords, transposeCapo, transposeText } from "@/lib/music";
 import { CHORD_LIBRARY, type ChordDefinition } from "@/lib/music-theory";
 import { supabase } from "@/lib/supabase";
@@ -177,7 +178,7 @@ export default function SarkiDetay() {
                   +1
                 </button>
                 <button onClick={() => { setPlayControlsVisible(true); setPlayMode(true); }} className="min-h-11 rounded-lg bg-white px-4 py-3 font-bold text-zinc-950 hover:bg-red-100">
-                  Çalma Modu
+                  Sahne Modu
                 </button>
                 {isOwnSong && (
                   <Link href={`/sarki-yaz?songId=${song.id}`} className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 py-3 font-bold text-zinc-950 hover:bg-red-100">
@@ -210,6 +211,10 @@ export default function SarkiDetay() {
                 </details>
               )}
             </section>
+
+            <div className="mt-6">
+              <SongNotesPanel song={{ id: song.id, artist: song.artist, title: song.title }} />
+            </div>
 
             {playMode && (
               <section onClick={() => setPlayControlsVisible((value) => !value)} className="fixed inset-0 z-[80] flex flex-col bg-black text-white">

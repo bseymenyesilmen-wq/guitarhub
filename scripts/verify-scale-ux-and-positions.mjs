@@ -13,6 +13,7 @@ const required = [
   'overflow-y-auto',
   'setViewMode("vertical")',
   'const displayFrets = 21',
+  'const fretboardStartFret = 0',
   'positionStartFret',
   'positionEndFret',
   'getStringFretRange',
