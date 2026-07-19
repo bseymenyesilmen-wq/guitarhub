@@ -8,6 +8,7 @@ import { GhInput } from "@/app/components/ui/GhInput";
 import { supabase } from "@/lib/supabase";
 
 const onboardingSteps = ["Hesabını oluştur", "Mail doğrulamasını tamamla", "İlk setlistini kur"];
+const AUTH_REDIRECT_URL = "https://guitarhub47.netlify.app/giris";
 
 export default function Kayit() {
   const [name, setName] = useState("");
@@ -28,7 +29,10 @@ export default function Kayit() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name: name.trim(), username: name.trim() } },
+      options: {
+        data: { name: name.trim(), username: name.trim() },
+        emailRedirectTo: AUTH_REDIRECT_URL,
+      },
     });
 
     if (error) {

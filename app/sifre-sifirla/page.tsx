@@ -7,6 +7,8 @@ import { GhCard } from "@/app/components/ui/GhCard";
 import { GhInput } from "@/app/components/ui/GhInput";
 import { supabase } from "@/lib/supabase";
 
+const AUTH_REDIRECT_URL = "https://guitarhub47.netlify.app/giris";
+
 export default function SifreSifirla() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -22,7 +24,7 @@ export default function SifreSifirla() {
 
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/giris`,
+      redirectTo: AUTH_REDIRECT_URL,
     });
     setLoading(false);
 
