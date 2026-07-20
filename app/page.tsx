@@ -77,7 +77,7 @@ export default function Home() {
 
   return (
     <main className="gh-page min-h-screen p-4 pb-28 text-white sm:p-6 md:pb-6">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto w-full max-w-6xl overflow-hidden rounded-[2rem]">
         <AppNav />
 
         <section className="gh-hero mb-8 p-5 sm:p-8">

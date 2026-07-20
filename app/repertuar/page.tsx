@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { PointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AppNav } from "@/app/components/AppNav";
 import { supabase } from "@/lib/supabase";
@@ -48,6 +49,7 @@ export default function Repertuvar() {
   const [saving, setSaving] = useState(false);
   const [movingId, setMovingId] = useState<number | null>(null);
   const [draggedSetlistSongId, setDraggedSetlistSongId] = useState<number | null>(null);
+  const [touchDropTargetId, setTouchDropTargetId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deletingOwnSongId, setDeletingOwnSongId] = useState<number | null>(null);
   const [deletingSetlistId, setDeletingSetlistId] = useState<number | null>(null);
@@ -361,6 +363,40 @@ export default function Repertuvar() {
     );
   }
 
+  function findSetlistSongDropTarget(clientX: number, clientY: number) {
+    const element = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-setlist-song-id]");
+    const id = Number(element?.dataset.setlistSongId);
+    return Number.isFinite(id) ? id : null;
+  }
+
+  function startTouchSetlistDrag(event: PointerEvent<HTMLButtonElement>, itemId: number) {
+    if (event.pointerType === "mouse") return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDraggedSetlistSongId(itemId);
+    setTouchDropTargetId(itemId);
+  }
+
+  function moveTouchSetlistDrag(event: PointerEvent<HTMLButtonElement>) {
+    if (!draggedSetlistSongId || event.pointerType === "mouse") return;
+    event.preventDefault();
+    const targetId = findSetlistSongDropTarget(event.clientX, event.clientY);
+    if (targetId) setTouchDropTargetId(targetId);
+  }
+
+  function endTouchSetlistDrag(event: PointerEvent<HTMLButtonElement>) {
+    if (event.pointerType === "mouse") return;
+    event.preventDefault();
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    const targetId = touchDropTargetId;
+    const draggedId = draggedSetlistSongId;
+    setDraggedSetlistSongId(null);
+    setTouchDropTargetId(null);
+    if (targetId) void reorderSetlistSong(draggedId, targetId);
+  }
+
   return (
     <main className="gh-page min-h-screen overflow-hidden p-4 pb-28 text-white sm:p-6 md:pb-6">
       <div className="mx-auto max-w-6xl">
@@ -510,14 +546,28 @@ export default function Repertuvar() {
                       return (
                         <div
                           key={item.id}
+                          data-setlist-song-id={item.id}
                           draggable
                           onDragStart={() => setDraggedSetlistSongId(item.id)}
                           onDragOver={(event) => event.preventDefault()}
                           onDrop={() => { void reorderSetlistSong(draggedSetlistSongId, item.id); setDraggedSetlistSongId(null); }}
                           onDragEnd={() => setDraggedSetlistSongId(null)}
-                          className={`grid cursor-grab gap-3 rounded-2xl border bg-zinc-950 p-4 transition active:cursor-grabbing md:grid-cols-[auto_1fr_auto] md:items-center ${draggedSetlistSongId === item.id ? "border-red-500 opacity-70" : "border-zinc-800 hover:border-red-500/40"}`}
+                          className={`grid cursor-grab gap-3 rounded-2xl border bg-zinc-950 p-4 transition active:cursor-grabbing md:grid-cols-[auto_1fr_auto] md:items-center ${draggedSetlistSongId === item.id ? "border-red-500 opacity-70" : touchDropTargetId === item.id ? "border-red-400/80 ring-2 ring-red-500/25" : "border-zinc-800 hover:border-red-500/40"}`}
                         >
-                          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 font-black text-red-300">{index + 1}</span>
+                          <div className="flex items-center gap-2 md:flex-col md:gap-1">
+                            <button
+                              type="button"
+                              aria-label={`${song.title} sırasını parmakla taşı`}
+                              onPointerDown={(event) => startTouchSetlistDrag(event, item.id)}
+                              onPointerMove={moveTouchSetlistDrag}
+                              onPointerUp={endTouchSetlistDrag}
+                              onPointerCancel={endTouchSetlistDrag}
+                              className="touch-none select-none rounded-xl bg-zinc-900 px-3 py-2 text-lg font-black leading-none text-red-200 shadow-inner shadow-black/30 active:bg-red-700"
+                            >
+                              ☰
+                            </button>
+                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 font-black text-red-300">{index + 1}</span>
+                          </div>
                           {storageMode === "local" ? (
                             <details className="min-w-0 rounded-xl p-1">
                               <summary className="cursor-pointer list-none rounded-xl hover:bg-zinc-800/60">

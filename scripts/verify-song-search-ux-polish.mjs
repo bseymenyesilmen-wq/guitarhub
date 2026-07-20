@@ -12,9 +12,9 @@ const required = [
   "style={coverStyle(song.cover, song.title, song.artist)}",
   "aria-label=\"Şarkı aramaya dön\"",
   "Şarkı araya dön",
-  "onClick={resetSongView}",
+  "returnToSearchResults",
   "providerChoicesRef",
-  "scrollIntoView({ behavior: \"smooth\", block: \"start\" })",
+  "slowScrollToElement(providerChoicesRef.current, 1200)",
   "ref={providerChoicesRef}",
   "scroll-mt-24",
 ];

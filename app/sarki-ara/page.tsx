@@ -15,7 +15,9 @@ import type { SongArtistResult, SongSearchListItem, SongSearchResponse, SongSear
 const NOT_FOUND_MESSAGE = "Şarkı bulunamadı.";
 const LOCAL_SETLISTS_KEY = "guitarhub.localSetlists.v1";
 const RECENT_SEARCHES_KEY = "guitarhub.songSearchHistory.v1";
-const AUTO_SCROLL_INTERVAL_MS = 80;
+const SEARCH_RESULTS_STATE_KEY = "guitarhub.songSearchResults.v1";
+const AUTO_SCROLL_INTERVAL_MS = 120;
+const AUTO_SCROLL_STEP_MULTIPLIER = 0.55;
 const PLAY_MODE_FONT_FAMILY = {
   proportional: "Arial, Helvetica, sans-serif",
   monospace: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
@@ -26,6 +28,14 @@ type SearchHistoryItem = {
   title: string;
   artist: string;
   searchedAt: string;
+};
+
+type SearchResultsState = {
+  title: string;
+  artist: string;
+  message: string;
+  artists: SongArtistResult[];
+  songs: SongSearchListItem[];
 };
 
 type SetlistOption = {
@@ -92,6 +102,36 @@ function writeRecentSearches(searches: SearchHistoryItem[]) {
   window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches.slice(0, 8)));
 }
 
+function readSearchResultsState(): SearchResultsState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const parsed = JSON.parse(window.sessionStorage.getItem(SEARCH_RESULTS_STATE_KEY) ?? "null") as SearchResultsState | null;
+    if (!parsed || !Array.isArray(parsed.artists) || !Array.isArray(parsed.songs)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeSearchResultsState(state: SearchResultsState) {
+  window.sessionStorage.setItem(SEARCH_RESULTS_STATE_KEY, JSON.stringify(state));
+}
+
+function slowScrollToElement(element: HTMLElement | null, durationMs = 1300, topOffset = 24) {
+  if (!element || typeof window === "undefined") return;
+  const start = window.scrollY;
+  const target = Math.max(0, start + element.getBoundingClientRect().top - topOffset);
+  const distance = target - start;
+  const startTime = performance.now();
+  const easeInOut = (value: number) => value < 0.5 ? 2 * value * value : 1 - ((-2 * value + 2) ** 2) / 2;
+  const step = (now: number) => {
+    const progress = Math.min(1, (now - startTime) / durationMs);
+    window.scrollTo(0, start + distance * easeInOut(progress));
+    if (progress < 1) window.requestAnimationFrame(step);
+  };
+  window.requestAnimationFrame(step);
+}
+
 function resultToForm(result: SongSearchResult, chords: string): SongForm {
   return {
     title: result.title,
@@ -136,6 +176,18 @@ function isMonospaceProvider(sourceProvider = "") {
   return sourceProvider === "Ultimate Guitar" || sourceProvider === "ultimate-guitar";
 }
 
+function providerPriority(song: Pick<SongSearchListItem, "provider" | "source">) {
+  const provider = `${song.provider ?? ""} ${song.source ?? ""}`.toLowerCase();
+  if (provider.includes("repertuarim") || provider.includes("repertuvarım") || provider.includes("repertuarim.com")) return 0;
+  if (provider.includes("uakor")) return 1;
+  if (provider.includes("ultimate") || provider.includes("ug:")) return 2;
+  return 3;
+}
+
+function prioritySongVariants(song: SongSearchListItem) {
+  return [...(song.variants?.length ? song.variants : [song])].sort((a, b) => providerPriority(a) - providerPriority(b));
+}
+
 function isTechnicalTabContent(text: string) {
   return /[|][\-0-9hpsbx/\\~ ]{8,}[|]?/.test(text);
 }
@@ -155,15 +207,19 @@ export default function SarkiAra() {
   const [playMode, setPlayMode] = useState(false);
   const [playControlsVisible, setPlayControlsVisible] = useState(true);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
-  const [autoScrollLevel, setAutoScrollLevel] = useState(4);
+  const [autoScrollLevel, setAutoScrollLevel] = useState(1);
   const [playFontSize, setPlayFontSize] = useState(1);
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [wakeLockMessage, setWakeLockMessage] = useState("");
   const playTextRef = useRef<HTMLPreElement | null>(null);
+  const autoScrollRemainderRef = useRef(0);
   const providerChoicesRef = useRef<HTMLElement | null>(null);
+  const searchResultsRef = useRef<HTMLElement | null>(null);
+  const songDetailRef = useRef<HTMLElement | null>(null);
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [openingRecommendationSource, setOpeningRecommendationSource] = useState("");
   const [saving, setSaving] = useState(false);
   const [setlistModalOpen, setSetlistModalOpen] = useState(false);
   const [setlists, setSetlists] = useState<SetlistOption[]>([]);
@@ -187,12 +243,28 @@ export default function SarkiAra() {
     return transposeCapo(result.capo, transposeSteps);
   }, [result, transposeSteps]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const savedState = readSearchResultsState();
+      if (!savedState) return;
+      setTitle(savedState.title);
+      setArtist(savedState.artist);
+      setMessage(savedState.message);
+      setArtistResults(savedState.artists);
+      setSongResults(savedState.songs);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!playMode || !autoScrollEnabled) return;
     const timer = window.setInterval(() => {
       if (!playTextRef.current) return;
-      playTextRef.current.scrollTop += autoScrollLevel;
+      autoScrollRemainderRef.current += autoScrollLevel * AUTO_SCROLL_STEP_MULTIPLIER;
+      const scrollStep = Math.floor(autoScrollRemainderRef.current);
+      if (scrollStep < 1) return;
+      autoScrollRemainderRef.current -= scrollStep;
+      playTextRef.current.scrollTop += scrollStep;
     }, AUTO_SCROLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [autoScrollEnabled, autoScrollLevel, playMode]);
@@ -243,6 +315,19 @@ export default function SarkiAra() {
     setAutoScrollEnabled(false);
   }
 
+  function returnToSearchResults() {
+    resetSongView();
+    const savedState = readSearchResultsState();
+    if (savedState) {
+      setTitle(savedState.title);
+      setArtist(savedState.artist);
+      setMessage(savedState.message);
+      setArtistResults(savedState.artists);
+      setSongResults(savedState.songs);
+    }
+    window.setTimeout(() => slowScrollToElement(searchResultsRef.current, 900), 80);
+  }
+
   function openChord(chordName: string) {
     const chord = findChord(chordName);
     if (chord) {
@@ -253,18 +338,27 @@ export default function SarkiAra() {
     setMessage(`${chordName} için akor örneği henüz kütüphanede yok.`);
   }
 
-  function applyPayload(payload: SongSearchResponse) {
+  function applyPayload(payload: SongSearchResponse, searchedTitle = title, searchedArtist = artist) {
     if (payload.found) {
-      setArtistResults([]);
-      setSongResults([]);
       setResult(payload.song);
       setEditedChords(payload.song.chords || payload.song.lyrics);
+      setProviderChoices(null);
       return;
     }
 
-    setArtistResults(payload.artists ?? []);
-    setSongResults(payload.songs ?? []);
+    const nextArtists = payload.artists ?? [];
+    const nextSongs = payload.songs ?? [];
+    setArtistResults(nextArtists);
+    setSongResults(nextSongs);
     setMessage(payload.message);
+    writeSearchResultsState({
+      title: searchedTitle.trim(),
+      artist: searchedArtist.trim(),
+      message: payload.message,
+      artists: nextArtists,
+      songs: nextSongs,
+    });
+    window.setTimeout(() => slowScrollToElement(searchResultsRef.current, 1400), 160);
   }
 
   function saveRecentSearch(searchTitle: string, searchArtist: string) {
@@ -316,7 +410,7 @@ export default function SarkiAra() {
       return;
     }
 
-    applyPayload(payload);
+    applyPayload(payload, trimmedTitle, trimmedArtist);
   }
 
   async function selectArtist(artistName: string) {
@@ -341,60 +435,91 @@ export default function SarkiAra() {
       setMessage(NOT_FOUND_MESSAGE);
       return;
     }
-    applyPayload(payload);
+    applyPayload(payload, "", artistName);
+  }
+
+  async function fetchSongSearchPayload(body: Record<string, string>) {
+    const response = await fetch("/api/song-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(() => null);
+    const payload = response ? ((await response.json().catch(() => null)) as SongSearchResponse | null) : null;
+    return { response, payload };
+  }
+
+  async function openSongViaSearchFallback(song: SongSearchListItem): Promise<boolean> {
+    const { response, payload } = await fetchSongSearchPayload({ title: song.title, artist: song.artist });
+    if (!response?.ok || !payload) return false;
+    if (payload.found) {
+      applyPayload(payload, song.title, song.artist);
+      return true;
+    }
+    const firstSong = payload.songs?.[0];
+    if (!firstSong) return false;
+    const orderedVariants = prioritySongVariants(firstSong);
+    for (const variant of orderedVariants) {
+      if (await openSongBySource(variant, false)) return true;
+    }
+    return false;
+  }
+
+  async function openSongBySource(song: SongSearchListItem, allowSearchFallback = true): Promise<boolean> {
+    const { response, payload } = await fetchSongSearchPayload({ source: song.source, artist: song.artist });
+    if (response?.ok && payload?.found) {
+      applyPayload(payload, song.title, song.artist);
+      return true;
+    }
+    if (allowSearchFallback) return await openSongViaSearchFallback(song);
+    return false;
+  }
+
+  function recommendationKey(song: SongSearchListItem) {
+    return `${song.source || "search"}::${song.artist}::${song.title}`;
+  }
+
+  async function openRecommendation(song: SongSearchListItem) {
+    const key = recommendationKey(song);
+    setOpeningRecommendationSource(key);
+    setMessage("");
+    resetSongView();
+    setLoading(true);
+    try {
+      for (const variant of prioritySongVariants(song)) {
+        if (variant.source.startsWith("search:")) {
+          if (await openSongViaSearchFallback(variant)) return;
+          continue;
+        }
+        if (await openSongBySource(variant, false)) return;
+      }
+      if (await openSongViaSearchFallback(song)) return;
+      setMessage(NOT_FOUND_MESSAGE);
+    } finally {
+      setLoading(false);
+      setOpeningRecommendationSource("");
+    }
   }
 
   async function selectSong(song: SongSearchListItem) {
     setMessage("");
     if (song.variants?.length) {
       setProviderChoices(song.variants);
-      window.setTimeout(() => providerChoicesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+      window.setTimeout(() => slowScrollToElement(providerChoicesRef.current, 1200), 120);
       return;
     }
     if (song.source.startsWith("search:")) {
       resetSongView();
       setLoading(true);
-      const response = await fetch("/api/song-search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: song.title, artist: song.artist }),
-      }).catch(() => null);
+      const opened = await openSongViaSearchFallback(song);
       setLoading(false);
-      const payload = response ? ((await response.json().catch(() => null)) as SongSearchResponse | null) : null;
-      if (!response?.ok || !payload) {
-        setMessage(NOT_FOUND_MESSAGE);
-        return;
-      }
-      if (payload.found) {
-        applyPayload(payload);
-        return;
-      }
-      const firstSong = payload.songs?.[0];
-      if (firstSong) {
-        await selectSong(firstSong);
-        return;
-      }
-      setMessage(NOT_FOUND_MESSAGE);
+      if (!opened) setMessage(NOT_FOUND_MESSAGE);
       return;
     }
     resetSongView();
     setLoading(true);
-
-    const response = await fetch("/api/song-search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source: song.source, artist: song.artist }),
-    }).catch(() => null);
-
+    const opened = await openSongBySource(song, true);
     setLoading(false);
-
-    const payload = response ? ((await response.json().catch(() => null)) as SongSearchResponse | null) : null;
-    if (!response?.ok || !payload || !payload.found) {
-      setMessage(NOT_FOUND_MESSAGE);
-      return;
-    }
-
-    applyPayload(payload);
+    if (!opened) setMessage(NOT_FOUND_MESSAGE);
   }
 
   async function loadSetlists(userId: string) {
@@ -589,11 +714,13 @@ export default function SarkiAra() {
   }
 
   return (
-    <main className="gh-page min-h-screen overflow-hidden p-4 pb-28 text-white sm:p-6 md:pb-6">
-      <div className="mx-auto max-w-6xl">
+    <main className="gh-page min-h-screen w-full overflow-x-hidden p-4 pb-28 text-white sm:p-6 md:pb-6">
+      <div className="mx-auto w-full max-w-6xl overflow-x-hidden">
         <AppNav />
 
-        <section className="gh-hero mb-6 p-5 sm:p-6">
+        {!result && (
+          <>
+            <section className="gh-hero mb-6 p-5 sm:p-6">
           <h1 className="gh-title relative z-10 text-4xl font-black sm:text-5xl">Şarkı Ara</h1>
         </section>
 
@@ -673,8 +800,8 @@ export default function SarkiAra() {
         </section>
 
         {(artistResults.length > 0 || songResults.length > 0) && (
-          <section className="mt-6 grid gap-4 lg:grid-cols-[320px_1fr]">
-            <div className="rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/15 backdrop-blur">
+          <section ref={searchResultsRef} className="mt-6 grid min-w-0 scroll-mt-24 gap-4 overflow-hidden lg:grid-cols-[320px_1fr]">
+            <div className="min-w-0 overflow-hidden rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/15 backdrop-blur">
               <h2 className="gh-section-title text-xl font-black">Sanatçılar</h2>
               <div className="mt-3 space-y-2">
                 {artistResults.length ? (
@@ -694,7 +821,7 @@ export default function SarkiAra() {
               </div>
             </div>
 
-            <div className="rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/15 backdrop-blur">
+            <div className="min-w-0 overflow-hidden rounded-[1.75rem] border border-zinc-800/80 bg-zinc-900/80 p-4 shadow-xl shadow-black/15 backdrop-blur">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 className="gh-section-title text-xl font-black">Şarkılar</h2>
@@ -707,15 +834,15 @@ export default function SarkiAra() {
                   <button
                     key={song.source}
                     onClick={() => selectSong(song)}
-                    className="group flex items-center gap-4 rounded-[1.4rem] border border-zinc-800/80 bg-zinc-950/80 p-3 text-left shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:border-red-500/50 hover:bg-zinc-900"
+                    className="group flex w-full min-w-0 items-center gap-3 overflow-hidden rounded-[1.4rem] border border-zinc-800/80 bg-zinc-950/80 p-3 text-left shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:border-red-500/50 hover:bg-zinc-900 sm:gap-4"
                   >
                     <span
                       className="h-16 w-16 shrink-0 rounded-2xl bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center shadow-lg shadow-black/30 ring-1 ring-white/5"
                       style={coverStyle(song.cover, song.title, song.artist)}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-base font-black text-white">{song.title}</span>
-                      <span className="mt-1 block truncate text-sm text-zinc-400">{song.artist}</span>
+                      <span className="block max-w-full break-words text-base font-black leading-tight text-white line-clamp-2">{song.title}</span>
+                      <span className="mt-1 block max-w-full truncate text-sm text-zinc-400">{song.artist}</span>
                       <span className="mt-2 inline-flex rounded-full bg-red-600/15 px-2.5 py-1 text-[11px] font-black text-red-200">
                         {song.variants?.length ? `${song.variants.length} varyasyon` : "Tek varyasyon"}
                       </span>
@@ -759,13 +886,15 @@ export default function SarkiAra() {
             </div>
           </section>
         )}
+          </>
+        )}
 
         {result && (
-          <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section ref={songDetailRef} className="mt-6 grid scroll-mt-24 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
               <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
                 <div className="flex w-full items-center gap-2">
-                  <button type="button" onClick={resetSongView} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full bg-zinc-800 text-xl font-black text-white hover:bg-zinc-700" aria-label="Şarkı aramaya dön">←</button>
+                  <button type="button" onClick={returnToSearchResults} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full bg-zinc-800 text-xl font-black text-white hover:bg-zinc-700" aria-label="Şarkı aramaya dön">←</button>
                   <span className="text-sm font-black text-zinc-400">Şarkı araya dön</span>
                 </div>
                 <div>
@@ -827,11 +956,14 @@ export default function SarkiAra() {
                 <h3 className="mt-1 text-xl font-black">Sıradaki şarkılar</h3>
                 <div className="mt-4 space-y-2">
                   {result.recommendations?.length ? (
-                    result.recommendations.map((recommendation) => (
+                    result.recommendations.map((recommendation) => {
+                      const isOpening = openingRecommendationSource === recommendationKey(recommendation);
+                      return (
                       <button
-                        key={recommendation.source}
-                        onClick={() => selectSong(recommendation)}
-                        className="flex w-full items-center gap-3 rounded-2xl bg-zinc-950 p-3 text-left hover:bg-zinc-800"
+                        key={recommendationKey(recommendation)}
+                        onClick={() => void openRecommendation(recommendation)}
+                        disabled={isOpening || loading}
+                        className="flex w-full items-center gap-3 rounded-2xl bg-zinc-950 p-3 text-left transition hover:bg-zinc-800 disabled:cursor-wait disabled:opacity-70"
                       >
                         <span
                           className="h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br from-red-600 to-zinc-800 bg-cover bg-center"
@@ -839,10 +971,13 @@ export default function SarkiAra() {
                         />
                         <span className="min-w-0">
                           <span className="block truncate font-black">{recommendation.title}</span>
-                          <span className="block truncate text-sm text-zinc-500">{recommendation.artist}</span>
+                          <span className="block truncate text-sm text-zinc-500">
+                            {isOpening ? "Açılıyor..." : recommendation.artist}
+                          </span>
                         </span>
                       </button>
-                    ))
+                      );
+                    })
                   ) : (
                     <p className="rounded-2xl bg-zinc-950 p-4 text-sm text-zinc-500">Bu varyasyon için öneri yok.</p>
                   )}

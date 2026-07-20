@@ -594,6 +594,13 @@ function fallbackCoverForSong(artist: string, title: string) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+function forcedCoverForSong(artist: string, title: string) {
+  if (normalizeText(artist) === "duman" && normalizeText(title) === "balik") {
+    return fallbackCoverForSong("Duman", "Balık");
+  }
+  return "";
+}
+
 const itunesCoverCache = new Map<string, string>();
 const deezerCoverCache = new Map<string, string>();
 
@@ -757,7 +764,8 @@ async function findInternetCoverForSong(artist: string, title: string, options: 
 
 function withFallbackCover<T extends SongSearchListItem>(song: T): T {
   const variants = song.variants ? withFallbackCovers(song.variants) : undefined;
-  const cover = song.cover || fallbackCoverForSong(song.artist, song.title);
+  const forcedCover = forcedCoverForSong(song.artist, song.title);
+  const cover = forcedCover || song.cover || fallbackCoverForSong(song.artist, song.title);
   return { ...song, cover, variants };
 }
 
@@ -767,6 +775,8 @@ function withFallbackCovers<T extends SongSearchListItem>(songs: T[]): T[] {
 
 async function withCachedOrFallbackCover<T extends SongSearchListItem>(song: T): Promise<T> {
   const variants = song.variants ? await withCachedOrFallbackCovers(song.variants) : undefined;
+  const forcedCover = forcedCoverForSong(song.artist, song.title);
+  if (forcedCover) return { ...song, cover: forcedCover, variants };
   const cachedCover = await getCachedSongCover(song.artist, song.title);
   const providerCover = isWeakProviderCover(song.cover) ? "" : song.cover;
   const artistCover = cachedCover ? "" : await getCachedArtistCover(song.artist);
@@ -779,6 +789,8 @@ async function withCachedOrFallbackCovers<T extends SongSearchListItem>(songs: T
 
 async function withInternetOrFallbackCover<T extends SongSearchListItem>(song: T, options: CoverLookupOptions = {}): Promise<T> {
   const variants = song.variants ? await withInternetOrFallbackCovers(song.variants, options) : undefined;
+  const forcedCover = forcedCoverForSong(song.artist, song.title);
+  if (forcedCover) return { ...song, cover: forcedCover, variants };
   const cachedCover = await getCachedSongCover(song.artist, song.title);
   const internetCover = cachedCover ? "" : await findInternetCoverForSong(song.artist, song.title, options);
   const providerCover = isWeakProviderCover(song.cover) ? "" : song.cover;

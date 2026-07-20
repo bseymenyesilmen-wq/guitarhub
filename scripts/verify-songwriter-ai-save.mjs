@@ -9,7 +9,7 @@ const repertuar = readFileSync(join(__dirname, "..", "app", "repertuar", "page.t
 
 const required = [
   "Repertuvara Kaydet",
-  "saveToRepertuar",
+  "saveToRepertuvar",
   "GUITARHUB_OWN_SONG",
   "artist: \"Kendi Şarkım\"",
   "router.push(`/sarki/${created.id}`)",
@@ -18,7 +18,6 @@ const required = [
   "Devamını yaz",
   "Sadece söz öner",
   "Sadece akor öner",
-  "Sözleri güçlendir",
   "suggestionType",
   "suggestionTypeLabel",
   "getSystemSuggestion",

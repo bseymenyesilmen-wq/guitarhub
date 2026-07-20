@@ -1,22 +1,33 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Ana Sayfa", icon: "⌂" },
-  { href: "/repertuar", label: "Repertuvar", icon: "♪" },
+  { href: "/", label: "Ana Sayfa", mobileLabel: "Ana", icon: "⌂" },
+  { href: "/repertuar", label: "Repertuvar", mobileLabel: "Repertuvar", icon: "♪" },
   { href: "/sarki-ara", label: "Şarkı Ara", mobileLabel: "Ara", icon: "⌕" },
   { href: "/sarki-yaz", label: "Şarkı Yaz", mobileLabel: "Yaz", icon: "✎" },
-  { href: "/akor-kutuphanesi", label: "Akorlar", icon: "♬" },
-  { href: "/gam-kutuphanesi", label: "Gamlar", icon: "◎" },
-  { href: "/tuner", label: "Tuner", icon: "♩" },
+  { href: "/akor-kutuphanesi", label: "Akorlar", mobileLabel: "Akorlar", icon: "♬" },
+  { href: "/gam-kutuphanesi", label: "Gamlar", mobileLabel: "Gamlar", icon: "◎" },
+  { href: "/tuner", label: "Tuner", mobileLabel: "Tuner", icon: "♩" },
 ];
 
 export function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const mobileNavRef = useRef<HTMLDivElement | null>(null);
+  const activeMobileItemRef = useRef<HTMLAnchorElement | null>(null);
+
+  useEffect(() => {
+    const container = mobileNavRef.current;
+    const activeItem = activeMobileItemRef.current;
+    if (!container || !activeItem) return;
+    const nextScrollLeft = activeItem.offsetLeft - (container.clientWidth - activeItem.clientWidth) / 2;
+    container.scrollTo({ left: Math.max(0, nextScrollLeft), behavior: "smooth" });
+  }, [pathname]);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -55,7 +66,7 @@ export function AppNav() {
         </button>
       </nav>
 
-      <div className="mb-6 flex min-w-0 items-center justify-between rounded-[1.5rem] border border-white/10 bg-zinc-950/70 p-2 pl-4 shadow-lg shadow-black/20 backdrop-blur-xl md:hidden">
+      <div className="mb-6 flex min-w-0 items-center justify-between overflow-hidden rounded-[1.5rem] border border-white/10 bg-zinc-950/70 p-2 pl-4 shadow-lg shadow-black/20 backdrop-blur-xl md:hidden">
         <Link href="/" className="text-xl font-black tracking-tight text-white">
           GuitarHub
         </Link>
@@ -65,7 +76,10 @@ export function AppNav() {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black/70 px-2 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2 shadow-2xl shadow-black backdrop-blur-2xl md:hidden">
-        <div className="mx-auto max-w-[calc(100vw-1rem)] overflow-x-auto overscroll-x-contain rounded-[1.4rem] border border-white/10 bg-zinc-950/70 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div
+          ref={mobileNavRef}
+          className="mx-auto max-w-[calc(100vw-1rem)] overflow-x-auto overscroll-x-contain rounded-[1.4rem] border border-white/10 bg-zinc-950/70 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           <div className="flex min-w-max gap-1">
             {NAV_ITEMS.map((item) => {
               const active = pathname === item.href;
@@ -73,7 +87,8 @@ export function AppNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex min-h-14 w-[4.35rem] shrink-0 flex-col items-center justify-center rounded-2xl text-[10px] font-black transition ${
+                  ref={active ? activeMobileItemRef : null}
+                  className={`flex min-h-14 w-[5.65rem] shrink-0 flex-col items-center justify-center rounded-2xl text-[10px] font-black transition ${
                     active ? "scale-[1.02] bg-red-600 text-white shadow-lg shadow-red-950/50" : "text-zinc-400 hover:bg-white/5 hover:text-white"
                   }`}
                 >

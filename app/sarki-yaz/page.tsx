@@ -30,7 +30,6 @@ const SUGGESTION_TYPES = [
   { value: "continue", label: "Devamını yaz", hint: "Seçilen bölüme göre aynı havada 1-2 satır devam önerir." },
   { value: "lyrics-only", label: "Sadece söz öner", hint: "Akorlara ve duyguya göre sadece söz önerir." },
   { value: "chords-only", label: "Sadece akor öner", hint: "Sözlerin duygu/kafiyesine göre sadece akor önerir." },
-  { value: "polish-lyrics", label: "Sözleri güçlendir", hint: "Yazdığın sözleri anlamını bozmadan daha doğal ve etkili hale getirir." },
 ] as const;
 
 type Draft = {

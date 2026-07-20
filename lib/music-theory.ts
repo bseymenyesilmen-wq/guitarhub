@@ -616,8 +616,7 @@ export function getScalePositions(root: string, scaleId: string, viewMode: Scale
 export function getTimeGreeting(date = new Date()) {
   const hour = date.getHours();
   if (hour >= 5 && hour < 11) return "Günaydın";
-  if (hour >= 11 && hour < 15) return "İyi öğlenler";
-  if (hour >= 15 && hour < 18) return "İyi günler";
+  if (hour >= 11 && hour < 18) return "İyi günler";
   if (hour >= 18 && hour < 23) return "İyi akşamlar";
   return "İyi geceler";
 }

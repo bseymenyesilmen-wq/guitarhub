@@ -7,10 +7,11 @@ import { GhButton } from "@/app/components/ui/GhButton";
 import { GhCard } from "@/app/components/ui/GhCard";
 import { GhInput } from "@/app/components/ui/GhInput";
 import { supabase } from "@/lib/supabase";
+import { usernameToAuthEmail, normalizeUsername } from "@/lib/authUsername";
 
 export default function Giris() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,13 +19,15 @@ export default function Giris() {
   async function girisYap() {
     setMessage("");
 
-    if (!email.trim() || !password.trim()) {
-      setMessage("E-posta ve şifre zorunludur.");
+    const authEmail = usernameToAuthEmail(normalizeUsername(username));
+
+    if (!authEmail || !password.trim()) {
+      setMessage("Kullanıcı adı ve şifre zorunludur.");
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password });
     setLoading(false);
 
     if (error) {
@@ -44,11 +47,11 @@ export default function Giris() {
 
         <div className="mt-6 space-y-4">
           <GhInput
-            label="E-posta"
-            type="email"
+            label="Kullanıcı Adı"
+            type="text"
             placeholder=""
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
           />
           <GhInput
             label="Şifre"
@@ -65,9 +68,8 @@ export default function Giris() {
           {loading ? "Giriş Yapılıyor..." : "Giriş Yap"}
         </GhButton>
 
-        <div className="mt-5 flex items-center justify-between gap-3 text-sm">
+        <div className="mt-5 text-center text-sm">
           <Link href="/kayit" className="font-bold text-zinc-300 hover:text-white">Kayıt Ol</Link>
-          <Link href="/sifre-sifirla" className="font-bold text-red-300 hover:text-red-200">Şifremi Unuttum</Link>
         </div>
       </GhCard>
     </main>

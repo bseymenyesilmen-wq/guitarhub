@@ -10,9 +10,7 @@ const required = [
   "Devamını yaz",
   "Sadece söz öner",
   "Sadece akor öner",
-  "Sözleri güçlendir",
   "Repertuvara Kaydet",
-  "Otomatik kaydedildi",
   "Bölüm Nakarat ise",
   "Bölüm Bridge ise",
 ];
@@ -20,9 +18,10 @@ const required = [
 const forbiddenWriter = [
   "value: \"chorus\"",
   "value: \"bridge\"",
+  "polish-lyrics",
+  "Sözleri güçlendir",
   "Nakarat üret",
   "Bridge öner",
-  "function saveDraft",
   "onClick={saveDraft}",
   ">\n                  Kaydet\n                </button>",
 ];

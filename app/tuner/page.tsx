@@ -439,8 +439,7 @@ export default function TunerPage() {
         <AppNav />
 
         <section className="gh-hero mb-6 p-5 sm:p-8">
-          <p className="gh-kicker relative z-10 text-xs sm:text-sm">Neon pedal tuner</p>
-          <h1 className="gh-title relative z-10 mt-3 text-4xl font-black sm:text-6xl">Tuner</h1>
+          <h1 className="gh-title relative z-10 text-4xl font-black sm:text-6xl">Tuner</h1>
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr]">
@@ -560,8 +559,6 @@ export default function TunerPage() {
               <div className="mx-auto mt-7 max-w-xl">
                 <div className="relative h-28 rounded-t-full border-x border-t border-white/10 bg-gradient-to-b from-zinc-900 to-zinc-950">
                   <div className="absolute left-1/2 top-0 h-full w-1 -translate-x-1/2 bg-emerald-400/90 shadow-lg shadow-emerald-400/40" />
-                  <div className="absolute left-[13%] top-8 text-xs font-black uppercase tracking-[0.18em] text-red-300">Gevşet</div>
-                  <div className="absolute right-[15%] top-8 text-xs font-black uppercase tracking-[0.18em] text-red-300">Sık</div>
                   <div
                     className="absolute bottom-0 left-1/2 h-24 w-1 origin-bottom rounded-full bg-white shadow-lg shadow-red-500/50 transition-transform duration-200"
                     style={{ transform: `translateX(-50%) rotate(${needle}deg)` }}

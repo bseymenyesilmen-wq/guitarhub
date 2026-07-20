@@ -6,51 +6,56 @@ import { GhButton } from "@/app/components/ui/GhButton";
 import { GhCard } from "@/app/components/ui/GhCard";
 import { GhInput } from "@/app/components/ui/GhInput";
 import { supabase } from "@/lib/supabase";
+import { usernameToAuthEmail, normalizeUsername } from "@/lib/authUsername";
 
-const onboardingSteps = ["Hesabını oluştur", "Mail doğrulamasını tamamla", "İlk setlistini kur"];
-const AUTH_REDIRECT_URL = "https://guitarhub47.netlify.app/giris";
+const onboardingSteps = ["Kullanıcı adını seç", "Şifreni belirle", "İlk setlistini kur"];
 
 export default function Kayit() {
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function kayitOl() {
     setMessage("");
+    const normalizedUsername = normalizeUsername(username);
+    const authEmail = usernameToAuthEmail(normalizedUsername);
 
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setMessage("İsim, e-posta ve şifre zorunludur.");
+    if (!name.trim() || !normalizedUsername || !password.trim()) {
+      setMessage("İsim, kullanıcı adı ve şifre zorunludur.");
+      return;
+    }
+
+    if (!authEmail) {
+      setMessage("Kullanıcı adı en az 3 harf/rakam içermeli.");
       return;
     }
 
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name: name.trim(), username: name.trim() },
-        emailRedirectTo: AUTH_REDIRECT_URL,
-      },
-    });
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), username: normalizedUsername, password }),
+    }).catch(() => null);
 
-    if (error) {
+    const payload = response ? ((await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null) : null;
+
+    if (!response?.ok || !payload?.ok) {
       setLoading(false);
-      setMessage(error.message);
+      setMessage(payload?.error ?? "Kayıt oluşturulamadı.");
       return;
     }
 
-    if (data.user) {
-      await supabase.from("profiles").insert({
-        user_id: data.user.id,
-        name: name.trim(),
-        username: name.trim(),
-      });
+    const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password });
+    setLoading(false);
+
+    if (error) {
+      setMessage("Kayıt oluşturuldu. Kullanıcı adın ve şifrenle giriş yapabilirsin.");
+      return;
     }
 
-    setLoading(false);
-    setMessage("Kayıt başarılı. Doğrulama maili için e-postanı kontrol et.");
+    window.location.href = "/";
   }
 
   return (
@@ -62,8 +67,8 @@ export default function Kayit() {
           <p className="mt-2 text-sm leading-6 text-zinc-400">GitarHub hesabınla repertuvarını, setlistlerini ve bestelerini sakla.</p>
 
           <div className="mt-6 space-y-4">
-            <GhInput label="Kullanıcı Adı" type="text" placeholder="" value={name} onChange={(event) => setName(event.target.value)} />
-            <GhInput label="E-posta" type="email" placeholder="" value={email} onChange={(event) => setEmail(event.target.value)} />
+            <GhInput label="İsim" type="text" placeholder="" value={name} onChange={(event) => setName(event.target.value)} />
+            <GhInput label="Kullanıcı Adı" type="text" placeholder="" value={username} onChange={(event) => setUsername(event.target.value)} />
             <GhInput label="Şifre" type="password" placeholder="" value={password} onChange={(event) => setPassword(event.target.value)} />
           </div>
 

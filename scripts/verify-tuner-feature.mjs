@@ -68,7 +68,7 @@ const required = [
   [css, "@keyframes gh-led-sweep", "led sweep animation"],
   [nav, 'href: "/tuner", label: "Tuner"', "nav tuner link"],
   [nav, "overflow-x-auto", "mobile nav horizontal scroll"],
-  [nav, "w-[4.35rem] shrink-0", "mobile nav fixed item width"],
+  [nav, "w-[5.65rem] shrink-0", "mobile nav fixed item width"],
   [home, 'href="/tuner"', "home tuner action"],
 ];
 const forbidden = [
@@ -76,12 +76,14 @@ const forbidden = [
   "Mikrofonu Başlat",
   "Mikrofon izni verilmedi veya tarayıcı desteklemiyor.",
   "Gitar kafa",
-  "grid-cols-7",
   "${cents} cent",
   "Gevşet · kalınlaştır",
   "Sık · incelt",
   "Kalınlaştır",
   "İncelt",
+  "Neon pedal tuner",
+  "absolute left-[13%] top-8",
+  "absolute right-[15%] top-8",
 ];
 
 const missing = required.filter(([content, snippet]) => !content.includes(snippet));

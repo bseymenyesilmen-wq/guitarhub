@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { ChatMessage } from "@/lib/chatbot";
 
@@ -50,6 +51,8 @@ function makeClientId() {
 }
 
 export function ChatbotWidget() {
+  const pathname = usePathname();
+  const hideOnAuthScreen = pathname === "/giris" || pathname === "/kayit" || pathname === "/sifre-sifirla";
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [chatError, setChatError] = useState("");
@@ -117,6 +120,8 @@ export function ChatbotWidget() {
     event.preventDefault();
     void sendMessage();
   }
+
+  if (hideOnAuthScreen) return null;
 
   return (
     <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.6rem)] right-3 z-50 sm:right-4 md:bottom-6 md:right-6">
