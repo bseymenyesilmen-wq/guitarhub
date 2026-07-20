@@ -1,6 +1,25 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { usernameToAuthEmail, normalizeUsername } from "@/lib/authUsername";
+
+function isDuplicateAuthError(message = "") {
+  const normalized = message.toLowerCase();
+  return normalized.includes("already") || normalized.includes("registered") || normalized.includes("duplicate");
+}
+
+async function findExistingAuthUser(admin: SupabaseClient, username: string, email: string) {
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) break;
+    const found = data.users.find((user) => {
+      const metadataUsername = normalizeUsername(String(user.user_metadata?.username ?? ""));
+      return user.email?.toLowerCase() === email.toLowerCase() || metadataUsername === username;
+    });
+    if (found) return found;
+    if (data.users.length < 1000) break;
+  }
+  return null;
+}
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { name?: string; username?: string; password?: string } | null;
@@ -32,13 +51,18 @@ export async function POST(request: Request) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: existingProfile } = await admin
+  const existingAuthUser = await findExistingAuthUser(admin, username, email);
+  if (existingAuthUser) {
+    return NextResponse.json({ error: "Bu kullanıcı adı alınmış." }, { status: 409 });
+  }
+
+  const { data: existingProfiles } = await admin
     .from("profiles")
     .select("user_id")
     .eq("username", username)
-    .maybeSingle();
+    .limit(1);
 
-  if (existingProfile?.user_id) {
+  if (existingProfiles?.length) {
     return NextResponse.json({ error: "Bu kullanıcı adı alınmış." }, { status: 409 });
   }
 
@@ -50,8 +74,7 @@ export async function POST(request: Request) {
   });
 
   if (createError) {
-    const duplicate = createError.message.toLowerCase().includes("already") || createError.message.toLowerCase().includes("registered");
-    return NextResponse.json({ error: duplicate ? "Bu kullanıcı adı alınmış." : createError.message }, { status: duplicate ? 409 : 400 });
+    return NextResponse.json({ error: isDuplicateAuthError(createError.message) ? "Bu kullanıcı adı alınmış." : createError.message }, { status: isDuplicateAuthError(createError.message) ? 409 : 400 });
   }
 
   if (userData.user) {

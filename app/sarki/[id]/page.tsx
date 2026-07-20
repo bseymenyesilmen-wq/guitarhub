@@ -200,7 +200,8 @@ export default function SarkiDetay() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
+            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_320px]">
+              <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
               <h2 className="mb-4 text-xl font-bold">Akorlar ve Sözler</h2>
               <ChordTextViewer text={transposedChords} onChordClick={openChord} />
 
@@ -210,10 +211,11 @@ export default function SarkiDetay() {
                   <pre className="mt-3 whitespace-pre-wrap text-sm leading-7">{song.lyrics}</pre>
                 </details>
               )}
-            </section>
+              </section>
 
-            <div className="mt-6">
-              <SongNotesPanel song={{ id: song.id, artist: song.artist, title: song.title }} />
+              <aside className="md:sticky md:top-4 md:self-start">
+                <SongNotesPanel song={{ id: song.id, artist: song.artist, title: song.title }} />
+              </aside>
             </div>
 
             {playMode && (

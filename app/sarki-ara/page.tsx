@@ -889,7 +889,7 @@ export default function SarkiAra() {
         )}
 
         {result && (
-          <section ref={songDetailRef} className="mt-6 grid scroll-mt-24 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section ref={songDetailRef} className="mt-6 grid scroll-mt-24 gap-5 md:grid-cols-[minmax(0,1fr)_320px]">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
               <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
                 <div className="flex w-full items-center gap-2">
@@ -944,12 +944,10 @@ export default function SarkiAra() {
                 )}
               </div>
 
-              <div className="mt-4">
-                <SongNotesPanel song={{ artist: result.artist, title: result.title }} />
-              </div>
             </div>
 
-            <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+            <aside className="space-y-4 md:sticky md:top-4 md:self-start">
+              <SongNotesPanel song={{ artist: result.artist, title: result.title }} />
               <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Play next</p>
                 <h3 className="mt-1 text-xl font-black">Sıradaki şarkılar</h3>

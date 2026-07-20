@@ -33,7 +33,7 @@ if (missing.length) {
   process.exit(1);
 }
 
-for (const badTitle of ["Duman Üstü", "Duman Duman", "Duman"]) {
+for (const badTitle of ["Duman Üstü", "Duman Duman", "Duman", "Zaman Zaman"]) {
   if (!route.includes(`"${badTitle}"`)) {
     console.error(`Blocked title missing: ${badTitle}`);
     process.exit(1);

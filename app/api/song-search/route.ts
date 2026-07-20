@@ -191,7 +191,7 @@ function withTimeout<T>(promise: Promise<T>, fallback: T, timeoutMs: number): Pr
   ]);
 }
 
-const BLOCKED_SONG_RESULTS = new Set(["Duman Üstü", "Duman", "Duman Duman"].map(normalizeText));
+const BLOCKED_SONG_RESULTS = new Set(["Duman Üstü", "Duman", "Duman Duman", "Zaman Zaman"].map(normalizeText));
 
 function isBlockedSongResult(song: SongSearchListItem) {
   return normalizeText(song.artist) === "duman" && BLOCKED_SONG_RESULTS.has(normalizeText(song.title));
