@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { GhButton } from "@/app/components/ui/GhButton";
 import { GhCard } from "@/app/components/ui/GhCard";
 import { GhInput } from "@/app/components/ui/GhInput";
@@ -58,6 +58,11 @@ export default function Kayit() {
     window.location.href = "/";
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!loading) void kayitOl();
+  }
+
   return (
     <main className="gh-page flex min-h-screen items-center justify-center p-4 text-white sm:p-6">
       <div className="grid w-full max-w-5xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
@@ -66,6 +71,7 @@ export default function Kayit() {
           <h1 className="mt-2 text-3xl font-black text-white">Hesap Oluştur</h1>
           <p className="mt-2 text-sm leading-6 text-zinc-400">GitarHub hesabınla repertuvarını, setlistlerini ve bestelerini sakla.</p>
 
+          <form onSubmit={handleSubmit}>
           <div className="mt-6 space-y-4">
             <GhInput label="İsim" type="text" placeholder="" value={name} onChange={(event) => setName(event.target.value)} />
             <GhInput label="Kullanıcı Adı" type="text" placeholder="" value={username} onChange={(event) => setUsername(event.target.value)} />
@@ -74,9 +80,10 @@ export default function Kayit() {
 
           {message && <p className="mt-4 rounded-2xl bg-zinc-900 p-3 text-sm font-bold text-zinc-100 ring-1 ring-white/10">{message}</p>}
 
-          <GhButton onClick={kayitOl} disabled={loading} fullWidth className="mt-6">
+          <GhButton type="submit" disabled={loading} fullWidth className="mt-6">
             {loading ? "Kayıt Oluşturuluyor..." : "Kayıt Ol"}
           </GhButton>
+          </form>
 
           <Link href="/giris" className="mt-5 block text-center text-sm font-bold text-zinc-300 hover:text-white">
             Zaten hesabım var

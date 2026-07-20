@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useEffect, useState } from "react";
+import { type FormEvent, useMemo, useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppNav } from "@/app/components/AppNav";
 import { ChordBottomSheet } from "@/app/components/ChordBottomSheet";
@@ -413,6 +413,11 @@ export default function SarkiAra() {
     applyPayload(payload, trimmedTitle, trimmedArtist);
   }
 
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!loading) void searchSong();
+  }
+
   async function selectArtist(artistName: string) {
     setArtist(artistName);
     setTitle("");
@@ -725,7 +730,7 @@ export default function SarkiAra() {
         </section>
 
         <section className="gh-card rounded-[1.75rem] p-4 sm:p-5">
-          <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+          <form onSubmit={handleSearchSubmit} className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
             <label className="rounded-2xl border border-zinc-800 bg-black/40 px-4 py-3 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20">
               <span className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500">Şarkı</span>
               <input
@@ -733,9 +738,6 @@ export default function SarkiAra() {
                 placeholder=""
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") searchSong();
-                }}
                 className="mt-1 min-h-8 w-full bg-transparent text-base font-bold text-white outline-none placeholder:text-zinc-600"
               />
             </label>
@@ -746,20 +748,17 @@ export default function SarkiAra() {
                 placeholder=""
                 value={artist}
                 onChange={(event) => setArtist(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") searchSong();
-                }}
                 className="mt-1 min-h-8 w-full bg-transparent text-base font-bold text-white outline-none placeholder:text-zinc-600"
               />
             </label>
             <button
-              onClick={() => void searchSong()}
+              type="submit"
               disabled={loading}
               className="min-h-16 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 px-6 py-3 font-black shadow-lg shadow-red-950/40 transition hover:-translate-y-0.5 hover:from-red-400 hover:to-red-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Aranıyor..." : "Ara"}
             </button>
-          </div>
+          </form>
 
           {recentSearches.length > 0 && !result && (
             <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GhButton } from "@/app/components/ui/GhButton";
 import { GhCard } from "@/app/components/ui/GhCard";
@@ -39,6 +39,11 @@ export default function Giris() {
     router.push("/");
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!loading) void girisYap();
+  }
+
   return (
     <main className="gh-page flex min-h-screen items-center justify-center p-4 text-white sm:p-6">
       <GhCard glow className="w-full max-w-md p-5 sm:p-7">
@@ -46,6 +51,7 @@ export default function Giris() {
         <h1 className="mt-2 text-3xl font-black text-white">Giriş Yap</h1>
         <p className="mt-2 text-sm leading-6 text-zinc-400">Kaldığın şarkıdan devam etmek için hesabına gir.</p>
 
+        <form onSubmit={handleSubmit}>
         <div className="mt-6 space-y-4">
           <GhInput
             label="Kullanıcı Adı veya E-posta"
@@ -65,9 +71,10 @@ export default function Giris() {
 
         {message && <p className="mt-4 rounded-2xl bg-red-950/70 p-3 text-sm font-bold text-red-100 ring-1 ring-red-500/20">{message}</p>}
 
-        <GhButton onClick={girisYap} disabled={loading} fullWidth className="mt-6">
+        <GhButton type="submit" disabled={loading} fullWidth className="mt-6">
           {loading ? "Giriş Yapılıyor..." : "Giriş Yap"}
         </GhButton>
+        </form>
 
         <div className="mt-5 text-center text-sm">
           <Link href="/kayit" className="font-bold text-zinc-300 hover:text-white">Kayıt Ol</Link>
