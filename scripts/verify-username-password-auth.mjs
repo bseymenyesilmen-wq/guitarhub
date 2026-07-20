@@ -11,7 +11,7 @@ const helper = readFileSync(join(root, "lib", "authUsername.ts"), "utf8");
 
 const required = [
   [helper, "usernameToAuthEmail", "username internal email helper"],
-  [helper, "guitarhub.local", "internal auth email domain"],
+  [helper, "guitarhub47.netlify.app", "internal auth email domain"],
   [registerApi, "admin.auth.admin.createUser", "server-side admin registration when secret exists"],
   [registerApi, "email_confirm: true", "admin registration bypasses confirm email when secret exists"],
   [registerApi, "publicClient.auth.signUp", "public fallback registration when Netlify secret is missing"],

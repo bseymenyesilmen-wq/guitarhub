@@ -1,4 +1,4 @@
-const AUTH_USERNAME_DOMAIN = "guitarhub.local";
+const AUTH_USERNAME_DOMAIN = "guitarhub47.netlify.app";
 
 const TURKISH_CHAR_MAP: Record<string, string> = {
   ç: "c",
