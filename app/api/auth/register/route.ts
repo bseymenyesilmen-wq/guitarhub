@@ -22,10 +22,28 @@ export async function POST(request: Request) {
   }
 
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serviceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !serviceKey) {
+  if (!supabaseUrl) {
     return NextResponse.json({ error: "Kayıt servisi yapılandırılmamış." }, { status: 500 });
+  }
+
+  if (!serviceKey) {
+    if (!anonKey) return NextResponse.json({ error: "Kayıt servisi yapılandırılmamış." }, { status: 500 });
+    const publicClient = createClient(supabaseUrl, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { error: signupError } = await publicClient.auth.signUp({
+      email,
+      password,
+      options: { data: { name, username } },
+    });
+    if (signupError) {
+      const duplicate = signupError.message.toLowerCase().includes("already") || signupError.message.toLowerCase().includes("registered");
+      return NextResponse.json({ error: duplicate ? "Bu kullanıcı adı alınmış." : signupError.message }, { status: duplicate ? 409 : 400 });
+    }
+    return NextResponse.json({ ok: true, username, mode: "public-signup" });
   }
 
   const admin = createClient(supabaseUrl, serviceKey, {
