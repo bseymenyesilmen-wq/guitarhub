@@ -14,15 +14,14 @@ const required = [
   [helper, "guitarhub47.netlify.app", "internal auth email domain"],
   [registerApi, "admin.auth.admin.createUser", "server-side admin registration when secret exists"],
   [registerApi, "email_confirm: true", "admin registration bypasses confirm email when secret exists"],
-  [registerApi, "publicClient.auth.signUp", "public fallback registration when Netlify secret is missing"],
-  [registerApi, "mode: \"public-signup\"", "public fallback response"],
-  [registerApi, "SUPABASE_SECRET_KEY", "server-side service key supported"],
+  [registerApi, "SUPABASE_SECRET_KEY", "server-side service key required"],
+  [registerApi, "Kayıt için Netlify SUPABASE_SECRET_KEY ayarı eksik", "clear missing Netlify secret error"],
   [registerPage, "fetch(\"/api/auth/register\"", "signup uses API route"],
   [registerPage, "label=\"İsim\"", "signup asks name"],
   [registerPage, "label=\"Kullanıcı Adı\"", "signup asks username"],
   [registerPage, "label=\"Şifre\"", "signup asks password"],
-  [loginPage, "label=\"Kullanıcı Adı\"", "login uses username"],
-  [loginPage, "usernameToAuthEmail", "login maps username to auth email"],
+  [loginPage, "label=\"Kullanıcı Adı veya E-posta\"", "login supports username and old email accounts"],
+  [loginPage, "trimmedLoginId.includes(\"@\")", "old email login bypasses username mapping"],
 ];
 
 const forbidden = [

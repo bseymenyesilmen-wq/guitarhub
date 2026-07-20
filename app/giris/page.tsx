@@ -11,7 +11,7 @@ import { usernameToAuthEmail, normalizeUsername } from "@/lib/authUsername";
 
 export default function Giris() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,10 +19,11 @@ export default function Giris() {
   async function girisYap() {
     setMessage("");
 
-    const authEmail = usernameToAuthEmail(normalizeUsername(username));
+    const trimmedLoginId = loginId.trim();
+    const authEmail = trimmedLoginId.includes("@") ? trimmedLoginId : usernameToAuthEmail(normalizeUsername(trimmedLoginId));
 
     if (!authEmail || !password.trim()) {
-      setMessage("Kullanıcı adı ve şifre zorunludur.");
+      setMessage("Kullanıcı adı/e-posta ve şifre zorunludur.");
       return;
     }
 
@@ -47,11 +48,11 @@ export default function Giris() {
 
         <div className="mt-6 space-y-4">
           <GhInput
-            label="Kullanıcı Adı"
+            label="Kullanıcı Adı veya E-posta"
             type="text"
             placeholder=""
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
+            value={loginId}
+            onChange={(event) => setLoginId(event.target.value)}
           />
           <GhInput
             label="Şifre"
