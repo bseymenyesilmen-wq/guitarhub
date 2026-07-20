@@ -43,3 +43,6 @@ next-env.d.ts
 
 # runtime cache
 .cache/
+
+# Local Netlify folder
+.netlify
